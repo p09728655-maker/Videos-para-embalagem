@@ -107,6 +107,12 @@
   .timer-row>*+*{margin-left:1.2vw;}
   #timerDisplay{font-family:'JetBrains Mono',monospace;font-size:5.5vh;color:var(--accent);
                 min-width:10vh;text-align:center;font-weight:700;line-height:1;flex-shrink:0;}
+  /* Tocar na imagem tambem pausa, mas ninguem descobre isso sozinho. */
+  #btnPausa{flex-shrink:0;background:var(--panel);border:1px solid var(--border);
+            border-radius:8px;color:var(--text);font-size:2.6vh;font-weight:700;
+            padding:0.9vh 2.2vh;cursor:pointer;font-family:inherit;white-space:nowrap;}
+  #btnPausa:hover{border-color:var(--accent);color:var(--accent);}
+  #btnPausa.pausado{background:var(--warn);border-color:var(--warn);color:#1A1A1A;}
   .progress-bar-wrap{flex:1;height:0.8vh;background:var(--panel);border-radius:4px;overflow:hidden;}
   .progress-bar{height:100%;background:var(--accent);width:100%;border-radius:4px;}
 
@@ -171,6 +177,7 @@
     </div>
     <div class="timer-row">
       <div id="timerDisplay">--s</div>
+      <button id="btnPausa" onclick="alternarPausa()">&#10073;&#10073; Pausar</button>
       <div class="progress-bar-wrap"><div class="progress-bar" id="progressBar"></div></div>
     </div>
   </div>
@@ -406,12 +413,16 @@ function tocarSom(){
 function estaPausado(){ return !intervalo; }
 
 function pintarPausa(){
-  var area = $('desenhoCamada'), t = $('timerDisplay'), b = $('progressBar');
+  var area = $('desenhoCamada'), t = $('timerDisplay'), b = $('progressBar'), bt = $('btnPausa');
   if (!area) return;
   var p = estaPausado();
   area.className = p ? 'pausado' : '';
   if (t){ t.className = p ? 'pausado' : ''; if (p && painel) t.textContent = 'II'; }
   if (b){ b.className = p ? 'progress-bar pausado' : 'progress-bar'; }
+  if (bt){
+    bt.className = p ? 'pausado' : '';
+    bt.innerHTML = p ? '&#9654; Continuar' : '&#10073;&#10073; Pausar';
+  }
 }
 
 function alternarPausa(){

@@ -357,6 +357,83 @@ fileInput.addEventListener('change', e => {
    desenho ganha area na TV, alem de gerar arquivo menor.
    Margem de seguranca de 12px e piso de 35%: se o recorte for agressivo demais,
    e sinal de que a heuristica errou, entao devolve a pagina inteira. */
+
+/* Aperta o desenho antes de publicar.
+ *
+ * A pagina do PDF traz o desenho util espalhado entre faixas brancas largas e
+ * um rodape administrativo (desenhista, data, pagina). Exibida inteira na TV,
+ * o desenho fica pequeno. Aqui as faixas brancas longas saem e o conteudo e
+ * recolado — nada de informacao se perde.
+ *
+ * Duas armadilhas resolvidas no caminho, com um PDF real na mao:
+ *  - a moldura da pagina atravessa toda a altura e fazia cada linha parecer ter
+ *    conteudo; as colunas da moldura sao descontadas antes da analise;
+ *  - linha de chamada (aquela que liga o nome a peca) tem 2 a 3 pixels por
+ *    linha, contra 1 a 2 do branco. Um pixel de diferenca nao separa os dois,
+ *    entao o corte nao usa intensidade: so remove faixa quase vazia LONGA,
+ *    porque uma linha de chamada nunca ocupa 8% da altura sozinha.
+ */
+function apertarDesenho(canvas) {
+  try {
+    const w = canvas.width, h = canvas.height;
+    const ctx = canvas.getContext('2d');
+    const dados = ctx.getImageData(0, 0, w, h).data;
+    const escuro = (x, y) => dados[(y * w + x) * 4] < 200;
+
+    const moldura = new Set();
+    for (let x = 0; x < w; x++) {
+      let n = 0;
+      for (let y = 0; y < h; y += 4) if (escuro(x, y)) n++;
+      if (n > (h / 4) * 0.80) moldura.add(x);
+    }
+
+    const dens = new Array(h).fill(0);
+    for (let y = 0; y < h; y++) {
+      let n = 0;
+      for (let x = 0; x < w; x++) if (!moldura.has(x) && escuro(x, y)) n++;
+      dens[y] = n;
+    }
+
+    const QUASE = 2, MIN = Math.floor(h * 0.08);
+    const remover = [];
+    let ini = null;
+    for (let y = 0; y < h; y++) {
+      if (dens[y] <= QUASE && ini === null) ini = y;
+      else if (dens[y] > QUASE && ini !== null) {
+        if (y - ini >= MIN) remover.push([ini, y]);
+        ini = null;
+      }
+    }
+    if (ini !== null && h - ini >= MIN) remover.push([ini, h]);
+    if (!remover.length) return canvas;
+
+    const blocos = [];
+    let y = 0;
+    for (const [a, b] of remover) { if (a > y) blocos.push([y, a]); y = b; }
+    if (y < h) blocos.push([y, h]);
+    if (blocos.length > 1) {
+      const ult = blocos[blocos.length - 1];
+      if (ult[1] - ult[0] < h * 0.06) blocos.pop();   /* rodape administrativo */
+    }
+    if (!blocos.length) return canvas;
+
+    const RESP = Math.max(6, Math.floor(h * 0.02));
+    const alt = blocos.reduce((s, b) => s + (b[1] - b[0]), 0) + RESP * (blocos.length - 1);
+    if (alt >= h * 0.95) return canvas;              /* nao valeu o esforco */
+
+    const out = document.createElement('canvas');
+    out.width = w; out.height = alt;
+    const octx = out.getContext('2d');
+    octx.fillStyle = '#fff'; octx.fillRect(0, 0, w, alt);
+    let dy = 0;
+    for (const [a, b] of blocos) {
+      octx.drawImage(canvas, 0, a, w, b - a, 0, dy, w, b - a);
+      dy += (b - a) + RESP;
+    }
+    return out;
+  } catch (e) { return canvas; }
+}
+
 function recortarMargemBranca(canvas) {
   try {
     const w = canvas.width, h = canvas.height;
@@ -415,7 +492,7 @@ async function processar(file) {
     canvas.width = viewport.width;
     canvas.height = viewport.height;
     await page.render({ canvasContext: canvas.getContext('2d'), viewport }).promise;
-    const imgBase64 = recortarMargemBranca(canvas).toDataURL('image/jpeg', 0.82);
+    const imgBase64 = apertarDesenho(recortarMargemBranca(canvas)).toDataURL('image/jpeg', 0.82);
 
     const { components, obs } = await extrairComponentes(page);
     const opName = 'CAMADA ' + String(i).padStart(2, '0');
