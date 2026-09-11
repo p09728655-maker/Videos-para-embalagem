@@ -272,6 +272,43 @@ fileInput.addEventListener('change', e => {
   if (e.target.files[0]) processar(e.target.files[0]);
 });
 
+
+/* O PDF vem com margens brancas largas. Exibida inteira, a pagina fica pequena
+   na area do painel. Recorta so o branco em volta — nunca conteudo — e o
+   desenho ganha area na TV, alem de gerar arquivo menor.
+   Margem de seguranca de 12px e piso de 35%: se o recorte for agressivo demais,
+   e sinal de que a heuristica errou, entao devolve a pagina inteira. */
+function recortarMargemBranca(canvas) {
+  try {
+    const w = canvas.width, h = canvas.height;
+    const d = canvas.getContext('2d').getImageData(0, 0, w, h).data;
+    const LIM = 244;
+    let minx = w, miny = h, maxx = 0, maxy = 0;
+    for (let y = 0; y < h; y += 2) {
+      for (let x = 0; x < w; x += 2) {
+        const i = (y * w + x) * 4;
+        if (d[i] < LIM || d[i+1] < LIM || d[i+2] < LIM) {
+          if (x < minx) minx = x;
+          if (x > maxx) maxx = x;
+          if (y < miny) miny = y;
+          if (y > maxy) maxy = y;
+        }
+      }
+    }
+    if (maxx <= minx || maxy <= miny) return canvas;   // pagina em branco
+    const M = 12;
+    minx = Math.max(0, minx - M); miny = Math.max(0, miny - M);
+    maxx = Math.min(w - 1, maxx + M); maxy = Math.min(h - 1, maxy + M);
+    const cw = maxx - minx + 1, ch = maxy - miny + 1;
+    if (cw < w * 0.35 || ch < h * 0.35) return canvas; // recorte suspeito
+    if (cw > w * 0.95 && ch > h * 0.95) return canvas; // nao vale o esforco
+    const out = document.createElement('canvas');
+    out.width = cw; out.height = ch;
+    out.getContext('2d').drawImage(canvas, minx, miny, cw, ch, 0, 0, cw, ch);
+    return out;
+  } catch (e) { return canvas; }
+}
+
 async function processar(file) {
   pagesData = [];
   document.getElementById('pagesGrid').innerHTML = '';
@@ -299,7 +336,7 @@ async function processar(file) {
     canvas.width = viewport.width;
     canvas.height = viewport.height;
     await page.render({ canvasContext: canvas.getContext('2d'), viewport }).promise;
-    const imgBase64 = canvas.toDataURL('image/jpeg', 0.82);
+    const imgBase64 = recortarMargemBranca(canvas).toDataURL('image/jpeg', 0.82);
 
     const { components, obs } = await extrairComponentes(page);
     const opName = 'CAMADA ' + String(i).padStart(2, '0');
