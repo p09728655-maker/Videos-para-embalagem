@@ -192,9 +192,10 @@
 
 <div id="pagesGrid"></div>
 
-<button id="btnGerar" onclick="gerarHTML()">Gerar painel para a TV</button>
+<button id="btnGerar" onclick="gerarPacote()">Gerar pacote do produto</button>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script>
 pdfjsLib.GlobalWorkerOptions.workerSrc =
   'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
@@ -381,389 +382,81 @@ function coletarDados() {
   return { produto, ops, tempo };
 }
 
-function gerarHTML() {
+function slugify(t) {
+  return (t || '').toLowerCase()
+    .normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .substring(0, 60) || 'produto';
+}
+
+/* Monta a pasta do produto: dados.json + uma imagem por camada.
+   As imagens saem como arquivo, nao embutidas em base64 no HTML — e o que
+   permite a TV carregar uma de cada vez, em vez de tudo na memoria. */
+async function gerarPacote() {
   const { produto, ops, tempo } = coletarDados();
+  const slug = slugify(produto);
 
-  const imgsJS = pagesData.map((p, i) => `    ${i}: "${p.img}"`).join(',\n');
-  const opsJS  = JSON.stringify(ops, null, 2);
-  const tempoSeg = tempo;
-
-  /* Logo embutida para o painel ficar autocontido. Sem ela (gerador aberto
-     via file://), cai no nome em texto — o painel continua funcionando. */
-  const logoHeaderHtml = LOGO_B64
-    ? `<img class="rp-marca" src="${LOGO_B64}" alt="Patrimar Móveis">`
-    : `<span class="rp-wordmark">RITMOPATRIMAR</span>`;
-  const logoSplashHtml = LOGO_B64
-    ? `<img class="ol-logo-img" src="${LOGO_B64}" alt="Patrimar Móveis">`
-    : '';
-
-  const fotos = fotosBase64;
-  const carouselImgsHtml = fotos.map((src, i) =>
-    `<img class="carousel-img${i===0?' ativo':''}" src="${src}">`
-  ).join('');
-  const carouselBtnsHtml = fotos.length > 1
-    ? '<button class="carousel-btn prev" onclick="carouselPrev()">&#8249;</button><button class="carousel-btn next" onclick="carouselNext()">&#8250;</button>'
-    : '';
-  const carouselDotsHtml = fotos.length > 1
-    ? '<div class="carousel-dots">' + fotos.map((_, i) =>
-        `<div class="carousel-dot${i===0?' ativo':''}" onclick="carouselGoto(${i})"></div>`
-      ).join('') + '</div>'
-    : '';
-  const fotoHtml = fotos.length
-    ? `<div id="fotoProduto"><div class="carousel">${carouselImgsHtml}${carouselBtnsHtml}</div>${carouselDotsHtml}</div>`
-    : '';
-  const carouselJs = fotos.length > 1
-    ? `var _ci=0;var _cimgs=document.querySelectorAll('.carousel-img'),_cdots=document.querySelectorAll('.carousel-dot');function carouselGoto(n){_cimgs[_ci].className='carousel-img';if(_cdots[_ci])_cdots[_ci].className='carousel-dot';_ci=(n+_cimgs.length)%_cimgs.length;_cimgs[_ci].className='carousel-img ativo';if(_cdots[_ci])_cdots[_ci].className='carousel-dot ativo';}function carouselNext(){carouselGoto(_ci+1);}function carouselPrev(){carouselGoto(_ci-1);}setInterval(carouselNext,5000);`
-    : '';
-
-  const html = `<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>RitmoPatrimar · Embalagem — ${produto}</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap">
-<style>
-  /* Compatibilidade Smart TV: sem flex gap, sem inset, sem aspect-ratio, sem hex de 8 digitos.
-     Tipografia em vh para escalar de 720p a 4K e permanecer legivel a 4 metros. */
-  :root{
-    --bg:#0A0A0B;--panel:#18181B;--border:#3F3F46;
-    --gray:#71717A;--line:#E4E4E7;
-    --accent:#FF5C1F;
-    --warn:#EAB308;--error:#DC2626;
-    --text:#E4E4E7;--text-muted:#A1A1AA;
-  }
-  *{box-sizing:border-box;margin:0;padding:0;}
-  html,body{height:100%;}
-  body{font-family:'Inter',Arial,Helvetica,sans-serif;background:#0A0A0B;background:var(--bg);color:#E4E4E7;color:var(--text);display:flex;flex-direction:column;overflow:hidden;}
-
-  /* HEADER */
-  .header{display:flex;justify-content:space-between;align-items:center;padding:1vh 1.4vw;border-bottom:1px solid var(--border);flex-shrink:0;}
-  .rp-logo{display:flex;align-items:center;min-width:0;}
-  .rp-logo>*+*{margin-left:8px;}
-  .rp-wordmark{font-size:1.8vh;font-weight:800;color:var(--line);letter-spacing:0.14em;white-space:nowrap;}
-  .rp-marca{height:3.4vh;width:auto;display:block;}
-  .rp-sep{color:var(--border);font-size:2vh;font-weight:300;}
-  .produto-nome{font-size:2.4vh;font-weight:800;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-  .controls{display:flex;align-items:center;flex-shrink:0;}
-  .controls>*+*{margin-left:8px;}
-  .controls input[type=number]{width:9vh;padding:0.8vh 1vh;border-radius:6px;border:1px solid var(--border);background:var(--panel);color:var(--text);font-family:'JetBrains Mono',monospace;font-size:2vh;text-align:center;font-weight:700;}
-  .controls input[type=number]:focus{outline:none;border-color:var(--accent);}
-  .btn{padding:0.9vh 1.6vh;border-radius:6px;border:none;background:var(--accent);color:#fff;font-weight:700;font-size:1.7vh;cursor:pointer;white-space:nowrap;font-family:inherit;}
-  .btn.stop{background:var(--error);}
-  .btn.fs{background:var(--panel);color:var(--text);border:1px solid var(--border);}
-
-  /* LAYOUT */
-  .container{display:flex;flex:1;overflow:hidden;min-height:0;}
-  .left{width:75%;padding:1.2vh 1.1vw;display:flex;flex-direction:column;overflow:hidden;min-height:0;}
-  .left>*+*{margin-top:1vh;}
-  .right{width:25%;padding:1.2vh 0.9vw;border-left:1px solid var(--border);overflow:hidden;display:flex;flex-direction:column;min-height:0;}
-  .right>*+*{margin-top:1vh;}
-
-  /* CAMADA */
-  #etapaPrincipal{background:var(--accent);color:#fff;padding:1vh 2vh;border-radius:8px;font-size:6.5vh;font-weight:800;text-align:center;flex-shrink:0;line-height:1;}
-  #etapaPrincipal .tot{font-size:3vh;font-weight:600;opacity:0.55;}
-
-  /* ALERTA OBS */
-  #obsDisplay{background:rgba(234,179,8,0.13);border:2px solid var(--warn);border-radius:6px;padding:1.2vh 2vh;font-size:3.4vh;font-weight:800;color:var(--warn);text-align:center;flex-shrink:0;display:none;text-transform:uppercase;line-height:1.15;}
-
-  /* COMPONENTES */
-  #componentesGrade{display:flex;flex-wrap:wrap;flex-shrink:0;margin-right:-0.8vh;}
-  #componentesGrade .vazio{color:var(--text-muted);font-size:2.2vh;padding:1vh;}
-  .comp-card{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:0.9vh 1.6vh;display:flex;align-items:center;margin:0 0.8vh 0.8vh 0;}
-  .comp-card-qty{font-family:'JetBrains Mono',monospace;font-size:5vh;font-weight:700;color:var(--accent);line-height:1;flex-shrink:0;margin-right:1.2vh;}
-  .comp-card-nome{font-size:2.7vh;font-weight:700;color:var(--text);line-height:1.15;}
-
-  /* DESENHO */
-  #desenhoCamada{background:var(--panel);border:1px solid var(--border);border-radius:8px;flex:1;min-height:0;position:relative;overflow:hidden;}
-  #desenhoCamada img{position:absolute;top:0;left:0;width:100%;height:100%;object-fit:contain;display:none;}
-  #desenhoCamada img.ativo{display:block;}
-  #desenhoPh{position:absolute;top:50%;left:0;width:100%;text-align:center;margin-top:-1.2vh;color:var(--gray);font-size:2.4vh;}
-
-  /* TIMER */
-  .timer-row{display:flex;align-items:center;flex-shrink:0;}
-  .timer-row>*+*{margin-left:1.2vw;}
-  #timerDisplay{font-family:'JetBrains Mono',monospace;font-size:5.5vh;color:var(--accent);min-width:10vh;text-align:center;font-weight:700;line-height:1;flex-shrink:0;}
-  .progress-bar-wrap{flex:1;height:0.8vh;background:var(--panel);border-radius:4px;overflow:hidden;}
-  .progress-bar{height:100%;background:var(--accent);width:100%;border-radius:4px;}
-
-  /* COLUNA DIREITA */
-  #fotoProduto{flex-shrink:0;border-bottom:1px solid var(--border);padding-bottom:1vh;}
-  .carousel{position:relative;width:100%;padding-top:75%;overflow:hidden;border-radius:8px;background:var(--bg);}
-  .carousel-img{position:absolute;top:0;left:0;width:100%;height:100%;object-fit:contain;opacity:0;transition:opacity .4s;}
-  .carousel-img.ativo{opacity:1;}
-  .carousel-btn{position:absolute;top:50%;margin-top:-2vh;background:rgba(0,0,0,0.55);border:none;color:#fff;font-size:2.6vh;cursor:pointer;padding:0.4vh 1vh;border-radius:4px;z-index:10;line-height:1;}
-  .carousel-btn.prev{left:4px;} .carousel-btn.next{right:4px;}
-  .carousel-dots{text-align:center;margin-top:0.6vh;}
-  .carousel-dot{display:inline-block;width:0.8vh;height:0.8vh;border-radius:50%;background:var(--border);margin:0 2px;cursor:pointer;}
-  .carousel-dot.ativo{background:var(--accent);}
-  .section-title{font-size:1.5vh;letter-spacing:0.08em;color:var(--text-muted);text-transform:uppercase;flex-shrink:0;font-weight:700;}
-  #mapaTrilhos{overflow-y:auto;flex:1;min-height:0;}
-  .op-item{background:var(--panel);padding:1.2vh;border-left:4px solid var(--border);border-radius:0 5px 5px 0;font-size:2vh;font-weight:600;flex-shrink:0;cursor:pointer;color:var(--text-muted);margin-bottom:3px;}
-  .op-item.ativo{border-left-color:var(--accent);background:rgba(255,92,31,0.08);color:var(--accent);font-weight:800;}
-
-  /* FOOTER + SPLASH */
-  .footer{text-align:center;padding:0.5vh;font-family:'JetBrains Mono',monospace;font-size:1.3vh;letter-spacing:0.08em;color:var(--gray);flex-shrink:0;border-top:1px solid var(--border);}
-  @keyframes pulseEtapa{0%{transform:scale(1);}40%{transform:scale(1.04);}100%{transform:scale(1);}}
-  .pulse{animation:pulseEtapa .35s ease-out;}
-  #overlayInicio{position:fixed;top:0;left:0;right:0;bottom:0;background:#1A1A1A;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:999;cursor:pointer;transition:opacity .5s;}
-  #overlayInicio>*+*{margin-top:2vh;}
-  #overlayInicio.sumindo{opacity:0;}
-  .ol-logo-img{width:20vh;max-width:260px;display:block;}
-  .ol-nome{font-size:4.4vh;font-weight:800;color:#E8E8E8;letter-spacing:0.19em;text-indent:0.19em;line-height:1;}
-  .ol-pulso{width:28vh;max-width:320px;display:block;}
-  .ol-sub{font-size:2.8vh;color:var(--text-muted);font-weight:600;}
-</style>
-</head>
-<body>
-<div class="header">
-  <div class="rp-logo">
-    ${logoHeaderHtml}
-    <span class="rp-sep">/</span>
-    <span class="produto-nome">${produto}</span>
-  </div>
-  <div class="controls">
-    <input type="number" id="tempoInput" min="1" max="9999" value="${tempoSeg}">
-    <button class="btn" onclick="iniciarTempoManual()">&#9654; Iniciar</button>
-    <button class="btn stop" onclick="pararTimer()">&#9632; Parar</button>
-    <button class="btn fs" onclick="toggleFullscreen()">&#9974; Tela Cheia</button>
-  </div>
-</div>
-<div class="container">
-  <div class="left">
-    <div id="etapaPrincipal">AGUARDANDO</div>
-    <div id="obsDisplay"></div>
-    <div id="componentesGrade"><span class="vazio">Carregando sequencia...</span></div>
-    <div id="desenhoCamada"><div id="desenhoPh">Desenho da camada</div></div>
-    <div class="timer-row">
-      <div id="timerDisplay">--s</div>
-      <div class="progress-bar-wrap"><div class="progress-bar" id="progressBar"></div></div>
-    </div>
-  </div>
-  <div class="right">
-    ${fotoHtml}
-    <div class="section-title">Sequência de Camadas</div>
-    <div id="mapaTrilhos"></div>
-  </div>
-</div>
-<div class="footer" id="rodape">PADRÃO DE EMBALAGEM · ${produto} · RITMOPATRIMAR</div>
-<div id="overlayInicio" onclick="iniciarTela()">
-  ${logoSplashHtml}
-  <div class="ol-nome">RITMOPATRIMAR</div>
-  <svg class="ol-pulso" viewBox="0 0 340 44" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M2 26 H126 L140 26 L150 8 L162 40 L172 26 L186 26 H338"
-          stroke="#FF5C1F" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/>
-  </svg>
-  <div class="ol-sub">${produto}</div>
-</div>
-<script>
-  var IMGS={
-${imgsJS}
-  };
-  var opsData=${opsJS};
-  var totalEtapas=opsData.length;
-  var TEMPO_PADRAO=${tempoSeg};
-  var intervalo=null,etapaAtual=0,tRestante=0,tCiclo=0,_iniciado=false;
-  var _imgCache={};
-
-  window.onerror=function(m){try{document.getElementById('rodape').textContent='ERRO: '+m;}catch(e){}return false;};
-
-  function qs(n){try{var m=new RegExp('[?&]'+n+'=([^&#]*)').exec(location.search);return m?decodeURIComponent(m[1]):null;}catch(e){return null;}}
-  function tempoConfigurado(){
-    var u=parseInt(qs('t'),10); if(u>0)return u;
-    var el=document.getElementById('tempoInput');
-    var v=el?parseInt(el.value,10):0;
-    return v>0?v:TEMPO_PADRAO;
+  if (typeof JSZip === 'undefined') {
+    mostrarStatus('', 100);
+    document.getElementById('statusTxt').innerHTML =
+      '<b style="color:var(--error)">Não consegui carregar o compactador (JSZip).</b> ' +
+      'Verifique a internet e recarregue a página.';
+    return;
   }
 
-  function init(){
-    var c=document.getElementById('mapaTrilhos'); c.innerHTML='';
-    opsData.forEach(function(op,idx){
-      var d=document.createElement('div');
-      d.id='step'+idx; d.className='op-item';
-      d.textContent=op.op+' · '+op.components.length+' itens';
-      d.onclick=function(){etapaAtual=idx;destacarEtapa();};
-      c.appendChild(d);
-    });
-    var t=qs('t'); if(t&&parseInt(t,10)>0)document.getElementById('tempoInput').value=parseInt(t,10);
-  }
+  mostrarStatus('Montando o pacote...', 20);
 
-  function tocarSom(){try{var AC=window.AudioContext||window.webkitAudioContext;if(!AC)return;var ctx=new AC();var osc=ctx.createOscillator(),g=ctx.createGain();osc.connect(g);g.connect(ctx.destination);osc.type='sine';osc.frequency.value=880;g.gain.setValueAtTime(0.35,ctx.currentTime);g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.4);osc.start();osc.stop(ctx.currentTime+0.4);}catch(e){}}
+  const zip = new JSZip();
+  const pasta = zip.folder(slug);
 
-  function iniciarCiclo(seg){
-    if(intervalo){clearInterval(intervalo);intervalo=null;}
-    tCiclo=seg; tRestante=seg;
-    atualizar(tRestante,tCiclo); destacarEtapa();
-    intervalo=setInterval(function(){
-      tRestante--; atualizar(tRestante,tCiclo);
-      if(tRestante<=0){tocarSom();etapaAtual=(etapaAtual+1)%totalEtapas;tRestante=tCiclo;destacarEtapa();}
-    },1000);
-  }
-  function iniciarTempoManual(){var v=tempoConfigurado();if(!v||v<=0)return;etapaAtual=0;iniciarCiclo(v);}
-
-  function pararTimer(){
-    if(intervalo){clearInterval(intervalo);intervalo=null;}
-    document.getElementById('timerDisplay').textContent='--s';
-    var bar=document.getElementById('progressBar');bar.style.transition='none';bar.style.width='100%';
-    document.getElementById('etapaPrincipal').textContent='AGUARDANDO';
-    document.getElementById('componentesGrade').innerHTML='<span class="vazio">Parado. Clique Iniciar.</span>';
-    document.getElementById('obsDisplay').style.display='none';
-    var its=document.querySelectorAll('.op-item');
-    for(var i=0;i<its.length;i++)its[i].className='op-item';
-    for(var k in _imgCache){if(_imgCache.hasOwnProperty(k))_imgCache[k].className='';}
-    document.getElementById('desenhoPh').style.display='block';
-    document.getElementById('desenhoPh').textContent='Desenho da camada';
-  }
-
-  function scrollParaEtapa(el){
-    try{
-      var box=document.getElementById('mapaTrilhos');
-      var top=el.offsetTop,h=el.offsetHeight;
-      if(top<box.scrollTop)box.scrollTop=top;
-      else if(top+h>box.scrollTop+box.clientHeight)box.scrollTop=top+h-box.clientHeight;
-    }catch(e){}
-  }
-
-  function mostrarDesenho(idx){
-    var area=document.getElementById('desenhoCamada');
-    var ph=document.getElementById('desenhoPh');
-    var src=IMGS[idx];
-    if(!src){
-      for(var k in _imgCache){if(_imgCache.hasOwnProperty(k))_imgCache[k].className='';}
-      ph.style.display='block'; ph.textContent=opsData[idx].op; return;
-    }
-    ph.style.display='none';
-    if(!_imgCache[idx]){
-      var im=document.createElement('img');
-      im.alt=opsData[idx].op; im.src=src;
-      area.appendChild(im); _imgCache[idx]=im;
-    }
-    var alvo=String(idx);
-    for(var j in _imgCache){if(_imgCache.hasOwnProperty(j))_imgCache[j].className=(j===alvo?'ativo':'');}
-  }
-
-  function destacarEtapa(){
-    var its=document.querySelectorAll('.op-item');
-    for(var i=0;i<its.length;i++)its[i].className='op-item';
-    var el=document.getElementById('step'+etapaAtual);
-    if(el){el.className='op-item ativo';scrollParaEtapa(el);}
-    var op=opsData[etapaAtual];
-    var ep=document.getElementById('etapaPrincipal');
-    ep.innerHTML=op.op+' <span class="tot">/ '+totalEtapas+'</span>';
-    ep.className=''; void ep.offsetWidth; ep.className='pulse';
-    var obs=document.getElementById('obsDisplay');
-    if(op.obs){obs.innerHTML='&#9888; '+op.obs;obs.style.display='block';}else{obs.style.display='none';}
-    var grade=document.getElementById('componentesGrade');
-    grade.innerHTML=op.components.map(function(c){
-      return '<div class="comp-card"><span class="comp-card-qty">&times;'+c.qty+'</span><span class="comp-card-nome">'+c.name+'</span></div>';
-    }).join('');
-    mostrarDesenho(etapaAtual);
-  }
-
-  function atualizar(s,total){
-    document.getElementById('timerDisplay').textContent=s+'s';
-    var pct=(s/(total||1))*100;
-    var bar=document.getElementById('progressBar');
-    bar.style.transition=(s===total?'none':'width 1s linear');
-    bar.style.width=pct+'%';
-  }
-
-  function pedirFullscreen(){
-    try{
-      var el=document.documentElement;
-      var f=el.requestFullscreen||el.webkitRequestFullscreen||el.mozRequestFullScreen||el.msRequestFullscreen;
-      if(!f)return;
-      var r=f.call(el);
-      if(r&&typeof r['catch']==='function')r['catch'](function(){});
-    }catch(e){}
-  }
-  function sairFullscreen(){try{var d=document;var f=d.exitFullscreen||d.webkitExitFullscreen||d.mozCancelFullScreen||d.msExitFullscreen;if(f)f.call(d);}catch(e){}}
-  function emFullscreen(){return !!(document.fullscreenElement||document.webkitFullscreenElement||document.mozFullScreenElement||document.msFullscreenElement);}
-  function toggleFullscreen(){
-    var btn=document.querySelector('.btn.fs');
-    if(!emFullscreen()){pedirFullscreen();if(btn)btn.innerHTML='&times; Sair';}
-    else{sairFullscreen();if(btn)btn.innerHTML='&#9974; Tela Cheia';}
-  }
-  document.addEventListener('fullscreenchange',function(){var b=document.querySelector('.btn.fs');if(b&&!emFullscreen())b.innerHTML='&#9974; Tela Cheia';});
-
-  /* Inicia sozinho: a TV nao tem mouse nem teclado. */
-  function iniciarTela(){
-    if(_iniciado)return; _iniciado=true;
-    var o=document.getElementById('overlayInicio');
-    if(o){o.className='sumindo';setTimeout(function(){o.style.display='none';},500);}
-    iniciarTempoManual();
-  }
-
-  /* Auto-atualizacao: detecta nova publicacao e recarrega sozinho.
-     Caminho principal: compara ETag/Last-Modified a cada 3 min.
-     Rede de seguranca: se o servidor nao mandar esses headers, recarrega a cada 30 min
-     de qualquer forma, desde que a rede esteja respondendo (evita cair em tela de erro
-     quando a TV perde a internet). O reload periodico tambem recupera a TV de
-     travamentos de memoria do navegador depois de horas ligada. */
-  var _tag=null,_redeOk=false,_semHeader=false;
-  function checarAtualizacao(){
-    if(location.protocol.indexOf('http')!==0||!window.fetch)return;
-    try{
-      fetch(location.pathname+'?_v='+(new Date()).getTime(),{method:'HEAD',cache:'no-store'})
-        .then(function(r){
-          _redeOk=true;
-          var t=r.headers.get('etag')||r.headers.get('last-modified');
-          if(!t){_semHeader=true;return;}
-          if(_tag===null){_tag=t;return;}
-          if(t!==_tag)location.reload();
-        })['catch'](function(){_redeOk=false;});
-    }catch(e){_redeOk=false;}
-  }
-  function reloadSeguranca(){ if(_redeOk)location.reload(); }
-
-  /* Esconde o cursor do controle remoto quando parado. */
-  var _cur;
-  function armarCursor(){clearTimeout(_cur);_cur=setTimeout(function(){document.body.style.cursor='none';},5000);}
-  document.addEventListener('mousemove',function(){document.body.style.cursor='default';armarCursor();});
-
-  document.addEventListener('keydown',function(e){
-    if(e.target&&e.target.tagName==='INPUT')return;
-    if(e.code==='Space'||e.keyCode===32){
-      e.preventDefault();
-      if(intervalo){clearInterval(intervalo);intervalo=null;document.getElementById('timerDisplay').textContent='II';}
-      else{iniciarCiclo(tCiclo||tempoConfigurado());}
-    }else if(e.code==='ArrowRight'||e.keyCode===39||e.code==='Enter'||e.keyCode===13){
-      e.preventDefault();etapaAtual=(etapaAtual+1)%totalEtapas;tRestante=tCiclo;destacarEtapa();
-    }else if(e.code==='ArrowLeft'||e.keyCode===37){
-      e.preventDefault();etapaAtual=(etapaAtual-1+totalEtapas)%totalEtapas;tRestante=tCiclo;destacarEtapa();
-    }
+  const camadas = pagesData.map((p, i) => {
+    const arq = 'cam' + String(i + 1).padStart(2, '0') + '.jpg';
+    pasta.file(arq, p.img.split(',')[1], { base64: true });
+    return {
+      op: ops[i].op,
+      obs: ops[i].obs,
+      img: arq,
+      componentes: ops[i].components.map(c => ({ qtd: c.qty, nome: c.name }))
+    };
   });
 
-  window.addEventListener('load',function(){
-    init();
-    armarCursor();
-    setTimeout(iniciarTela,2500);
-    checarAtualizacao();
-    setInterval(checarAtualizacao,180000);
-    setInterval(reloadSeguranca,1800000);
+  const fotos = fotosBase64.map((f, i) => {
+    const ext = f.indexOf('image/png') >= 0 ? 'png' : 'jpg';
+    const arq = 'foto' + String(i + 1).padStart(2, '0') + '.' + ext;
+    pasta.file(arq, f.split(',')[1], { base64: true });
+    return arq;
   });
-  ${carouselJs}
-<\/script>
-</body>
-</html>`;
 
-  const mb = html.length / 1048576;
-  const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
-  const url  = URL.createObjectURL(blob);
-  const a    = document.createElement('a');
-  a.href = url;
-  a.download = 'index.html';
-  a.click();
-  setTimeout(() => URL.revokeObjectURL(url), 2000);
+  const carimbo = new Date().toISOString();
+  pasta.file('dados.json', JSON.stringify(
+    { produto, tempo, camadas, fotos, gerado: carimbo }, null, 2));
 
-  const aviso = mb > 8
-    ? ` <b style="color:var(--warn)">ATENÇÃO: ${mb.toFixed(1)} MB — pesado para Smart TV. Reduza o número de páginas do PDF ou teste antes de publicar.</b>`
-    : ` (${mb.toFixed(1)} MB)`;
+  /* Vai junto para o usuario nao precisar escrever o JSON na mao. */
+  zip.file('ativo.json', JSON.stringify({ painel: slug, atualizado: carimbo }, null, 2));
+
+  mostrarStatus('Compactando...', 60);
+  const blob = await zip.generateAsync(
+    { type: 'blob', compression: 'DEFLATE', compressionOptions: { level: 6 } },
+    m => mostrarStatus('Compactando... ' + Math.round(m.percent) + '%', 60 + m.percent * 0.35)
+  );
+
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = slug + '.zip'; a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 3000);
+
+  const mb = blob.size / 1048576;
   mostrarStatus('', 100);
   document.getElementById('statusTxt').innerHTML =
-    `Arquivo <b>index.html</b> baixado${aviso}. Agora suba ele no GitHub em <b>tv/index.html</b> — a TV atualiza sozinha em até 3 minutos.`;
+    'Pacote <b>' + slug + '.zip</b> baixado (' + mb.toFixed(1) + ' MB, ' +
+    camadas.length + ' camadas). Extraia e faça duas coisas no GitHub:' +
+    '<ol style="margin:10px 0 0 20px;line-height:1.7">' +
+    '<li>suba a pasta <b>' + slug + '</b> dentro de <code>paineis/</code>' +
+    ' <span style="color:var(--text-muted)">(uma vez só — depois ela fica guardada)</span></li>' +
+    '<li>substitua <code>tv/ativo.json</code> pelo <b>ativo.json</b> do pacote' +
+    ' <span style="color:var(--text-muted)">(é o que manda esse produto para a TV)</span></li>' +
+    '</ol>';
 }
 
 let fotosBase64 = [];
@@ -804,19 +497,7 @@ if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0) {
   setTimeout(fechar,1800);
 })();
 
-/* A logo entra embutida no painel gerado, que precisa ser autocontido.
-   Via file:// o fetch falha — nesse caso o painel cai no titulo em texto. */
-var LOGO_B64 = null;
-(function(){
-  if (location.protocol.indexOf('http') !== 0) return;
-  fetch('logo/patrimar.png').then(function(r){ return r.ok ? r.blob() : null; })
-    .then(function(b){
-      if(!b) return;
-      var fr=new FileReader();
-      fr.onload=function(){ LOGO_B64=fr.result; };
-      fr.readAsDataURL(b);
-    })['catch'](function(){});
-})();
+
 </script>
 </body>
 </html>

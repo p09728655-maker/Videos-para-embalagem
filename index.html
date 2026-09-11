@@ -78,21 +78,31 @@
     <div class="lbl">Endereço para digitar na Smart TV (uma vez só)</div>
     <div class="u" id="urlTv">…/tv</div>
     <div class="hint">Digite no navegador da TV e salve nos favoritos. Esse endereço nunca muda —
-      quando você publicar um produto novo, a TV troca o conteúdo sozinha em até 3 minutos.</div>
+      quando você trocar o produto, a TV muda sozinha em até 1 minuto.</div>
   </div>
 
-  <h2>Como trocar o produto da TV</h2>
+  <h2>Publicar um produto novo</h2>
   <ol>
-    <li>Abra o <b>Gerador</b>, arraste o PDF de embalagem e revise os componentes.</li>
-    <li>Preencha o nome do produto e o <b>tempo por camada</b>, depois clique em <b>Gerar painel para a TV</b>. Baixa um arquivo <code>index.html</code>.</li>
-    <li>No GitHub, entre na pasta <code>tv/</code> do repositório e faça upload do arquivo, substituindo o <code>index.html</code> que está lá.</li>
-    <li>A Vercel publica em ~30 segundos. A TV detecta e recarrega sozinha. <b>Ninguém precisa tocar na TV.</b></li>
+    <li>No <b>Gerador</b>, arraste o PDF de embalagem e revise os componentes de cada camada.</li>
+    <li>Preencha o nome do produto e o <b>tempo por camada</b>, e clique em <b>Gerar pacote do produto</b>.
+        Baixa um <code>.zip</code>.</li>
+    <li>Extraia. No GitHub, suba a pasta do produto dentro de <code>paineis/</code>
+        — <b>uma vez só</b>, ela fica guardada na biblioteca.</li>
+    <li>Substitua <code>tv/ativo.json</code> pelo <code>ativo.json</code> que veio no pacote.</li>
+  </ol>
+
+  <h2>Trocar para um produto já publicado</h2>
+  <ol>
+    <li>No GitHub, edite <code>tv/ativo.json</code>.</li>
+    <li>Troque o nome em <code>"painel"</code> pelo da pasta desejada e salve.</li>
+    <li>A TV percebe em até 1 minuto e troca sozinha. <b>Ninguém encosta na TV.</b></li>
   </ol>
 
   <div class="nota">
-    <b>Atenção ao peso do arquivo.</b> As imagens das camadas ficam embutidas no HTML.
-    Navegador de Smart TV tem pouca memória — acima de 8&nbsp;MB o gerador avisa.
-    Se passar disso, reduza o número de páginas do PDF e teste na TV antes de deixar rodando.
+    <b>As imagens agora ficam fora do HTML.</b> Cada camada é um arquivo próprio, carregado
+    só quando aparece na tela. Um produto saiu de ~8&nbsp;MB para algumas centenas de KB,
+    o que resolve o gargalo de memória do navegador da Smart TV e evita que o
+    repositório cresça a cada troca de produto.
   </div>
 
 </div>

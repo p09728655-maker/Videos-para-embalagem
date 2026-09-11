@@ -3,48 +3,492 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>TV Embalagem · aguardando publicação</title>
+<title>RitmoPatrimar · Embalagem</title>
+<meta name="theme-color" content="#1A1A1A">
+<link rel="icon" href="../icones/icone-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap">
 <style>
-  /* Placeholder compativel com navegador de Smart TV: sem gap, sem inset, sem aspect-ratio. */
-  :root{--bg:#0A0A0B;--border:#3F3F46;--line:#E4E4E7;--accent:#FF5C1F;--text-muted:#A1A1AA;}
+  /* Player da TV.
+     Compatibilidade com navegador de Smart TV (Tizen ~Chrome 76, webOS ~Chrome 68):
+     sem flex gap (84+), sem inset (87+), sem aspect-ratio (88+), sem min() (79+),
+     sem hex de 8 digitos (62+). Tipografia em vh para escalar de 720p a 4K. */
+  :root{
+    --bg:#0A0A0B;--panel:#18181B;--border:#3F3F46;
+    --gray:#71717A;--line:#E4E4E7;
+    --accent:#FF5C1F;
+    --warn:#EAB308;--error:#DC2626;
+    --text:#E4E4E7;--text-muted:#A1A1AA;
+  }
   *{box-sizing:border-box;margin:0;padding:0;}
   html,body{height:100%;}
-  body{font-family:Arial,Helvetica,sans-serif;background:#0A0A0B;background:var(--bg);
-       color:#E4E4E7;display:flex;flex-direction:column;align-items:center;justify-content:center;
-       text-align:center;padding:4vh;cursor:none;}
-  .logo{font-size:2.6vh;font-weight:700;color:var(--line);letter-spacing:-0.03em;margin-bottom:3vh;}
-  .logo span{color:var(--accent);}
-  h1{font-size:5vh;font-weight:800;letter-spacing:-0.02em;margin-bottom:2vh;}
-  p{font-size:2.6vh;color:var(--text-muted);line-height:1.6;max-width:70vw;}
-  .badge{margin-top:4vh;border:2px solid var(--border);border-radius:8px;padding:1.6vh 3vh;
-         font-size:2vh;color:var(--text-muted);letter-spacing:0.06em;text-transform:uppercase;}
+  body{font-family:'Inter',Arial,Helvetica,sans-serif;background:#0A0A0B;background:var(--bg);
+       color:#E4E4E7;color:var(--text);display:flex;flex-direction:column;overflow:hidden;}
+
+  /* HEADER */
+  .header{display:flex;justify-content:space-between;align-items:center;padding:1vh 1.4vw;
+          border-bottom:1px solid var(--border);flex-shrink:0;}
+  .rp-logo{display:flex;align-items:center;min-width:0;}
+  .rp-logo>*+*{margin-left:8px;}
+  .rp-marca{height:3.4vh;width:auto;display:block;}
+  .rp-sep{color:var(--border);font-size:2vh;font-weight:300;}
+  .produto-nome{font-size:2.4vh;font-weight:800;color:var(--text);white-space:nowrap;
+                overflow:hidden;text-overflow:ellipsis;}
+  .controls{display:flex;align-items:center;flex-shrink:0;}
+  .controls>*+*{margin-left:8px;}
+  .controls input[type=number]{width:9vh;padding:0.8vh 1vh;border-radius:6px;border:1px solid var(--border);
+       background:var(--panel);color:var(--text);font-family:'JetBrains Mono',monospace;
+       font-size:2vh;text-align:center;font-weight:700;}
+  .controls input[type=number]:focus{outline:none;border-color:var(--accent);}
+  .btn{padding:0.9vh 1.6vh;border-radius:6px;border:none;background:var(--accent);color:#fff;
+       font-weight:700;font-size:1.7vh;cursor:pointer;white-space:nowrap;font-family:inherit;}
+  .btn.stop{background:var(--error);}
+  .btn.fs{background:var(--panel);color:var(--text);border:1px solid var(--border);}
+
+  /* LAYOUT */
+  .container{display:flex;flex:1;overflow:hidden;min-height:0;}
+  .left{width:75%;padding:1.2vh 1.1vw;display:flex;flex-direction:column;overflow:hidden;min-height:0;}
+  .left>*+*{margin-top:1vh;}
+  .right{width:25%;padding:1.2vh 0.9vw;border-left:1px solid var(--border);overflow:hidden;
+         display:flex;flex-direction:column;min-height:0;}
+  .right>*+*{margin-top:1vh;}
+
+  #etapaPrincipal{background:var(--accent);color:#fff;padding:1vh 2vh;border-radius:8px;
+                  font-size:6.5vh;font-weight:800;text-align:center;flex-shrink:0;line-height:1;}
+  #etapaPrincipal .tot{font-size:3vh;font-weight:600;opacity:0.55;}
+
+  #obsDisplay{background:rgba(234,179,8,0.13);border:2px solid var(--warn);border-radius:6px;
+              padding:1.2vh 2vh;font-size:3.4vh;font-weight:800;color:var(--warn);text-align:center;
+              flex-shrink:0;display:none;text-transform:uppercase;line-height:1.15;}
+
+  #componentesGrade{display:flex;flex-wrap:wrap;flex-shrink:0;margin-right:-0.8vh;}
+  #componentesGrade .vazio{color:var(--text-muted);font-size:2.2vh;padding:1vh;}
+  .comp-card{background:var(--panel);border:1px solid var(--border);border-radius:8px;
+             padding:0.9vh 1.6vh;display:flex;align-items:center;margin:0 0.8vh 0.8vh 0;}
+  .comp-card-qty{font-family:'JetBrains Mono',monospace;font-size:5vh;font-weight:700;
+                 color:var(--accent);line-height:1;flex-shrink:0;margin-right:1.2vh;}
+  .comp-card-nome{font-size:2.7vh;font-weight:700;color:var(--text);line-height:1.15;}
+
+  #desenhoCamada{background:var(--panel);border:1px solid var(--border);border-radius:8px;flex:1;
+                 min-height:0;position:relative;overflow:hidden;}
+  #desenhoCamada img{position:absolute;top:0;left:0;width:100%;height:100%;object-fit:contain;display:none;}
+  #desenhoCamada img.ativo{display:block;}
+  #desenhoPh{position:absolute;top:50%;left:0;width:100%;text-align:center;margin-top:-1.2vh;
+             color:var(--gray);font-size:2.4vh;}
+
+  .timer-row{display:flex;align-items:center;flex-shrink:0;}
+  .timer-row>*+*{margin-left:1.2vw;}
+  #timerDisplay{font-family:'JetBrains Mono',monospace;font-size:5.5vh;color:var(--accent);
+                min-width:10vh;text-align:center;font-weight:700;line-height:1;flex-shrink:0;}
+  .progress-bar-wrap{flex:1;height:0.8vh;background:var(--panel);border-radius:4px;overflow:hidden;}
+  .progress-bar{height:100%;background:var(--accent);width:100%;border-radius:4px;}
+
+  #fotoProduto{flex-shrink:0;border-bottom:1px solid var(--border);padding-bottom:1vh;display:none;}
+  .carousel{position:relative;width:100%;padding-top:75%;overflow:hidden;border-radius:8px;background:var(--bg);}
+  .carousel-img{position:absolute;top:0;left:0;width:100%;height:100%;object-fit:contain;
+                opacity:0;transition:opacity .4s;}
+  .carousel-img.ativo{opacity:1;}
+  .section-title{font-size:1.5vh;letter-spacing:0.08em;color:var(--text-muted);text-transform:uppercase;
+                 flex-shrink:0;font-weight:700;}
+  #mapaTrilhos{overflow-y:auto;flex:1;min-height:0;}
+  .op-item{background:var(--panel);padding:1.2vh;border-left:4px solid var(--border);
+           border-radius:0 5px 5px 0;font-size:2vh;font-weight:600;flex-shrink:0;cursor:pointer;
+           color:var(--text-muted);margin-bottom:3px;}
+  .op-item.ativo{border-left-color:var(--accent);background:rgba(255,92,31,0.08);
+                 color:var(--accent);font-weight:800;}
+
+  .footer{text-align:center;padding:0.5vh;font-family:'JetBrains Mono',monospace;font-size:1.3vh;
+          letter-spacing:0.08em;color:var(--gray);flex-shrink:0;border-top:1px solid var(--border);}
+  @keyframes pulseEtapa{0%{transform:scale(1);}40%{transform:scale(1.04);}100%{transform:scale(1);}}
+  .pulse{animation:pulseEtapa .35s ease-out;}
+
+  /* SPLASH / ESTADOS */
+  #tela{position:fixed;top:0;left:0;right:0;bottom:0;background:#1A1A1A;display:flex;
+        flex-direction:column;align-items:center;justify-content:center;z-index:999;
+        transition:opacity .5s;text-align:center;padding:4vh;}
+  #tela>*+*{margin-top:2vh;}
+  #tela.sumindo{opacity:0;}
+  .ol-logo-img{width:20vh;max-width:260px;display:block;}
+  .ol-nome{font-size:4.4vh;font-weight:800;color:#E8E8E8;letter-spacing:0.19em;
+           text-indent:0.19em;line-height:1;}
+  .ol-pulso{width:28vh;max-width:320px;display:block;}
+  .ol-sub{font-size:2.8vh;color:var(--text-muted);font-weight:600;}
+  .ol-erro{font-size:2.2vh;color:var(--warn);font-weight:600;max-width:70vw;line-height:1.5;}
+  .ol-dica{font-size:1.8vh;color:var(--gray);max-width:70vw;line-height:1.5;}
 </style>
 </head>
 <body>
-  <div class="logo">ritmoprod<span>.</span></div>
-  <h1>Nenhum painel publicado</h1>
-  <p>Gere o painel no computador e substitua este arquivo em <b>tv/index.html</b>.<br>
-     Esta tela atualiza sozinha assim que a publicação sair.</p>
-  <div class="badge">Aguardando publicação</div>
+
+<div class="header">
+  <div class="rp-logo">
+    <img class="rp-marca" src="../logo/patrimar.png" alt="Patrimar Móveis">
+    <span class="rp-sep">/</span>
+    <span class="produto-nome" id="produtoNome">—</span>
+  </div>
+  <div class="controls">
+    <input type="number" id="tempoInput" min="1" max="9999" value="5">
+    <button class="btn" onclick="iniciarTempoManual()">&#9654; Iniciar</button>
+    <button class="btn stop" onclick="pararTimer()">&#9632; Parar</button>
+    <button class="btn fs" onclick="toggleFullscreen()">&#9974; Tela Cheia</button>
+  </div>
+</div>
+
+<div class="container">
+  <div class="left">
+    <div id="etapaPrincipal">AGUARDANDO</div>
+    <div id="obsDisplay"></div>
+    <div id="componentesGrade"><span class="vazio">Carregando...</span></div>
+    <div id="desenhoCamada"><div id="desenhoPh">Desenho da camada</div></div>
+    <div class="timer-row">
+      <div id="timerDisplay">--s</div>
+      <div class="progress-bar-wrap"><div class="progress-bar" id="progressBar"></div></div>
+    </div>
+  </div>
+  <div class="right">
+    <div id="fotoProduto"><div class="carousel" id="carousel"></div></div>
+    <div class="section-title">Sequência de Camadas</div>
+    <div id="mapaTrilhos"></div>
+  </div>
+</div>
+
+<div class="footer" id="rodape">RITMOPATRIMAR · EMBALAGEM</div>
+
+<div id="tela" onclick="pularSplash()">
+  <img class="ol-logo-img" src="../logo/patrimar.png" alt="Patrimar Móveis">
+  <div class="ol-nome">RITMOPATRIMAR</div>
+  <svg class="ol-pulso" viewBox="0 0 340 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M2 26 H126 L140 26 L150 8 L162 40 L172 26 L186 26 H338"
+          stroke="#FF5C1F" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>
+  <div class="ol-sub" id="telaSub">Carregando painel...</div>
+  <div class="ol-erro" id="telaErro" style="display:none"></div>
+  <div class="ol-dica" id="telaDica" style="display:none"></div>
+</div>
+
 <script>
-  /* Mesma checagem de atualizacao do painel: recarrega quando o arquivo mudar. */
-  var _tag=null,_redeOk=false;
-  function checarAtualizacao(){
-    if(location.protocol.indexOf('http')!==0||!window.fetch)return;
-    try{
-      fetch(location.pathname+'?_v='+(new Date()).getTime(),{method:'HEAD',cache:'no-store'})
-        .then(function(r){
-          _redeOk=true;
-          var t=r.headers.get('etag')||r.headers.get('last-modified');
-          if(!t)return;
-          if(_tag===null){_tag=t;return;}
-          if(t!==_tag)location.reload();
-        })['catch'](function(){_redeOk=false;});
-    }catch(e){_redeOk=false;}
+/* ------------------------------------------------------------------
+   Player fixo. Nunca muda quando troca o produto.
+   Le tv/ativo.json -> descobre qual painel exibir
+   Le paineis/<slug>/dados.json -> monta a tela
+   As imagens das camadas sao arquivos, carregados sob demanda: o navegador
+   da Smart TV nao aguenta dezenas de imagens em memoria de uma vez.
+   ------------------------------------------------------------------ */
+
+var ATIVO_URL = 'ativo.json';
+var painel = null;        /* dados.json carregado */
+var baseDir = '';         /* ../paineis/<slug>/ */
+var slugAtual = null;
+var carimboAtual = null;
+
+var intervalo = null, etapaAtual = 0, tRestante = 0, tCiclo = 0;
+var imgCache = {}, splashFeita = false, redeOk = false;
+
+function $(id){ return document.getElementById(id); }
+window.onerror = function(m){ try{ $('rodape').textContent = 'ERRO: ' + m; }catch(e){} return false; };
+
+function qs(n){
+  try{ var m = new RegExp('[?&]'+n+'=([^&#]*)').exec(location.search);
+       return m ? decodeURIComponent(m[1]) : null; }catch(e){ return null; }
+}
+
+/* ---------- estados da tela de abertura ---------- */
+function mostrarErro(msg, dica){
+  var t = $('tela');
+  t.className = ''; t.style.display = 'flex'; t.style.opacity = '1';
+  $('telaSub').style.display = 'none';
+  $('telaErro').style.display = 'block'; $('telaErro').textContent = msg;
+  if (dica){ $('telaDica').style.display = 'block'; $('telaDica').textContent = dica; }
+  splashFeita = false;
+}
+function pularSplash(){
+  if (splashFeita || !painel) return;
+  splashFeita = true;
+  var t = $('tela');
+  t.className = 'sumindo';
+  setTimeout(function(){ t.style.display = 'none'; }, 500);
+}
+
+/* ---------- carga ---------- */
+function buscarJSON(url){
+  return fetch(url + '?_v=' + (new Date()).getTime(), { cache: 'no-store' })
+    .then(function(r){
+      if (!r.ok) throw new Error(url + ' -> HTTP ' + r.status);
+      return r.json();
+    });
+}
+
+function carregar(){
+  if (!window.fetch){
+    mostrarErro('Este navegador é antigo demais para o painel.',
+                'O aparelho não suporta os recursos necessários. Use um TV Box Android ou um mini PC.');
+    return;
   }
-  checarAtualizacao();
-  setInterval(checarAtualizacao,120000);
-  setInterval(function(){if(_redeOk)location.reload();},1800000);
+  buscarJSON(ATIVO_URL).then(function(a){
+    redeOk = true;
+    var slug = (a && a.painel) ? String(a.painel) : '';
+    var forcado = qs('p');
+    if (forcado) slug = forcado;
+    if (!slug){
+      mostrarErro('Nenhum painel publicado.', 'Defina o produto em tv/ativo.json e publique.');
+      return;
+    }
+    slugAtual = slug;
+    carimboAtual = a ? (a.atualizado || null) : null;
+    baseDir = '../paineis/' + slug + '/';
+    return buscarJSON(baseDir + 'dados.json').then(function(d){
+      painel = d;
+      montar();
+    });
+  })['catch'](function(e){
+    redeOk = false;
+    mostrarErro('Não consegui carregar o painel.',
+                String(e && e.message ? e.message : e) +
+                ' — confira se a pasta do produto foi publicada e se a TV está na rede.');
+  });
+}
+
+/* ---------- montagem ---------- */
+function montar(){
+  var p = painel;
+  if (!p || !p.camadas || !p.camadas.length){
+    mostrarErro('O painel publicado está sem camadas.', 'Gere o produto novamente e publique a pasta.');
+    return;
+  }
+  document.title = 'RitmoPatrimar · ' + (p.produto || 'Embalagem');
+  $('produtoNome').textContent = p.produto || '—';
+  $('telaSub').textContent = p.produto || '';
+  $('rodape').textContent = 'PADRÃO DE EMBALAGEM · ' + (p.produto || '') + ' · RITMOPATRIMAR';
+  var tUrl = parseInt(qs('t'), 10);
+  $('tempoInput').value = (tUrl > 0) ? tUrl : (p.tempo > 0 ? p.tempo : 5);
+
+  var c = $('mapaTrilhos'); c.innerHTML = '';
+  p.camadas.forEach(function(cam, idx){
+    var d = document.createElement('div');
+    d.id = 'step' + idx; d.className = 'op-item';
+    d.textContent = (cam.op || ('CAMADA ' + (idx+1))) + ' · ' + (cam.componentes || []).length + ' itens';
+    d.onclick = function(){ etapaAtual = idx; destacarEtapa(); };
+    c.appendChild(d);
+  });
+
+  if (p.fotos && p.fotos.length){
+    var car = $('carousel');
+    p.fotos.forEach(function(f, i){
+      var im = document.createElement('img');
+      im.className = 'carousel-img' + (i === 0 ? ' ativo' : '');
+      im.src = baseDir + f;
+      car.appendChild(im);
+    });
+    $('fotoProduto').style.display = 'block';
+    if (p.fotos.length > 1) setInterval(proximaFoto, 5000);
+  }
+
+  setTimeout(function(){ pularSplash(); iniciarTempoManual(); }, 2200);
+}
+
+var fotoAtual = 0;
+function proximaFoto(){
+  var fs = document.querySelectorAll('.carousel-img');
+  if (fs.length < 2) return;
+  fs[fotoAtual].className = 'carousel-img';
+  fotoAtual = (fotoAtual + 1) % fs.length;
+  fs[fotoAtual].className = 'carousel-img ativo';
+}
+
+/* O campo do cabecalho e a fonte de verdade; montar() ja o inicializa com o
+   tempo do produto (ou o ?t= da URL). Comparar com painel.tempo aqui fazia o
+   valor padrao do HTML passar por alteracao manual e vencer o do produto. */
+function tempoConfigurado(){
+  var u = parseInt(qs('t'), 10); if (u > 0) return u;
+  var el = $('tempoInput'); var v = el ? parseInt(el.value, 10) : 0;
+  return v > 0 ? v : 5;
+}
+
+/* ---------- ciclo ---------- */
+function tocarSom(){
+  try{
+    var AC = window.AudioContext || window.webkitAudioContext; if (!AC) return;
+    var ctx = new AC(), osc = ctx.createOscillator(), g = ctx.createGain();
+    osc.connect(g); g.connect(ctx.destination);
+    osc.type = 'sine'; osc.frequency.value = 880;
+    g.gain.setValueAtTime(0.35, ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
+    osc.start(); osc.stop(ctx.currentTime + 0.4);
+  }catch(e){}
+}
+
+function iniciarCiclo(seg){
+  if (intervalo){ clearInterval(intervalo); intervalo = null; }
+  tCiclo = seg; tRestante = seg;
+  atualizar(tRestante, tCiclo); destacarEtapa();
+  intervalo = setInterval(function(){
+    tRestante--; atualizar(tRestante, tCiclo);
+    if (tRestante <= 0){
+      tocarSom();
+      etapaAtual = (etapaAtual + 1) % painel.camadas.length;
+      tRestante = tCiclo; destacarEtapa();
+    }
+  }, 1000);
+}
+function iniciarTempoManual(){
+  if (!painel) return;
+  var v = tempoConfigurado(); if (!v || v <= 0) return;
+  etapaAtual = 0; iniciarCiclo(v);
+}
+function pararTimer(){
+  if (intervalo){ clearInterval(intervalo); intervalo = null; }
+  $('timerDisplay').textContent = '--s';
+  var bar = $('progressBar'); bar.style.transition = 'none'; bar.style.width = '100%';
+  $('etapaPrincipal').textContent = 'AGUARDANDO';
+  $('componentesGrade').innerHTML = '<span class="vazio">Parado. Clique Iniciar.</span>';
+  $('obsDisplay').style.display = 'none';
+  var its = document.querySelectorAll('.op-item');
+  for (var i = 0; i < its.length; i++) its[i].className = 'op-item';
+  for (var k in imgCache){ if (imgCache.hasOwnProperty(k)) imgCache[k].className = ''; }
+  $('desenhoPh').style.display = 'block';
+  $('desenhoPh').textContent = 'Desenho da camada';
+}
+
+function scrollParaEtapa(el){
+  try{
+    var box = $('mapaTrilhos'), top = el.offsetTop, h = el.offsetHeight;
+    if (top < box.scrollTop) box.scrollTop = top;
+    else if (top + h > box.scrollTop + box.clientHeight) box.scrollTop = top + h - box.clientHeight;
+  }catch(e){}
+}
+
+/* Imagem criada na primeira vez que a camada aparece e mantida em cache:
+   evita redecodificar a cada volta do ciclo, que na TV causa piscada. */
+function mostrarDesenho(idx){
+  var area = $('desenhoCamada'), ph = $('desenhoPh');
+  var cam = painel.camadas[idx];
+  var arq = cam ? cam.img : null;
+  if (!arq){
+    for (var k in imgCache){ if (imgCache.hasOwnProperty(k)) imgCache[k].className = ''; }
+    ph.style.display = 'block'; ph.textContent = cam ? (cam.op || '') : ''; return;
+  }
+  ph.style.display = 'none';
+  if (!imgCache[idx]){
+    var im = document.createElement('img');
+    im.alt = cam.op || ''; im.src = baseDir + arq;
+    im.onerror = function(){ ph.style.display = 'block'; ph.textContent = 'Imagem não encontrada: ' + arq; };
+    area.appendChild(im); imgCache[idx] = im;
+  }
+  var alvo = String(idx);
+  for (var j in imgCache){ if (imgCache.hasOwnProperty(j)) imgCache[j].className = (j === alvo ? 'ativo' : ''); }
+}
+
+function destacarEtapa(){
+  var its = document.querySelectorAll('.op-item');
+  for (var i = 0; i < its.length; i++) its[i].className = 'op-item';
+  var el = $('step' + etapaAtual);
+  if (el){ el.className = 'op-item ativo'; scrollParaEtapa(el); }
+
+  var cam = painel.camadas[etapaAtual];
+  var ep = $('etapaPrincipal');
+  ep.innerHTML = (cam.op || '') + ' <span class="tot">/ ' + painel.camadas.length + '</span>';
+  ep.className = ''; void ep.offsetWidth; ep.className = 'pulse';
+
+  var obs = $('obsDisplay');
+  if (cam.obs){ obs.innerHTML = '&#9888; ' + cam.obs; obs.style.display = 'block'; }
+  else { obs.style.display = 'none'; }
+
+  $('componentesGrade').innerHTML = (cam.componentes || []).map(function(c){
+    return '<div class="comp-card"><span class="comp-card-qty">&times;' + c.qtd +
+           '</span><span class="comp-card-nome">' + c.nome + '</span></div>';
+  }).join('');
+
+  mostrarDesenho(etapaAtual);
+}
+
+function atualizar(s, total){
+  $('timerDisplay').textContent = s + 's';
+  var bar = $('progressBar');
+  bar.style.transition = (s === total ? 'none' : 'width 1s linear');
+  bar.style.width = ((s / (total || 1)) * 100) + '%';
+}
+
+/* ---------- tela cheia ---------- */
+function pedirFullscreen(){
+  try{
+    var el = document.documentElement;
+    var f = el.requestFullscreen || el.webkitRequestFullscreen || el.mozRequestFullScreen || el.msRequestFullscreen;
+    if (!f) return;
+    var r = f.call(el);
+    if (r && typeof r['catch'] === 'function') r['catch'](function(){});
+  }catch(e){}
+}
+function sairFullscreen(){
+  try{
+    var d = document;
+    var f = d.exitFullscreen || d.webkitExitFullscreen || d.mozCancelFullScreen || d.msExitFullscreen;
+    if (f) f.call(d);
+  }catch(e){}
+}
+function emFullscreen(){
+  return !!(document.fullscreenElement || document.webkitFullscreenElement ||
+            document.mozFullScreenElement || document.msFullscreenElement);
+}
+function toggleFullscreen(){
+  var b = document.querySelector('.btn.fs');
+  if (!emFullscreen()){ pedirFullscreen(); if (b) b.innerHTML = '&times; Sair'; }
+  else { sairFullscreen(); if (b) b.innerHTML = '&#9974; Tela Cheia'; }
+}
+document.addEventListener('fullscreenchange', function(){
+  var b = document.querySelector('.btn.fs');
+  if (b && !emFullscreen()) b.innerHTML = '&#9974; Tela Cheia';
+});
+
+/* ---------- troca de produto sem tocar na TV ----------
+   ativo.json tem poucos bytes, entao da para checar de minuto em minuto
+   sem peso nenhum. Mudou o produto (ou o carimbo), recarrega. */
+function checarTroca(){
+  if (location.protocol.indexOf('http') !== 0 || !window.fetch) return;
+  buscarJSON(ATIVO_URL).then(function(a){
+    redeOk = true;
+    if (!a) return;
+    var slug = a.painel ? String(a.painel) : '';
+    var carimbo = a.atualizado || null;
+    if (!painel){ carregar(); return; }
+    if (slug && slug !== slugAtual) location.reload();
+    else if (carimbo && carimboAtual && carimbo !== carimboAtual) location.reload();
+  })['catch'](function(){ redeOk = false; });
+}
+/* Rede de seguranca: recupera a TV de travamento de memoria depois de horas
+   ligada. So recarrega com a rede respondendo, para nao cair em tela de erro. */
+function reloadSeguranca(){ if (redeOk) location.reload(); }
+
+/* ---------- cursor do controle remoto ---------- */
+var curTimer;
+function armarCursor(){
+  clearTimeout(curTimer);
+  curTimer = setTimeout(function(){ document.body.style.cursor = 'none'; }, 5000);
+}
+document.addEventListener('mousemove', function(){
+  document.body.style.cursor = 'default'; armarCursor();
+});
+
+document.addEventListener('keydown', function(e){
+  if (!painel) return;
+  if (e.target && e.target.tagName === 'INPUT') return;
+  var n = painel.camadas.length;
+  if (e.code === 'Space' || e.keyCode === 32){
+    e.preventDefault();
+    if (intervalo){ clearInterval(intervalo); intervalo = null; $('timerDisplay').textContent = 'II'; }
+    else { iniciarCiclo(tCiclo || tempoConfigurado()); }
+  } else if (e.code === 'ArrowRight' || e.keyCode === 39 || e.code === 'Enter' || e.keyCode === 13){
+    e.preventDefault(); etapaAtual = (etapaAtual + 1) % n; tRestante = tCiclo; destacarEtapa();
+  } else if (e.code === 'ArrowLeft' || e.keyCode === 37){
+    e.preventDefault(); etapaAtual = (etapaAtual - 1 + n) % n; tRestante = tCiclo; destacarEtapa();
+  }
+});
+
+window.addEventListener('load', function(){
+  armarCursor();
+  carregar();
+  setInterval(checarTroca, 60000);
+  setInterval(reloadSeguranca, 1800000);
+});
 </script>
 </body>
 </html>

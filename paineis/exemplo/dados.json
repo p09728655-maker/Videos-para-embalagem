@@ -1,0 +1,73 @@
+{
+  "produto": "PAINEL DE DEMONSTRACAO",
+  "tempo": 6,
+  "camadas": [
+    {
+      "op": "CAMADA 01",
+      "obs": "FURACOES PARA CIMA",
+      "img": "cam01.jpg",
+      "componentes": [
+        {
+          "qtd": 2,
+          "nome": "LATERAL ESQUERDA N 03"
+        },
+        {
+          "qtd": 2,
+          "nome": "LATERAL DIREITA N 04"
+        },
+        {
+          "qtd": 1,
+          "nome": "BASE INFERIOR"
+        },
+        {
+          "qtd": 4,
+          "nome": "CANTONEIRA PAPELAO"
+        }
+      ]
+    },
+    {
+      "op": "CAMADA 02",
+      "obs": "",
+      "img": "cam02.jpg",
+      "componentes": [
+        {
+          "qtd": 1,
+          "nome": "TAMPO SUPERIOR"
+        },
+        {
+          "qtd": 2,
+          "nome": "PRATELEIRA INTERNA"
+        },
+        {
+          "qtd": 1,
+          "nome": "FUNDO HDF"
+        },
+        {
+          "qtd": 6,
+          "nome": "PROTETOR EVA"
+        },
+        {
+          "qtd": 1,
+          "nome": "MANUAL DE MONTAGEM"
+        }
+      ]
+    },
+    {
+      "op": "CAMADA 03",
+      "obs": "CONFERIR PINTURA ANTES DE FECHAR",
+      "img": "cam03.jpg",
+      "componentes": [
+        {
+          "qtd": 1,
+          "nome": "PORTA BASCULANTE"
+        },
+        {
+          "qtd": 1,
+          "nome": "KIT FERRAGENS"
+        }
+      ]
+    }
+  ],
+  "fotos": [],
+  "gerado": "2026-09-11T16:35:00.715133Z"
+}

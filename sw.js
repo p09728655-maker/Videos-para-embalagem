@@ -5,7 +5,7 @@
  * a TV ficaria presa num produto antigo sem ninguém perceber. O guard em fetch()
  * abaixo é o que garante isso — não remova.
  */
-var CACHE = 'ritmopatrimar-embalagem-v2';
+var CACHE = 'ritmopatrimar-embalagem-v3';
 
 /* Só o que o gerador precisa para abrir sem internet. */
 var ESSENCIAL = [
@@ -17,7 +17,8 @@ var ESSENCIAL = [
   './icones/icone-512.png',
   './logo/patrimar.png',
   'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js',
-  'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js'
+  'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js',
+  'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js'
 ];
 
 /* Cacheia item a item: se o CDN falhar, o SW ainda instala em vez de abortar tudo. */

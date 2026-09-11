@@ -1,4 +1,4 @@
-# TV Embalagem · ritmoprod
+# RitmoPatrimar · Vídeos Embalagem
 
 Painel de gestão à vista do padrão de embalagem, exibido na TV do setor de embalagem
 da Patrimar Móveis. Mostra, camada por camada, quais componentes entram na caixa,
@@ -6,54 +6,81 @@ as observações críticas (furação, pintura) e o desenho técnico da camada.
 
 ## Estrutura
 
-| Caminho          | O que é |
-|------------------|---------|
-| `index.html`     | Página inicial: atalhos e instruções de publicação |
-| `gerador.html`   | Gerador: lê o PDF de embalagem e monta o painel |
-| `tv/index.html`  | **Painel ativo** — é este arquivo que a TV exibe |
-| `vercel.json`    | Impede cache agressivo em `/tv`, para a TV enxergar a publicação nova |
+| Caminho | O que é |
+|---|---|
+| `index.html` | Página inicial: atalhos e instruções |
+| `gerador.html` | Lê o PDF de embalagem e monta o pacote do produto |
+| `tv/index.html` | **Player da TV** — arquivo fixo, não muda ao trocar de produto |
+| `tv/ativo.json` | Define qual produto está na TV agora |
+| `paineis/<slug>/` | Biblioteca: um produto por pasta, publicado uma vez só |
+| `manifest.webmanifest`, `sw.js` | App instalável (PWA) do gerador |
+| `logo/`, `icones/` | Marca Patrimar preparada para fundo escuro |
 
-## Fluxo de operação
+## Como funciona
 
-1. No computador, abrir `gerador.html`.
-2. Arrastar o PDF de embalagem. O gerador renderiza cada página como uma camada e
-   extrai os componentes do texto do PDF.
-3. **Revisar os componentes de cada camada.** A extração é heurística — sempre conferir.
-4. Preencher nome do produto e tempo por camada.
-5. Clicar em *Gerar painel para a TV*. Baixa um arquivo `index.html`.
-6. Subir esse arquivo no GitHub em `tv/index.html`, substituindo o existente.
-7. A Vercel publica em ~30 s e a TV recarrega sozinha.
+O player é fixo. Ele lê `tv/ativo.json` para saber qual produto exibir, carrega
+`paineis/<slug>/dados.json` e monta a tela. As imagens das camadas são arquivos
+separados, carregados só quando a camada aparece.
 
-A TV fica sempre no mesmo endereço (`<dominio>/tv`), salvo nos favoritos.
-Ninguém precisa mexer na TV para trocar de produto.
+Isso separa três coisas que antes eram uma só:
 
-## Restrições da Smart TV consideradas no painel
+- **publicar um produto** → sobe a pasta em `paineis/`, uma vez na vida
+- **trocar o da TV** → edita uma linha em `tv/ativo.json`
+- **mudar o player** → mexe em `tv/index.html`, sem tocar em nenhum produto
+
+Antes, cada troca de produto gravava um HTML de ~8 MB no histórico do Git, para
+sempre. Com as imagens fora do HTML, um produto fica em algumas centenas de KB
+e é publicado uma vez, não a cada troca.
+
+### Formato do `dados.json`
+
+```json
+{
+  "produto": "RACK INTENSE 1.80",
+  "tempo": 7,
+  "camadas": [
+    { "op": "CAMADA 01", "obs": "FURACOES PARA CIMA", "img": "cam01.jpg",
+      "componentes": [ { "qtd": 2, "nome": "LATERAL ESQUERDA N 03" } ] }
+  ],
+  "fotos": ["foto01.jpg"]
+}
+```
+
+### Formato do `tv/ativo.json`
+
+```json
+{ "painel": "rack-intense-180", "atualizado": "2026-09-11T13:40:00Z" }
+```
+
+`atualizado` força a TV a recarregar quando você republica a **mesma** pasta com
+correções — mude o carimbo e a TV recarrega.
+
+## Restrições da Smart TV consideradas no player
 
 O navegador embutido de Smart TV é um Chromium antigo (Tizen 2020 ≈ Chrome 76,
-webOS 5 ≈ Chrome 68). O painel gerado evita, por isso:
+webOS 5 ≈ Chrome 68). O player evita:
 
-- `gap` em flexbox (Chrome 84+) — espaçamento feito com `margin`
-- `inset` (Chrome 87+) — usa `top/left/right/bottom`
-- `aspect-ratio` (Chrome 88+) — usa a técnica de `padding-top`
-- cores hexadecimais de 8 dígitos (Chrome 62+) — usa `rgba()`
-- `scrollIntoView` com opções — rolagem calculada manualmente
+- `gap` em flexbox (Chrome 84+) — espaçamento com `margin`
+- `inset` (87+) — usa `top/left/right/bottom`
+- `aspect-ratio` (88+) — usa a técnica de `padding-top`
+- `min()` (79+) — usa `vh` puro
+- cores hexadecimais de 8 dígitos (62+) — usa `rgba()`
+- `scrollIntoView` com opções — rolagem calculada na mão
 - `requestFullscreen()` retornando Promise — protegido com prefixos e `try/catch`
 
-Outras decisões ligadas ao uso real na fábrica:
+E, pelo uso real na fábrica:
 
-- **Inicia sozinho** após 2,5 s. A TV não tem mouse nem teclado.
-- **Tipografia em `vh`**, para permanecer legível a 4 m e escalar de 720p a 4K.
-- **Renderização a `scale 1.6` / JPEG 0.82.** Navegador de TV tem pouca memória;
-  `2.2 / 0.88` gerava arquivos grandes demais. Acima de 8 MB o gerador avisa.
-- **Imagens em cache no DOM**, decodificadas uma vez só, sem piscar a cada troca.
-- **Recarga automática**: compara `ETag`/`Last-Modified` a cada 3 min e, como rede de
-  segurança, recarrega a cada 30 min — o que também recupera a TV de travamentos de
-  memória depois de horas ligada. Só recarrega com a rede respondendo, para não cair
-  em tela de erro se o Wi-Fi da fábrica oscilar.
+- **inicia sozinho**, sem clique — a TV não tem mouse nem teclado
+- **tipografia em `vh`**, legível a 4 m, de 720p a 4K
+- **imagens sob demanda**, cada uma decodificada uma vez e mantida em cache
+- **falha visível**: erro de carga aparece na tela com o motivo, em vez de tela preta
+- **recarga de segurança** a cada 30 min, só com a rede respondendo — recupera a TV
+  de travamento de memória depois de horas ligada sem cair em tela de erro
 
-## Parâmetros de URL
+## Parâmetros de URL do player
 
-- `?t=8` — força o tempo por camada em segundos, sem regerar o painel.
+- `?p=slug` — força um produto, ignorando o `ativo.json` (útil para conferir)
+- `?t=8` — força o tempo por camada em segundos
 
 ## Atalhos (quando aberto no computador)
 
