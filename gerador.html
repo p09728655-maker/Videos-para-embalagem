@@ -264,6 +264,18 @@ const BOILERPLATE = [
   /^embalagem$/i, /^volume$/i,
 ];
 
+
+/* A fonte embutida do PDF as vezes devolve caracteres que nao existem em
+   portugues (INTERMEDIARIA virou INTERMEDIËRIA num PDF real). Corrige os
+   casos observados; letras legitimas nao sao tocadas. */
+function corrigirTexto(t) {
+  return String(t || '')
+    .replace(/Ë/g, 'Á').replace(/ë/g, 'á')
+    .replace(/Ì/g, 'Í').replace(/ì/g, 'í')
+    .replace(/\uFFFD/g, '')
+    .replace(/\s{2,}/g, ' ');
+}
+
 function isBoilerplate(line) {
   const l = line.trim();
   if (!l || l.length < 2) return true;
@@ -284,9 +296,12 @@ async function extrairComponentes(page) {
   const comps = [];
   for (const linha of linhas) {
     if (!isBoilerplate(linha)) {
-      const matchQty = linha.match(/^\(?(\d+)\s*[Xx]\s*/);
+      /* O PDF traz "(3X) NOME". O \)? no fim do padrao evita que o parentese
+         de fechamento sobre grudado no comeco do nome. */
+      const matchQty = linha.match(/^\s*\(?\s*(\d+)\s*[Xx]\s*\)?\s*/);
       const qty = matchQty ? parseInt(matchQty[1]) : 1;
-      const nome = matchQty ? linha.replace(matchQty[0], '').replace(/\)?$/, '').trim() : linha;
+      let nome = matchQty ? linha.replace(matchQty[0], '') : linha;
+      nome = corrigirTexto(nome).replace(/^[\)\(]\s*/, '').replace(/\s*[\(\)]$/, '').trim();
       if (nome) comps.push({ qty, name: nome });
     }
   }
@@ -299,13 +314,21 @@ async function extrairComponentes(page) {
     }
   }
   const OBS_PATTERN = /\bpara\s+(cima|baixo|frente|tr[áa]s|fora|dentro)\b|\bcom\s+pintura\b|\bsem\s+pintura\b|\bpintura\s+para\b|\baten[çc][ãa]o\b|\borientar\b/i;
+  /* Linhas que mandam fazer algo sao instrucao de montagem, nao peca da caixa. */
+  const INSTRUCAO = /^\s*(dobrar|virar|posicionar|conferir|encaixar|aplicar|fechar)\b/i;
+
   const components = [];
   const obsItems = [];
   for (const c of merged) {
-    if (OBS_PATTERN.test(c.name) && c.name.split(' ').length >= 3) {
+    if (INSTRUCAO.test(c.name) ||
+        (OBS_PATTERN.test(c.name) && c.name.split(' ').length >= 3)) {
       obsItems.push(c.name);
     } else {
-      components.push(c);
+      /* O mesmo componente pode vir repetido linha a linha; soma em vez de listar
+         tres vezes "x1", que na TV so ocupa espaco. */
+      const igual = components.find(x => x.name === c.name);
+      if (igual) igual.qty += c.qty;
+      else components.push(c);
     }
   }
   return { components, obs: obsItems.join(' / ') };

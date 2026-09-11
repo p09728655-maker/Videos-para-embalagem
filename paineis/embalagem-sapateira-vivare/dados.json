@@ -1,0 +1,145 @@
+{
+  "produto": "EMBALAGEM SAPATEIRA VIVARE",
+  "tempo": 5,
+  "camadas": [
+    {
+      "op": "CAMADA 01",
+      "obs": "",
+      "img": "cam01.jpg",
+      "componentes": [
+        {
+          "qtd": 1,
+          "nome": "BASE Nº 03"
+        },
+        {
+          "qtd": 1,
+          "nome": "TAMPO Nº 01"
+        },
+        {
+          "qtd": 1,
+          "nome": "ISOMANTA"
+        }
+      ]
+    },
+    {
+      "op": "CAMADA 02",
+      "obs": "",
+      "img": "cam02.jpg",
+      "componentes": [
+        {
+          "qtd": 1,
+          "nome": "LATERAL DIREITA Nº 04"
+        },
+        {
+          "qtd": 1,
+          "nome": "ISOPOR"
+        },
+        {
+          "qtd": 1,
+          "nome": "ISOMANTA"
+        }
+      ]
+    },
+    {
+      "op": "CAMADA 03",
+      "obs": "",
+      "img": "cam03.jpg",
+      "componentes": [
+        {
+          "qtd": 1,
+          "nome": "LATERAL ESQUERDA Nº 02"
+        },
+        {
+          "qtd": 1,
+          "nome": "ISOPOR"
+        },
+        {
+          "qtd": 3,
+          "nome": "TRAVESSA INFERIOR Nº 09"
+        },
+        {
+          "qtd": 2,
+          "nome": "TRAVESSA FRONTAL PÉ Nº 11"
+        },
+        {
+          "qtd": 1,
+          "nome": "ISOMANTA"
+        }
+      ]
+    },
+    {
+      "op": "CAMADA 04",
+      "obs": "",
+      "img": "cam04.jpg",
+      "componentes": [
+        {
+          "qtd": 1,
+          "nome": "PORTA BASCULANTE Nº 06"
+        },
+        {
+          "qtd": 1,
+          "nome": "ISOMANTA"
+        }
+      ]
+    },
+    {
+      "op": "CAMADA 05",
+      "obs": "DOBRAR A ISOMANTA ANTERIOR",
+      "img": "cam05.jpg",
+      "componentes": [
+        {
+          "qtd": 1,
+          "nome": "PORTA BASCULANTE Nº 06"
+        }
+      ]
+    },
+    {
+      "op": "CAMADA 06",
+      "obs": "",
+      "img": "cam06.jpg",
+      "componentes": [
+        {
+          "qtd": 1,
+          "nome": "PORTA BASCULANTE Nº 06"
+        },
+        {
+          "qtd": 1,
+          "nome": "KIT"
+        },
+        {
+          "qtd": 3,
+          "nome": "TRAVESSA SUPERIOR Nº 07"
+        },
+        {
+          "qtd": 1,
+          "nome": "ISOPOR"
+        },
+        {
+          "qtd": 1,
+          "nome": "ISOMANTA"
+        }
+      ]
+    },
+    {
+      "op": "CAMADA 07",
+      "obs": "TODAS AS PEÇAS COM PINTURA PARA BAIXO",
+      "img": "cam07.jpg",
+      "componentes": [
+        {
+          "qtd": 3,
+          "nome": "TRAVESSA INTERMEDIÁRIA Nº 08"
+        },
+        {
+          "qtd": 4,
+          "nome": "FUNDO TRASEIRO Nº 10"
+        },
+        {
+          "qtd": 1,
+          "nome": "TRAVA Nº 05"
+        }
+      ]
+    }
+  ],
+  "fotos": [],
+  "gerado": "2026-09-11T17:05:36.285Z"
+}
