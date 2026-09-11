@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TV Embalagem · ritmoprod</title>
+<style>
+  :root{--bg:#0A0A0B;--panel:#18181B;--border:#3F3F46;--gray:#71717A;--line:#E4E4E7;
+        --accent:#FF5C1F;--warn:#EAB308;--text:#E4E4E7;--text-muted:#A1A1AA;}
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:'Inter',system-ui,-apple-system,Segoe UI,Arial,sans-serif;background:var(--bg);
+       color:var(--text);min-height:100vh;padding:40px 28px;}
+  .wrap{max-width:820px;margin:0 auto;}
+  .rp-logo{display:flex;align-items:center;gap:10px;margin-bottom:28px;}
+  .rp-wordmark{font-size:20px;font-weight:700;color:var(--line);letter-spacing:-0.03em;}
+  .rp-wordmark span{color:var(--accent);}
+  .rp-tag{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:11px;font-weight:500;
+          color:var(--gray);letter-spacing:0.05em;text-transform:uppercase;}
+  h1{font-size:30px;font-weight:800;letter-spacing:-0.03em;margin-bottom:6px;}
+  .sub{color:var(--text-muted);font-size:15px;margin-bottom:32px;}
+  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px;margin-bottom:36px;}
+  a.card{display:block;background:var(--panel);border:1px solid var(--border);border-radius:10px;
+         padding:22px;text-decoration:none;color:inherit;transition:.15s;}
+  a.card:hover{border-color:var(--accent);}
+  a.card .t{font-size:17px;font-weight:700;margin-bottom:6px;}
+  a.card .d{font-size:13px;color:var(--text-muted);line-height:1.45;}
+  a.card .t em{font-style:normal;color:var(--accent);}
+  h2{font-size:12px;letter-spacing:0.08em;text-transform:uppercase;color:var(--gray);
+     font-weight:700;margin-bottom:14px;}
+  ol{margin-left:20px;font-size:15px;line-height:1.75;color:var(--text);}
+  ol li{margin-bottom:8px;}
+  code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:13px;background:var(--panel);
+       border:1px solid var(--border);border-radius:4px;padding:2px 7px;color:var(--accent);}
+  .url-box{background:var(--panel);border:1px solid var(--border);border-radius:10px;
+           padding:20px 22px;margin-bottom:32px;}
+  .url-box .lbl{font-size:11px;letter-spacing:0.08em;text-transform:uppercase;color:var(--gray);
+                font-weight:700;margin-bottom:10px;}
+  .url-box .u{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:19px;font-weight:700;
+              color:var(--accent);word-break:break-all;}
+  .url-box .hint{font-size:13px;color:var(--text-muted);margin-top:10px;line-height:1.5;}
+  .nota{border-left:3px solid var(--warn);background:rgba(234,179,8,0.07);padding:14px 18px;
+        border-radius:0 6px 6px 0;font-size:13.5px;color:var(--text-muted);line-height:1.6;margin-top:28px;}
+  .nota b{color:var(--warn);}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="rp-logo">
+    <span class="rp-wordmark">ritmoprod<span>.</span></span>
+    <span class="rp-tag">TV Embalagem</span>
+  </div>
+
+  <h1>Painel de Embalagem</h1>
+  <p class="sub">Gerador de painel a partir do PDF de embalagem e publicação para a TV do setor.</p>
+
+  <div class="cards">
+    <a class="card" href="gerador.html">
+      <div class="t">Gerador <em>&rarr;</em></div>
+      <div class="d">Arraste o PDF, revise os componentes de cada camada e gere o arquivo do painel.</div>
+    </a>
+    <a class="card" href="tv/">
+      <div class="t">Painel ativo <em>&rarr;</em></div>
+      <div class="d">O que está sendo exibido na TV da embalagem neste momento.</div>
+    </a>
+  </div>
+
+  <div class="url-box">
+    <div class="lbl">Endereço para digitar na Smart TV (uma vez só)</div>
+    <div class="u" id="urlTv">…/tv</div>
+    <div class="hint">Digite no navegador da TV e salve nos favoritos. Esse endereço nunca muda —
+      quando você publicar um produto novo, a TV troca o conteúdo sozinha em até 3 minutos.</div>
+  </div>
+
+  <h2>Como trocar o produto da TV</h2>
+  <ol>
+    <li>Abra o <b>Gerador</b>, arraste o PDF de embalagem e revise os componentes.</li>
+    <li>Preencha o nome do produto e o <b>tempo por camada</b>, depois clique em <b>Gerar painel para a TV</b>. Baixa um arquivo <code>index.html</code>.</li>
+    <li>No GitHub, entre na pasta <code>tv/</code> do repositório e faça upload do arquivo, substituindo o <code>index.html</code> que está lá.</li>
+    <li>A Vercel publica em ~30 segundos. A TV detecta e recarrega sozinha. <b>Ninguém precisa tocar na TV.</b></li>
+  </ol>
+
+  <div class="nota">
+    <b>Atenção ao peso do arquivo.</b> As imagens das camadas ficam embutidas no HTML.
+    Navegador de Smart TV tem pouca memória — acima de 8&nbsp;MB o gerador avisa.
+    Se passar disso, reduza o número de páginas do PDF e teste na TV antes de deixar rodando.
+  </div>
+
+</div>
+<script>
+  document.getElementById('urlTv').textContent = location.origin + '/tv';
+</script>
+</body>
+</html>
