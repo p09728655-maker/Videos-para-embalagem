@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Padrão de Desenho para a TV da Embalagem</title>
+<style>
+  :root{--ink:#111;--muted:#555;--line:#d4d4d8;--accent:#FF5C1F;--soft:#f4f4f5;--ok:#16A34A;--no:#DC2626;}
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:Arial,Helvetica,sans-serif;color:var(--ink);background:#fff;font-size:13.5px;line-height:1.5;}
+  .pagina{max-width:900px;margin:0 auto;padding:36px 40px 60px;}
+  header{display:flex;align-items:center;justify-content:space-between;border-bottom:3px solid var(--accent);padding-bottom:14px;margin-bottom:26px;}
+  header img{height:44px;}
+  header .meta{text-align:right;font-size:11px;color:var(--muted);line-height:1.4;}
+  h1{font-size:24px;letter-spacing:-0.02em;margin-bottom:6px;}
+  .lead{color:var(--muted);font-size:14px;max-width:700px;margin-bottom:26px;}
+  h2{font-size:15px;text-transform:uppercase;letter-spacing:0.08em;color:var(--accent);margin:30px 0 12px;padding-top:8px;border-top:1px solid var(--line);}
+  h3{font-size:14px;margin:16px 0 6px;}
+  p{margin-bottom:10px;}
+  ul,ol{margin:6px 0 12px 22px;}
+  li{margin-bottom:5px;}
+  table{width:100%;border-collapse:collapse;margin:10px 0 16px;font-size:13px;}
+  th,td{border:1px solid var(--line);padding:7px 10px;text-align:left;vertical-align:top;}
+  th{background:var(--soft);font-weight:700;}
+  code{font-family:Consolas,Menlo,monospace;background:var(--soft);padding:1px 6px;border-radius:3px;font-size:12.5px;}
+  .duas{display:grid;grid-template-columns:1fr 1fr;gap:18px;}
+  .caixa{border:1px solid var(--line);border-radius:6px;padding:12px 14px;}
+  .caixa.sim{border-color:var(--ok);} .caixa.nao{border-color:var(--no);}
+  .caixa h3{margin-top:0;} .caixa.sim h3{color:var(--ok);} .caixa.nao h3{color:var(--no);}
+  .nota{border-left:3px solid var(--accent);background:#fff7f3;padding:10px 14px;margin:14px 0;font-size:13px;}
+  .nota b{color:var(--accent);}
+  figure{margin:14px 0 18px;}
+  figcaption{font-size:12px;color:var(--muted);margin-top:6px;}
+  svg text{font-family:Arial,Helvetica,sans-serif;}
+  .check li{list-style:none;margin-left:-22px;padding-left:26px;position:relative;}
+  .check li:before{content:"☐";position:absolute;left:0;top:-1px;font-size:15px;color:var(--muted);}
+  footer{margin-top:40px;padding-top:12px;border-top:1px solid var(--line);font-size:11px;color:var(--muted);}
+  @media print{ body{font-size:12px;} .pagina{padding:10mm 12mm;max-width:none;} h2{page-break-after:avoid;} figure,table,.caixa{page-break-inside:avoid;} }
+</style>
+</head>
+<body>
+<div class="pagina">
+
+<header>
+  <img src="../Logotipo%20Patrimar.jpg" alt="Patrimar Móveis">
+  <div class="meta">RitmoPatrimar · Vídeos Embalagem<br>Padrão de folha para o painel da TV<br>versão 1 · setembro/2026</div>
+</header>
+
+<h1>Padrão de desenho para a TV da embalagem</h1>
+<p class="lead">Como preparar o desenho de embalagem para ele aparecer na TV do setor de forma legível, sem retrabalho. O painel lê o PDF automaticamente: o que estiver fora deste padrão ou não aparece, ou aparece errado.</p>
+
+<h2>1. Como a TV usa o desenho</h2>
+<p>O painel mostra <b>uma camada por vez</b>, em tela cheia, e avança sozinho. Para cada camada ele exibe:</p>
+<ul>
+  <li><b>o desenho da camada</b>, ocupando quase toda a tela — é a informação principal;</li>
+  <li><b>a lista de componentes</b>, lida dos <u>textos dentro do desenho</u> (nomes das peças);</li>
+  <li><b>uma observação em destaque</b>, quando existir (ex.: pintura para baixo).</li>
+</ul>
+<p>Logo, tabela de embalagem, carimbo, moldura e rodapé <b>não são usados</b>: o painel já mostra a marca e os componentes por fora. Tudo isso só ocupa espaço do desenho.</p>
+
+<h2>2. A folha</h2>
+<p>Formato <b>A3 paisagem (420 × 297 mm)</b>, uma camada por página, em qualquer escala. As zonas abaixo valem em milímetros a partir do canto inferior esquerdo.</p>
+
+<figure>
+<svg viewBox="0 0 440 320" width="100%" xmlns="http://www.w3.org/2000/svg" font-size="7">
+  <!-- folha -->
+  <rect x="10" y="10" width="420" height="297" fill="#fff" stroke="#111" stroke-width="1.2"/>
+  <!-- faixa de leitura (8% a 60% da altura, a partir de baixo): svg y = 10 + (297 - y_mm) -->
+  <rect x="10" y="129" width="420" height="154" fill="#fff7f3"/>
+  <text x="14" y="136" fill="#FF5C1F" font-size="6.5">faixa onde o painel lê os textos (24 a 178 mm)</text>
+  <!-- area do desenho principal: x 15..405, y 30..155 -> svg y 152..277 -->
+  <rect x="25" y="152" width="390" height="125" fill="none" stroke="#111" stroke-width="0.8" stroke-dasharray="4 3"/>
+  <text x="30" y="163" font-size="8" font-weight="bold">ÁREA DO DESENHO DA CAMADA</text>
+  <text x="30" y="173" fill="#555">x 15 a 405 mm · y 30 a 155 mm · peças, nomes e chamadas ficam aqui</text>
+  <!-- peca exemplo -->
+  <rect x="80" y="195" width="180" height="55" fill="#e6e8ee" stroke="#111" stroke-width="0.8"/>
+  <text x="170" y="220" text-anchor="middle" font-size="8">BASE Nº 03</text>
+  <rect x="260" y="195" width="60" height="55" fill="#e6e8ee" stroke="#111" stroke-width="0.8"/>
+  <text x="290" y="218" text-anchor="middle" font-size="7">(2X) ISOPOR</text>
+  <text x="290" y="228" text-anchor="middle" font-size="7">Nº 07</text>
+  <line x1="150" y1="250" x2="200" y2="268" stroke="#111" stroke-width="0.6"/>
+  <text x="203" y="271" font-size="7">ISOMANTA</text>
+  <!-- linha OBS: y 160..170 -> svg 137..147 -->
+  <rect x="25" y="137" width="390" height="12" fill="none" stroke="#EAB308" stroke-width="0.8" stroke-dasharray="3 2"/>
+  <text x="30" y="146" font-size="7.5" font-weight="bold" fill="#8a6d00">LINHA DE OBSERVAÇÃO (opcional) — ex.: TODAS AS PEÇAS COM PINTURA PARA BAIXO</text>
+  <!-- isometrica: x 260..405, y 185..285 -> svg y 22..122 -->
+  <rect x="270" y="22" width="145" height="100" fill="none" stroke="#111" stroke-width="0.8" stroke-dasharray="4 3"/>
+  <text x="275" y="33" font-size="8" font-weight="bold">VISTA ISOMÉTRICA</text>
+  <text x="275" y="43" fill="#555">x 260 a 405 · y 185 a 285</text>
+  <polygon points="300,90 380,70 400,80 320,100" fill="#e6e8ee" stroke="#111" stroke-width="0.7"/>
+  <polygon points="320,100 400,80 400,86 320,106" fill="#c9ccd6" stroke="#111" stroke-width="0.7"/>
+  <!-- identificacao: x 15..250, y 185..285 -> svg y 22..122 -->
+  <rect x="25" y="22" width="235" height="100" fill="none" stroke="#999" stroke-width="0.6" stroke-dasharray="2 3"/>
+  <text x="30" y="33" font-size="8" font-weight="bold" fill="#555">IDENTIFICAÇÃO (opcional)</text>
+  <text x="30" y="43" fill="#555">nome do produto e nº da camada · o painel ignora este bloco</text>
+  <text x="30" y="60" font-size="10" fill="#777">SAPATEIRA VIVARE</text>
+  <text x="30" y="72" font-size="8" fill="#777">CAMADA 03 / 7</text>
+  <!-- margens -->
+  <text x="14" y="300" fill="#555" font-size="6.5">margem 10 mm</text>
+</svg>
+<figcaption>Zonas da folha A3. Fora das áreas tracejadas, nada. Sem moldura, sem carimbo, sem tabela.</figcaption>
+</figure>
+
+<div class="duas">
+  <div class="caixa sim">
+    <h3>Entra na folha</h3>
+    <ul>
+      <li>Desenho da camada em vista de topo, com as peças <b>preenchidas em cinza claro</b> (como hoje)</li>
+      <li>Nome de cada peça <b>dentro ou encostado nela</b></li>
+      <li>Chamadas com linha (ex.: ISOMANTA, ISOPOR) para o que não é peça</li>
+      <li>Vista isométrica do volume montado, no canto superior direito</li>
+      <li>Uma linha de observação, se houver cuidado especial</li>
+      <li>Nome do produto e nº da camada (opcional, canto superior esquerdo)</li>
+    </ul>
+  </div>
+  <div class="caixa nao">
+    <h3>Não entra</h3>
+    <ul>
+      <li>Logo, carimbo, moldura da folha, rodapé (desenhista, data, página)</li>
+      <li>Tabela de embalagem (caixa, tabuleiro, isopor, medidas, quantidades)</li>
+      <li>Cotas e dimensões — na TV viram ruído</li>
+      <li>Vistas laterais, cortes, detalhes</li>
+      <li>Texto miúdo abaixo de 8 mm</li>
+      <li>Notas gerais fora da linha de observação</li>
+    </ul>
+  </div>
+</div>
+
+<div class="nota"><b>Por que a faixa de leitura importa.</b> O painel extrai os nomes das peças dos textos que estão entre 24 mm e 178 mm de altura da folha. Texto acima disso (na zona da isométrica e da identificação) é ignorado de propósito. Um nome de peça colocado lá em cima <u>não aparece na lista de componentes</u>.</div>
+
+<h2>3. Textos: como escrever para o painel entender</h2>
+
+<table>
+  <tr><th style="width:34%">Situação</th><th>Escreva assim</th><th style="width:30%">O painel mostra</th></tr>
+  <tr><td>Uma peça</td><td><code>BASE Nº 03</code></td><td>×1 BASE Nº 03</td></tr>
+  <tr><td>Várias peças iguais</td><td><code>(3X) TRAVESSA INFERIOR Nº 09</code></td><td>×3 TRAVESSA INFERIOR Nº 09</td></tr>
+  <tr><td>Nome em duas linhas</td><td><code>PORTA BASCULANTE</code> e, na linha de baixo, <code>Nº 06</code></td><td>×1 PORTA BASCULANTE Nº 06</td></tr>
+  <tr><td>Material de proteção</td><td><code>ISOMANTA</code>, <code>ISOPOR</code>, <code>KIT</code>, com linha de chamada</td><td>×1 ISOMANTA</td></tr>
+  <tr><td>Cuidado na montagem</td><td><code>TODAS AS PEÇAS COM PINTURA PARA BAIXO</code><br><code>DOBRAR A ISOMANTA ANTERIOR</code></td><td>Alerta amarelo em destaque, fora da lista de peças</td></tr>
+</table>
+
+<h3>Regras</h3>
+<ul>
+  <li><b>Tudo em maiúsculas.</b> Uma peça por texto; não junte duas peças na mesma linha.</li>
+  <li>A quantidade vem <b>antes</b> do nome, no formato <code>(nX)</code>. Sem quantidade = 1.</li>
+  <li>Observações começam com um verbo (<code>DOBRAR</code>, <code>VIRAR</code>, <code>POSICIONAR</code>, <code>CONFERIR</code>, <code>ENCAIXAR</code>, <code>APLICAR</code>, <code>FECHAR</code>) ou contêm <code>PARA CIMA / PARA BAIXO / PARA FRENTE / PARA TRÁS</code>, <code>COM PINTURA / SEM PINTURA</code>, <code>ATENÇÃO</code>, <code>ORIENTAR</code>. É assim que o painel separa observação de peça.</li>
+  <li>Não escreva na folha palavras de tabela (<code>DESCRIÇÃO</code>, <code>TIPO</code>, <code>MEDIDAS</code>, <code>QTDE</code>, <code>SIM</code>, <code>NÃO</code>) nem medidas soltas como <code>1430 X 408 X 113</code> — o painel descarta, mas é ruído.</li>
+</ul>
+
+<h3>Fonte e tamanhos (folha A3)</h3>
+<table>
+  <tr><th>Elemento</th><th>Altura mínima</th><th>Observação</th></tr>
+  <tr><td>Nome da peça</td><td><b>10 mm</b></td><td>Legível a 4 metros na TV. 8 mm é o limite absoluto.</td></tr>
+  <tr><td>Linha de observação</td><td><b>12 mm</b></td><td>Ela também aparece em destaque fora do desenho.</td></tr>
+  <tr><td>Chamadas (ISOMANTA etc.)</td><td>10 mm</td><td>Linha de chamada com 0,35 mm.</td></tr>
+  <tr><td>Contorno das peças</td><td>0,5 mm</td><td>Preenchimento cinza claro (≈ 15 %).</td></tr>
+  <tr><td>Fonte</td><td colspan="2"><b>Arial</b>. A fonte padrão do SolidWorks já saiu com acento trocado no PDF (<code>INTERMEDIÁRIA</code> virou <code>INTERMEDIËRIA</code>). Arial não tem esse problema.</td></tr>
+</table>
+
+<h2>4. Exportação do PDF</h2>
+<ol>
+  <li><b>Uma página por camada</b>, na ordem em que as peças entram na caixa — a primeira página é a primeira camada. O painel segue a ordem das páginas.</li>
+  <li>Todas as páginas com o <b>mesmo formato e a mesma orientação</b> (A3 paisagem).</li>
+  <li>No SolidWorks: <i>Salvar como → PDF → Opções</i>: marque <b>"Exportar todas as folhas"</b> e deixe <b>desmarcado</b> "Converter texto em curvas / linhas". Texto tem que continuar sendo texto — é dele que o painel lê os componentes. Se o PDF sair com texto em curvas, a lista de componentes vem vazia.</li>
+  <li>Nome do arquivo = nome do produto, sem prefixo: <code>SAPATEIRA VIVARE.pdf</code>, não <code>EMBALAGEM_SAPATEIRA_VIVARE_VOL1.pdf</code>. O painel usa o nome do arquivo como nome do produto. Se houver mais de um volume: <code>SAPATEIRA VIVARE VOL 2.pdf</code>.</li>
+  <li>Não é preciso gerar imagem, DXF ou qualquer outro formato. Só o PDF.</li>
+</ol>
+
+<div class="nota"><b>Como conferir em 1 minuto.</b> Abra o PDF, selecione um nome de peça com o mouse e copie. Se conseguir colar como texto, está certo. Se não selecionar, o texto virou curva e precisa reexportar.</div>
+
+<h2>5. Modelo de folha (DXF)</h2>
+<p>Junto com este documento vai o arquivo <code>modelo-folha-tv.dxf</code>, com as zonas acima já desenhadas em camadas próprias e um exemplo de peça, chamada e observação nos tamanhos corretos. As camadas <code>GUIA_NAO_PLOTAR</code> e <code>NOTAS_NAO_PLOTAR</code> estão marcadas para não imprimir: são referência de posição, não fazem parte do desenho. Use-o como base para montar o formato de folha "TV" no SolidWorks.</p>
+
+<h2>6. Checklist antes de enviar</h2>
+<ul class="check">
+  <li>A3 paisagem, uma camada por página, na ordem de embalagem</li>
+  <li>Sem logo, carimbo, moldura, rodapé, tabela e cotas</li>
+  <li>Nome de cada peça dentro da área do desenho, maiúsculas, Arial ≥ 10 mm</li>
+  <li>Quantidade no formato <code>(nX)</code> antes do nome</li>
+  <li>Observação, se houver, na linha própria, começando com verbo ou com PARA CIMA/BAIXO</li>
+  <li>Isométrica no canto superior direito</li>
+  <li>PDF exportado com texto como texto (teste: selecionar e copiar)</li>
+  <li>Arquivo nomeado com o nome do produto</li>
+</ul>
+
+<footer>RitmoPatrimar · Vídeos Embalagem — padrão de desenho v1. Dúvidas sobre o padrão: PPCP.</footer>
+</div>
+</body>
+</html>

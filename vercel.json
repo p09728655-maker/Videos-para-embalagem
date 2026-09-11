@@ -1,19 +1,45 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "rewrites": [
-    { "source": "/", "destination": "/tv/index.html" },
-    { "source": "/inicio", "destination": "/inicio.html" },
-    { "source": "/gerador", "destination": "/gerador.html" },
-    { "source": "/biblioteca", "destination": "/biblioteca.html" }
+    {
+      "source": "/",
+      "destination": "/tv/index.html"
+    },
+    {
+      "source": "/inicio",
+      "destination": "/inicio.html"
+    },
+    {
+      "source": "/gerador",
+      "destination": "/gerador.html"
+    },
+    {
+      "source": "/biblioteca",
+      "destination": "/biblioteca.html"
+    },
+    {
+      "source": "/padrao",
+      "destination": "/docs/padrao-desenho-tv.html"
+    }
   ],
   "headers": [
     {
       "source": "/tv/(.*)",
-      "headers": [{ "key": "Cache-Control", "value": "public, max-age=0, must-revalidate" }]
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=0, must-revalidate"
+        }
+      ]
     },
     {
       "source": "/paineis/(.*)",
-      "headers": [{ "key": "Cache-Control", "value": "public, max-age=0, must-revalidate" }]
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=0, must-revalidate"
+        }
+      ]
     }
   ]
 }
