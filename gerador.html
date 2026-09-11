@@ -3,7 +3,15 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Gerador TV Embalagem · ritmoprod</title>
+<title>Gerador · RitmoPatrimar Vídeos Embalagem</title>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#FF5C1F">
+<meta name="application-name" content="RitmoPatrimar Vídeos Embalagem">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Vídeos Embalagem">
+<link rel="apple-touch-icon" href="icones/apple-touch-icon.png">
+<link rel="icon" href="icones/icone-192.png">
+
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap');
   :root {
@@ -738,6 +746,15 @@ function previewFoto(input) {
       area.appendChild(img);
     };
     reader.readAsDataURL(file);
+  });
+}
+</script>
+<script>
+/* Registra o app. Só funciona em https (ou localhost) — aberto como arquivo
+   local o navegador ignora, sem erro. */
+if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0) {
+  window.addEventListener('load', function () {
+    navigator.serviceWorker.register('sw.js').catch(function () {});
   });
 }
 </script>

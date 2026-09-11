@@ -3,7 +3,15 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>TV Embalagem · ritmoprod</title>
+<title>RitmoPatrimar Vídeos Embalagem</title>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#FF5C1F">
+<meta name="application-name" content="RitmoPatrimar Vídeos Embalagem">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Vídeos Embalagem">
+<link rel="apple-touch-icon" href="icones/apple-touch-icon.png">
+<link rel="icon" href="icones/icone-192.png">
+
 <style>
   :root{--bg:#0A0A0B;--panel:#18181B;--border:#3F3F46;--gray:#71717A;--line:#E4E4E7;
         --accent:#FF5C1F;--warn:#EAB308;--text:#E4E4E7;--text-muted:#A1A1AA;}
@@ -89,6 +97,15 @@
 </div>
 <script>
   document.getElementById('urlTv').textContent = location.origin + '/tv';
+</script>
+<script>
+/* Registra o app. Só funciona em https (ou localhost) — aberto como arquivo
+   local o navegador ignora, sem erro. */
+if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0) {
+  window.addEventListener('load', function () {
+    navigator.serviceWorker.register('sw.js').catch(function () {});
+  });
+}
 </script>
 </body>
 </html>
