@@ -52,7 +52,7 @@
 
   #modalLogin{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.8);
               display:none;align-items:center;justify-content:center;z-index:9000;}
-  #modalLogin.aberto{display:flex;}
+  #modalLogin.aberto,#modalDialogo.aberto{display:flex!important;}
   .caixa-login{background:var(--panel);border:1px solid var(--border);border-radius:12px;
                padding:28px;width:380px;max-width:92vw;}
   .caixa-login h3{font-size:18px;font-weight:800;margin-bottom:6px;}
@@ -66,6 +66,7 @@
                              font-size:14px;cursor:pointer;font-family:inherit;}
   .btn-entrar{background:var(--accent);color:#fff;}
   .btn-cancelar{background:transparent;color:var(--text-muted);border:1px solid var(--border)!important;}
+  .btn-entrar.perigo{background:var(--error);}
   #erroLogin{color:var(--error);font-size:13px;margin-top:10px;display:none;line-height:1.4;}
 </style>
 </head>
@@ -104,6 +105,17 @@
       <button class="btn-cancelar" onclick="fecharLogin()">Cancelar</button>
     </div>
     <div id="erroLogin"></div>
+  </div>
+</div>
+
+<div id="modalDialogo" style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.8);display:none;align-items:center;justify-content:center;z-index:9100">
+  <div class="caixa-login">
+    <h3 id="dlgTitulo"></h3>
+    <p id="dlgTexto"></p>
+    <div class="linha">
+      <button class="btn-entrar" id="dlgOk">OK</button>
+      <button class="btn-cancelar" id="dlgCancelar">Cancelar</button>
+    </div>
   </div>
 </div>
 
@@ -214,21 +226,40 @@ function colocarNaTV(slug){
     });
 }
 
+/* Dialogo do proprio app. A caixa nativa do navegador vem com "vercel.app diz",
+   fora da identidade e sem controle de texto e cor. */
+function esc(t){ return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function dialogo(op){
+  return new Promise(function(res){
+    var m=$('modalDialogo'), ok=$('dlgOk'), ca=$('dlgCancelar');
+    $('dlgTitulo').textContent=op.titulo; $('dlgTexto').innerHTML=op.texto;
+    ok.textContent=op.ok||'OK'; ok.className='btn-entrar'+(op.perigo?' perigo':'');
+    ca.style.display=op.cancelar?'':'none'; ca.textContent=op.cancelar||'Cancelar';
+    m.className='aberto';
+    function fecha(v){ m.className=''; ok.onclick=ca.onclick=null; res(v); }
+    ok.onclick=function(){fecha(true);}; ca.onclick=function(){fecha(false);};
+  });
+}
+
 function excluir(slug, nome){
   if (!estaLogado()){ acaoPendente = function(){ excluir(slug, nome); }; abrirLogin(); return; }
   if (slug === ativoAtual){
-    alert('Este produto está na TV agora. Coloque outro na TV antes de excluir.');
+    dialogo({ titulo:'Este produto está na TV agora',
+              texto:'Coloque outro produto na TV antes de excluir <b>'+esc(nome)+'</b>.', ok:'Entendi' });
     return;
   }
-  if (!confirm('Excluir "' + nome + '" da biblioteca?\n\nIsso remove o painel do banco. ' +
-               'Para usar de novo, seria preciso gerar outra vez a partir do PDF.')) return;
-  $('estado').style.display = 'block';
-  $('estado').textContent = 'Excluindo...';
-  supaExcluirPainel(slug).then(function(){ carregar(); })
-    ['catch'](function(e){
-      $('estado').innerHTML = '<b style="color:var(--error)">Não consegui excluir:</b> ' +
-                              (e.message || e);
-    });
+  dialogo({ titulo:'Excluir da biblioteca?',
+            texto:'<b>'+esc(nome)+'</b> sai do banco. Para usar de novo, seria preciso gerar outra vez a partir do PDF.',
+            ok:'Excluir', cancelar:'Cancelar', perigo:true })
+  .then(function(sim){
+    if (!sim) return;
+    $('estado').style.display = 'block';
+    $('estado').textContent = 'Excluindo...';
+    supaExcluirPainel(slug).then(function(){ carregar(); })
+      ['catch'](function(e){
+        $('estado').innerHTML = '<b style="color:var(--error)">Não consegui excluir:</b> ' + (e.message || e);
+      });
+  });
 }
 
 window.addEventListener('load', function(){ pintarSessao(); carregar(); });
