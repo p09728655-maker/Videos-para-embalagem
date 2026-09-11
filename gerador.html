@@ -126,9 +126,32 @@
   }
   #btnGerar.visible { display:block; }
   #btnGerar:hover { filter:brightness(1.1); }
+
+  /* ── SPLASH RITMOPATRIMAR (abertura do app) ── */
+  #splash{position:fixed;top:0;left:0;right:0;bottom:0;background:#1A1A1A;z-index:9999;
+          display:flex;flex-direction:column;align-items:center;justify-content:center;
+          transition:opacity .45s ease;}
+  #splash.sumindo{opacity:0;}
+  #splash img.sp-logo{width:min(22vh,260px);display:block;}
+  #splash .sp-nome{color:#E8E8E8;font-size:min(5vh,46px);font-weight:800;letter-spacing:0.19em;
+                   text-indent:0.19em;margin-top:4.5vh;line-height:1;}
+  #splash svg.sp-pulso{width:min(32vh,330px);margin-top:3vh;display:block;}
+  #splash .sp-tag{color:#E8E8E8;font-size:min(2.1vh,19px);font-weight:700;margin-top:2.4vh;}
+  #splash .sp-tag span{color:var(--accent);}
 </style>
 </head>
 <body>
+
+<div id="splash">
+  <img class="sp-logo" src="logo/patrimar.png" alt="Patrimar Móveis">
+  <div class="sp-nome">RITMOPATRIMAR</div>
+  <svg class="sp-pulso" viewBox="0 0 340 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M2 26 H126 L140 26 L150 8 L162 40 L172 26 L186 26 H338"
+          stroke="#FF5C1F" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>
+  <div class="sp-tag">Medimos o pulso da&middot;linha<span>.</span></div>
+</div>
+
 
 <div class="rp-logo">
   <span class="rp-wordmark">ritmoprod<span>.</span></span>
@@ -364,6 +387,15 @@ function gerarHTML() {
   const opsJS  = JSON.stringify(ops, null, 2);
   const tempoSeg = tempo;
 
+  /* Logo embutida para o painel ficar autocontido. Sem ela (gerador aberto
+     via file://), cai no nome em texto — o painel continua funcionando. */
+  const logoHeaderHtml = LOGO_B64
+    ? `<img class="rp-marca" src="${LOGO_B64}" alt="Patrimar Móveis">`
+    : `<span class="rp-wordmark">RITMOPATRIMAR</span>`;
+  const logoSplashHtml = LOGO_B64
+    ? `<img class="ol-logo-img" src="${LOGO_B64}" alt="Patrimar Móveis">`
+    : '';
+
   const fotos = fotosBase64;
   const carouselImgsHtml = fotos.map((src, i) =>
     `<img class="carousel-img${i===0?' ativo':''}" src="${src}">`
@@ -388,7 +420,7 @@ function gerarHTML() {
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>TV Embalagem — ${produto} · ritmoprod</title>
+<title>RitmoPatrimar · Embalagem — ${produto}</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap">
@@ -410,8 +442,8 @@ function gerarHTML() {
   .header{display:flex;justify-content:space-between;align-items:center;padding:1vh 1.4vw;border-bottom:1px solid var(--border);flex-shrink:0;}
   .rp-logo{display:flex;align-items:center;min-width:0;}
   .rp-logo>*+*{margin-left:8px;}
-  .rp-wordmark{font-size:1.8vh;font-weight:700;color:var(--line);letter-spacing:-0.03em;white-space:nowrap;}
-  .rp-wordmark span{color:var(--accent);}
+  .rp-wordmark{font-size:1.8vh;font-weight:800;color:var(--line);letter-spacing:0.14em;white-space:nowrap;}
+  .rp-marca{height:3.4vh;width:auto;display:block;}
   .rp-sep{color:var(--border);font-size:2vh;font-weight:300;}
   .produto-nome{font-size:2.4vh;font-weight:800;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
   .controls{display:flex;align-items:center;flex-shrink:0;}
@@ -475,20 +507,19 @@ function gerarHTML() {
   .footer{text-align:center;padding:0.5vh;font-family:'JetBrains Mono',monospace;font-size:1.3vh;letter-spacing:0.08em;color:var(--gray);flex-shrink:0;border-top:1px solid var(--border);}
   @keyframes pulseEtapa{0%{transform:scale(1);}40%{transform:scale(1.04);}100%{transform:scale(1);}}
   .pulse{animation:pulseEtapa .35s ease-out;}
-  #overlayInicio{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.88);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:999;cursor:pointer;transition:opacity .5s;}
+  #overlayInicio{position:fixed;top:0;left:0;right:0;bottom:0;background:#1A1A1A;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:999;cursor:pointer;transition:opacity .5s;}
   #overlayInicio>*+*{margin-top:2vh;}
   #overlayInicio.sumindo{opacity:0;}
-  .ol-logo{font-size:2.4vh;font-weight:700;color:var(--line);letter-spacing:-0.03em;}
-  .ol-logo span{color:var(--accent);}
-  .ol-title{font-size:4.5vh;font-weight:800;color:var(--text);letter-spacing:-0.02em;}
-  .ol-sub{font-size:2.6vh;color:var(--text-muted);}
-  .ol-badge{background:var(--accent);color:#fff;font-size:2vh;font-weight:700;padding:1.2vh 3vh;border-radius:6px;}
+  .ol-logo-img{width:20vh;max-width:260px;display:block;}
+  .ol-nome{font-size:4.4vh;font-weight:800;color:#E8E8E8;letter-spacing:0.19em;text-indent:0.19em;line-height:1;}
+  .ol-pulso{width:28vh;max-width:320px;display:block;}
+  .ol-sub{font-size:2.8vh;color:var(--text-muted);font-weight:600;}
 </style>
 </head>
 <body>
 <div class="header">
   <div class="rp-logo">
-    <span class="rp-wordmark">ritmoprod<span>.</span></span>
+    ${logoHeaderHtml}
     <span class="rp-sep">/</span>
     <span class="produto-nome">${produto}</span>
   </div>
@@ -516,12 +547,15 @@ function gerarHTML() {
     <div id="mapaTrilhos"></div>
   </div>
 </div>
-<div class="footer" id="rodape">PADRÃO DE EMBALAGEM · ${produto} · ritmoprod.</div>
+<div class="footer" id="rodape">PADRÃO DE EMBALAGEM · ${produto} · RITMOPATRIMAR</div>
 <div id="overlayInicio" onclick="iniciarTela()">
-  <div class="ol-logo">ritmoprod<span>.</span></div>
-  <div class="ol-title">Painel de Embalagem</div>
+  ${logoSplashHtml}
+  <div class="ol-nome">RITMOPATRIMAR</div>
+  <svg class="ol-pulso" viewBox="0 0 340 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M2 26 H126 L140 26 L150 8 L162 40 L172 26 L186 26 H338"
+          stroke="#FF5C1F" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>
   <div class="ol-sub">${produto}</div>
-  <div class="ol-badge">Iniciando...</div>
 </div>
 <script>
   var IMGS={
@@ -757,6 +791,31 @@ if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0) {
     navigator.serviceWorker.register('sw.js').catch(function () {});
   });
 }
+</script>
+<script>
+/* Splash de abertura: some sozinha. Clicar pula. */
+(function(){
+  var sp=document.getElementById('splash'); if(!sp) return;
+  var fim=false;
+  function fechar(){ if(fim) return; fim=true;
+    sp.className='sumindo'; setTimeout(function(){sp.style.display='none';},500); }
+  sp.addEventListener('click',fechar);
+  setTimeout(fechar,1800);
+})();
+
+/* A logo entra embutida no painel gerado, que precisa ser autocontido.
+   Via file:// o fetch falha — nesse caso o painel cai no titulo em texto. */
+var LOGO_B64 = null;
+(function(){
+  if (location.protocol.indexOf('http') !== 0) return;
+  fetch('logo/patrimar.png').then(function(r){ return r.ok ? r.blob() : null; })
+    .then(function(b){
+      if(!b) return;
+      var fr=new FileReader();
+      fr.onload=function(){ LOGO_B64=fr.result; };
+      fr.readAsDataURL(b);
+    })['catch'](function(){});
+})();
 </script>
 </body>
 </html>
