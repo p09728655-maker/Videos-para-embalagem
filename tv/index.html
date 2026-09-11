@@ -70,17 +70,10 @@
               padding:1.2vh 2vh;font-size:3.4vh;font-weight:800;color:var(--warn);text-align:center;
               flex-shrink:0;display:none;text-transform:uppercase;line-height:1.15;}
 
-  /* O desenho e a informacao que o operador precisa ver de longe. Com o PDF em
-     retrato numa tela deitada, empilhar componentes e desenho deixava o desenho
-     minusculo; lado a lado ele usa a altura toda. */
-  .miolo{display:flex;flex:1;min-height:0;overflow:hidden;}
-  .miolo>*+*{margin-left:1vw;}
-  #componentesGrade{width:38%;flex-shrink:0;display:flex;flex-direction:column;
-                    overflow-y:auto;min-height:0;}
-  #componentesGrade>*+*{margin-top:0.8vh;}
+  #componentesGrade{display:flex;flex-wrap:wrap;flex-shrink:0;margin-right:-0.8vh;}
   #componentesGrade .vazio{color:var(--text-muted);font-size:2.2vh;padding:1vh;}
   .comp-card{background:var(--panel);border:1px solid var(--border);border-radius:8px;
-             padding:0.9vh 1.6vh;display:flex;align-items:center;flex-shrink:0;}
+             padding:0.9vh 1.6vh;display:flex;align-items:center;margin:0 0.8vh 0.8vh 0;}
   .comp-card-qty{font-family:'JetBrains Mono',monospace;font-size:5vh;font-weight:700;
                  color:var(--accent);line-height:1;flex-shrink:0;margin-right:1.2vh;}
   .comp-card-nome{font-size:2.7vh;font-weight:700;color:var(--text);line-height:1.15;}
@@ -153,10 +146,8 @@
   <div class="left">
     <div id="etapaPrincipal">AGUARDANDO</div>
     <div id="obsDisplay"></div>
-    <div class="miolo">
-      <div id="componentesGrade"><span class="vazio">Carregando...</span></div>
-      <div id="desenhoCamada"><div id="desenhoPh">Desenho da camada</div></div>
-    </div>
+    <div id="componentesGrade"><span class="vazio">Carregando...</span></div>
+    <div id="desenhoCamada"><div id="desenhoPh">Desenho da camada</div></div>
     <div class="timer-row">
       <div id="timerDisplay">--s</div>
       <div class="progress-bar-wrap"><div class="progress-bar" id="progressBar"></div></div>
