@@ -12,6 +12,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap">
+<script src="../supabase-config.js"></script>
 <style>
   /* Player da TV.
      Compatibilidade com navegador de Smart TV (Tizen ~Chrome 76, webOS ~Chrome 68):
@@ -183,7 +184,8 @@
    da Smart TV nao aguenta dezenas de imagens em memoria de uma vez.
    ------------------------------------------------------------------ */
 
-var ATIVO_URL = 'ativo.json';
+var ATIVO_URL = 'ativo.json';   /* reserva, se o Supabase nao responder */
+var fonte = '';                 /* 'supabase' ou 'arquivos' — aparece no rodape */
 var painel = null;        /* dados.json carregado */
 var baseDir = '';         /* ../paineis/<slug>/ */
 var slugAtual = null;
@@ -226,33 +228,79 @@ function buscarJSON(url){
     });
 }
 
+/* Fonte principal: Supabase. Se ele nao responder, cai nos arquivos estaticos
+   do repositorio — assim uma indisponibilidade do banco nao apaga a TV. */
+function carregarDoSupabase(){
+  if (!window.SUPA || !window.supaGet) return Promise.reject(new Error('config ausente'));
+  var forcado = qs('p');
+  var pegarSlug = forcado
+    ? Promise.resolve({ slug: forcado, carimbo: null })
+    : window.supaGet('embalagem_config?id=eq.1&select=painel_ativo,atualizado_em')
+        .then(function(rows){
+          var c = rows && rows[0];
+          return { slug: c && c.painel_ativo ? String(c.painel_ativo) : '',
+                   carimbo: c ? c.atualizado_em : null };
+        });
+
+  return pegarSlug.then(function(info){
+    if (!info.slug) throw new Error('nenhum painel ativo');
+    return window.supaGet('embalagem_paineis?slug=eq.' + encodeURIComponent(info.slug) +
+                          '&select=slug,produto,tempo,camadas,fotos,atualizado_em')
+      .then(function(rows){
+        var r = rows && rows[0];
+        if (!r) throw new Error('painel "' + info.slug + '" nao existe no banco');
+        slugAtual = r.slug;
+        carimboAtual = (info.carimbo || '') + '|' + (r.atualizado_em || '');
+        baseDir = '';
+        fonte = 'supabase';
+        painel = { produto: r.produto, tempo: r.tempo,
+                   camadas: (r.camadas || []).map(function(c){
+                     return { op: c.op, obs: c.obs, componentes: c.componentes || [],
+                              img: c.img ? window.supaImagem(c.img) : null };
+                   }),
+                   fotos: (r.fotos || []).map(function(f){ return window.supaImagem(f); }) };
+      });
+  });
+}
+
+function carregarDeArquivos(){
+  return buscarJSON(ATIVO_URL).then(function(a){
+    var slug = (a && a.painel) ? String(a.painel) : '';
+    var forcado = qs('p');
+    if (forcado) slug = forcado;
+    if (!slug) throw new Error('ativo.json sem painel definido');
+    slugAtual = slug;
+    carimboAtual = a ? (a.atualizado || null) : null;
+    baseDir = '../paineis/' + slug + '/';
+    fonte = 'arquivos';
+    return buscarJSON(baseDir + 'dados.json').then(function(d){
+      painel = { produto: d.produto, tempo: d.tempo,
+                 camadas: (d.camadas || []).map(function(c){
+                   return { op: c.op, obs: c.obs, componentes: c.componentes || [],
+                            img: c.img ? (baseDir + c.img) : null };
+                 }),
+                 fotos: (d.fotos || []).map(function(f){ return baseDir + f; }) };
+    });
+  });
+}
+
 function carregar(){
   if (!window.fetch){
     mostrarErro('Este navegador é antigo demais para o painel.',
                 'O aparelho não suporta os recursos necessários. Use um TV Box Android ou um mini PC.');
     return;
   }
-  buscarJSON(ATIVO_URL).then(function(a){
-    redeOk = true;
-    var slug = (a && a.painel) ? String(a.painel) : '';
-    var forcado = qs('p');
-    if (forcado) slug = forcado;
-    if (!slug){
-      mostrarErro('Nenhum painel publicado.', 'Defina o produto em tv/ativo.json e publique.');
-      return;
-    }
-    slugAtual = slug;
-    carimboAtual = a ? (a.atualizado || null) : null;
-    baseDir = '../paineis/' + slug + '/';
-    return buscarJSON(baseDir + 'dados.json').then(function(d){
-      painel = d;
-      montar();
+  carregarDoSupabase().then(function(){
+    redeOk = true; montar();
+  })['catch'](function(e1){
+    carregarDeArquivos().then(function(){
+      redeOk = true; montar();
+    })['catch'](function(e2){
+      redeOk = false;
+      mostrarErro('Não consegui carregar o painel.',
+                  'Supabase: ' + (e1 && e1.message ? e1.message : e1) +
+                  '  ·  Arquivos: ' + (e2 && e2.message ? e2.message : e2));
     });
-  })['catch'](function(e){
-    redeOk = false;
-    mostrarErro('Não consegui carregar o painel.',
-                String(e && e.message ? e.message : e) +
-                ' — confira se a pasta do produto foi publicada e se a TV está na rede.');
   });
 }
 
@@ -266,7 +314,8 @@ function montar(){
   document.title = 'RitmoPatrimar · ' + (p.produto || 'Embalagem');
   $('produtoNome').textContent = p.produto || '—';
   $('telaSub').textContent = p.produto || '';
-  $('rodape').textContent = 'PADRÃO DE EMBALAGEM · ' + (p.produto || '') + ' · RITMOPATRIMAR';
+  $('rodape').textContent = 'PADRÃO DE EMBALAGEM · ' + (p.produto || '') +
+                            ' · RITMOPATRIMAR' + (fonte === 'arquivos' ? ' · MODO RESERVA' : '');
   var tUrl = parseInt(qs('t'), 10);
   $('tempoInput').value = (tUrl > 0) ? tUrl : (p.tempo > 0 ? p.tempo : 5);
 
@@ -284,7 +333,7 @@ function montar(){
     p.fotos.forEach(function(f, i){
       var im = document.createElement('img');
       im.className = 'carousel-img' + (i === 0 ? ' ativo' : '');
-      im.src = baseDir + f;
+      im.src = f;
       car.appendChild(im);
     });
     $('fotoProduto').style.display = 'block';
@@ -378,7 +427,7 @@ function mostrarDesenho(idx){
   ph.style.display = 'none';
   if (!imgCache[idx]){
     var im = document.createElement('img');
-    im.alt = cam.op || ''; im.src = baseDir + arq;
+    im.alt = cam.op || ''; im.src = arq;
     im.onerror = function(){ ph.style.display = 'block'; ph.textContent = 'Imagem não encontrada: ' + arq; };
     area.appendChild(im); imgCache[idx] = im;
   }
@@ -452,12 +501,31 @@ document.addEventListener('fullscreenchange', function(){
    sem peso nenhum. Mudou o produto (ou o carimbo), recarrega. */
 function checarTroca(){
   if (location.protocol.indexOf('http') !== 0 || !window.fetch) return;
+  if (!painel){ carregar(); return; }
+
+  if (fonte === 'supabase'){
+    window.supaGet('embalagem_config?id=eq.1&select=painel_ativo,atualizado_em')
+      .then(function(rows){
+        redeOk = true;
+        var c = rows && rows[0]; if (!c) return;
+        var slug = c.painel_ativo ? String(c.painel_ativo) : '';
+        if (slug && slug !== slugAtual){ location.reload(); return; }
+        /* Mesmo produto: confere se ele foi republicado com correcoes. */
+        return window.supaGet('embalagem_paineis?slug=eq.' + encodeURIComponent(slugAtual) +
+                              '&select=atualizado_em').then(function(rs){
+          var r = rs && rs[0]; if (!r) return;
+          var novo = (c.atualizado_em || '') + '|' + (r.atualizado_em || '');
+          if (carimboAtual && novo !== carimboAtual) location.reload();
+        });
+      })['catch'](function(){ redeOk = false; });
+    return;
+  }
+
   buscarJSON(ATIVO_URL).then(function(a){
     redeOk = true;
     if (!a) return;
     var slug = a.painel ? String(a.painel) : '';
     var carimbo = a.atualizado || null;
-    if (!painel){ carregar(); return; }
     if (slug && slug !== slugAtual) location.reload();
     else if (carimbo && carimboAtual && carimbo !== carimboAtual) location.reload();
   })['catch'](function(){ redeOk = false; });

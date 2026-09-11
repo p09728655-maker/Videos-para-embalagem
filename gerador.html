@@ -138,6 +138,40 @@
   #splash svg.sp-pulso{width:min(32vh,330px);margin-top:3vh;display:block;}
   #splash .sp-tag{color:#E8E8E8;font-size:min(2.1vh,19px);font-weight:700;margin-top:2.4vh;}
   #splash .sp-tag span{color:var(--accent);}
+
+  /* ── PUBLICACAO ── */
+  .acoes{display:none;gap:12px;margin-bottom:20px;}
+  .acoes.visible{display:flex;}
+  .acoes button{flex:1;padding:16px;border:none;border-radius:10px;font-family:'Inter',sans-serif;
+                font-size:16px;font-weight:700;cursor:pointer;transition:.15s;}
+  #btnPublicar{background:var(--accent);color:#fff;}
+  #btnPublicar:hover{filter:brightness(1.1);}
+  #btnPublicar:disabled{opacity:.5;cursor:default;}
+  #btnGerar2{background:var(--panel);color:var(--text);border:1px solid var(--border);flex:0 0 220px;}
+  #btnGerar2:hover{border-color:var(--accent);color:var(--accent);}
+
+  .sessao{display:flex;align-items:center;gap:10px;font-size:12px;color:var(--text-muted);
+          margin-bottom:18px;}
+  .sessao a{color:var(--accent);text-decoration:none;cursor:pointer;}
+  .sessao a:hover{text-decoration:underline;}
+
+  #modalLogin{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.8);
+              display:none;align-items:center;justify-content:center;z-index:9000;}
+  #modalLogin.aberto{display:flex;}
+  .caixa-login{background:var(--panel);border:1px solid var(--border);border-radius:12px;
+               padding:28px;width:380px;max-width:92vw;}
+  .caixa-login h3{font-size:18px;font-weight:800;margin-bottom:6px;}
+  .caixa-login p{font-size:13px;color:var(--text-muted);margin-bottom:18px;line-height:1.5;}
+  .caixa-login input{width:100%;padding:11px 14px;border-radius:7px;border:1px solid var(--border);
+                     background:var(--bg);color:var(--text);font-size:15px;margin-bottom:10px;
+                     font-family:'Inter',sans-serif;}
+  .caixa-login input:focus{outline:none;border-color:var(--accent);}
+  .caixa-login .linha{display:flex;gap:10px;margin-top:8px;}
+  .caixa-login .linha button{flex:1;padding:12px;border-radius:7px;border:none;font-weight:700;
+                             font-size:14px;cursor:pointer;font-family:'Inter',sans-serif;}
+  .btn-entrar{background:var(--accent);color:#fff;}
+  .btn-cancelar{background:transparent;color:var(--text-muted);border:1px solid var(--border)!important;}
+  #erroLogin{color:var(--error);font-size:13px;margin-top:10px;display:none;line-height:1.4;}
 </style>
 </head>
 <body>
@@ -192,10 +226,32 @@
 
 <div id="pagesGrid"></div>
 
-<button id="btnGerar" onclick="gerarPacote()">Gerar pacote do produto</button>
+<div class="sessao" id="sessao"></div>
+
+<div class="acoes" id="acoes">
+  <button id="btnPublicar" onclick="publicarPainel()">Publicar para a TV</button>
+  <button id="btnGerar2" onclick="gerarPacote()">Baixar .zip</button>
+</div>
+
+<div id="modalLogin">
+  <div class="caixa-login">
+    <h3>Entrar para publicar</h3>
+    <p>Use o mesmo e-mail e senha do RitmoProd. Publicar altera o que aparece
+       na TV da embalagem, por isso exige login.</p>
+    <input type="email" id="loginEmail" placeholder="e-mail" autocomplete="username">
+    <input type="password" id="loginSenha" placeholder="senha" autocomplete="current-password">
+    <div class="linha">
+      <button class="btn-entrar" onclick="fazerLogin()">Entrar</button>
+      <button class="btn-cancelar" onclick="fecharLogin()">Cancelar</button>
+    </div>
+    <div id="erroLogin"></div>
+  </div>
+</div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="supabase-config.js"></script>
+<script src="publicar.js"></script>
 <script>
 pdfjsLib.GlobalWorkerOptions.workerSrc =
   'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
@@ -312,7 +368,7 @@ function recortarMargemBranca(canvas) {
 async function processar(file) {
   pagesData = [];
   document.getElementById('pagesGrid').innerHTML = '';
-  document.getElementById('btnGerar').classList.remove('visible');
+  document.getElementById('acoes').classList.remove('visible');
 
   const nomeSugerido = file.name.replace(/\.pdf$/i, '').replace(/_/g, ' ').toUpperCase();
   document.getElementById('produtoNome').value = nomeSugerido;
@@ -345,7 +401,7 @@ async function processar(file) {
   }
 
   mostrarStatus(`${total} páginas processadas! Revise os componentes e clique em Gerar.`, 100);
-  document.getElementById('btnGerar').classList.add('visible');
+  document.getElementById('acoes').classList.add('visible');
 }
 
 function adicionarCard(idx, opName, imgBase64, comps, obs = '') {
@@ -495,6 +551,116 @@ async function gerarPacote() {
     ' <span style="color:var(--text-muted)">(é o que manda esse produto para a TV)</span></li>' +
     '</ol>';
 }
+
+
+/* ─────────── Publicação no Supabase ─────────── */
+
+function pintarSessao() {
+  var el = document.getElementById('sessao');
+  if (!el) return;
+  if (estaLogado()) {
+    el.innerHTML = 'Conectado como <b>' + (emailLogado() || '—') + '</b> · ' +
+                   '<a onclick="sairDaConta()">sair</a> · ' +
+                   '<a href="biblioteca.html">ver biblioteca</a>';
+  } else {
+    el.innerHTML = 'Não conectado — <a onclick="abrirLogin()">entrar para publicar</a> · ' +
+                   '<a href="biblioteca.html">ver biblioteca</a>';
+  }
+}
+function abrirLogin() {
+  document.getElementById('erroLogin').style.display = 'none';
+  document.getElementById('modalLogin').className = 'aberto';
+  document.getElementById('loginEmail').focus();
+}
+function fecharLogin() { document.getElementById('modalLogin').className = ''; }
+function sairDaConta() { supaLogout(); pintarSessao(); }
+
+function fazerLogin() {
+  var email = document.getElementById('loginEmail').value.trim();
+  var senha = document.getElementById('loginSenha').value;
+  var err = document.getElementById('erroLogin');
+  err.style.display = 'none';
+  if (!email || !senha) { err.textContent = 'Preencha e-mail e senha.'; err.style.display = 'block'; return; }
+  supaLogin(email, senha).then(function () {
+    document.getElementById('loginSenha').value = '';
+    fecharLogin(); pintarSessao();
+    if (pagesData.length) publicarPainel();
+  })['catch'](function (e) {
+    err.textContent = e.message || 'Não consegui entrar.';
+    err.style.display = 'block';
+  });
+}
+
+async function publicarPainel() {
+  if (!estaLogado()) { abrirLogin(); return; }
+
+  var btn = document.getElementById('btnPublicar');
+  var { produto, ops, tempo } = coletarDados();
+  var slug = slugify(produto);
+
+  btn.disabled = true;
+  try {
+    mostrarStatus('Enviando as imagens das camadas...', 5);
+
+    var camadas = [];
+    for (var i = 0; i < pagesData.length; i++) {
+      var arq = slug + '/cam' + String(i + 1).padStart(2, '0') + '.jpg';
+      var img = dataUrlParaBlob(pagesData[i].img);
+      await supaUpload(arq, img.blob, img.tipo);
+      camadas.push({
+        op: ops[i].op,
+        obs: ops[i].obs,
+        img: arq,
+        componentes: ops[i].components.map(function (c) { return { qtd: c.qty, nome: c.name }; })
+      });
+      mostrarStatus('Enviando camada ' + (i + 1) + ' de ' + pagesData.length + '...',
+                    5 + ((i + 1) / pagesData.length) * 70);
+    }
+
+    var fotos = [];
+    for (var j = 0; j < fotosBase64.length; j++) {
+      var f = dataUrlParaBlob(fotosBase64[j]);
+      var ext = f.tipo.indexOf('png') >= 0 ? 'png' : 'jpg';
+      var nomeF = slug + '/foto' + String(j + 1).padStart(2, '0') + '.' + ext;
+      await supaUpload(nomeF, f.blob, f.tipo);
+      fotos.push(nomeF);
+    }
+
+    mostrarStatus('Salvando o painel...', 85);
+    await supaSalvarPainel({ slug: slug, produto: produto, tempo: tempo,
+                             camadas: camadas, fotos: fotos });
+
+    mostrarStatus('', 100);
+    document.getElementById('statusTxt').innerHTML =
+      '<b>' + produto + '</b> publicado na biblioteca.' +
+      ' <a href="#" onclick="enviarParaTV(\'' + slug + '\');return false;" ' +
+      'style="color:var(--accent);font-weight:700">Colocar na TV agora</a>' +
+      ' · <a href="biblioteca.html" style="color:var(--text-muted)">ver biblioteca</a>';
+  } catch (e) {
+    mostrarStatus('', 100);
+    document.getElementById('statusTxt').innerHTML =
+      '<b style="color:var(--error)">Falhou:</b> ' + (e.message || e) +
+      '<br><span style="color:var(--text-muted);font-size:13px">' +
+      'Se disser que a sessão expirou, entre de novo. O botão Baixar .zip continua ' +
+      'disponível como saída manual.</span>';
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+function enviarParaTV(slug) {
+  mostrarStatus('Trocando o painel da TV...', 50);
+  supaAtivarPainel(slug).then(function () {
+    mostrarStatus('', 100);
+    document.getElementById('statusTxt').innerHTML =
+      'Pronto. A TV troca sozinha em até 1 minuto.';
+  })['catch'](function (e) {
+    document.getElementById('statusTxt').innerHTML =
+      '<b style="color:var(--error)">Não consegui trocar:</b> ' + (e.message || e);
+  });
+}
+
+window.addEventListener('load', pintarSessao);
 
 let fotosBase64 = [];
 function previewFoto(input) {

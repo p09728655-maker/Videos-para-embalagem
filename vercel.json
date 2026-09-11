@@ -3,7 +3,8 @@
   "rewrites": [
     { "source": "/", "destination": "/tv/index.html" },
     { "source": "/inicio", "destination": "/inicio.html" },
-    { "source": "/gerador", "destination": "/gerador.html" }
+    { "source": "/gerador", "destination": "/gerador.html" },
+    { "source": "/biblioteca", "destination": "/biblioteca.html" }
   ],
   "headers": [
     {

@@ -5,7 +5,7 @@
  * a TV ficaria presa num produto antigo sem ninguém perceber. O guard em fetch()
  * abaixo é o que garante isso — não remova.
  */
-var CACHE = 'ritmopatrimar-embalagem-v4';
+var CACHE = 'ritmopatrimar-embalagem-v5';
 
 /* Só o que o gerador precisa para abrir sem internet. */
 var ESSENCIAL = [
@@ -16,6 +16,9 @@ var ESSENCIAL = [
   './icones/icone-192.png',
   './icones/icone-512.png',
   './logo/patrimar.png',
+  './biblioteca.html',
+  './supabase-config.js',
+  './publicar.js',
   'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js',
   'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js',
   'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js'
@@ -51,6 +54,10 @@ self.addEventListener('fetch', function (e) {
 
   /* Guard do painel da TV — deixa passar direto para a rede, sempre. */
   if (url.origin === self.location.origin && /^\/tv(\/|$)/.test(url.pathname)) return;
+
+  /* Guard do Supabase: respostas de API vem como CORS e cairiam no cache abaixo,
+     servindo painel velho e escondendo a troca de produto. Nunca interceptar. */
+  if (url.hostname.indexOf('supabase.co') >= 0) return;
 
   /* Rede primeiro, com cache como reserva: o gerador atualizado sempre vence,
      mas continua abrindo offline. */

@@ -68,6 +68,10 @@
       <div class="t">Gerador <em>&rarr;</em></div>
       <div class="d">Arraste o PDF, revise os componentes de cada camada e gere o arquivo do painel.</div>
     </a>
+    <a class="card" href="biblioteca.html">
+      <div class="t">Biblioteca <em>&rarr;</em></div>
+      <div class="d">Produtos já publicados. Um clique coloca qualquer um deles na TV.</div>
+    </a>
     <a class="card" href="tv/">
       <div class="t">Painel ativo <em>&rarr;</em></div>
       <div class="d">O que está sendo exibido na TV da embalagem neste momento.</div>
@@ -84,25 +88,24 @@
   <h2>Publicar um produto novo</h2>
   <ol>
     <li>No <b>Gerador</b>, arraste o PDF de embalagem e revise os componentes de cada camada.</li>
-    <li>Preencha o nome do produto e o <b>tempo por camada</b>, e clique em <b>Gerar pacote do produto</b>.
-        Baixa um <code>.zip</code>.</li>
-    <li>Extraia. No GitHub, suba a pasta do produto dentro de <code>paineis/</code>
-        — <b>uma vez só</b>, ela fica guardada na biblioteca.</li>
-    <li>Substitua <code>tv/ativo.json</code> pelo <code>ativo.json</code> que veio no pacote.</li>
+    <li>Preencha o nome do produto e o <b>tempo por camada</b>.</li>
+    <li>Clique em <b>Publicar para a TV</b>. Na primeira vez ele pede login —
+        é o mesmo e-mail e senha do RitmoProd.</li>
+    <li>Pronto: o produto entra na biblioteca e você escolhe se vai para a TV agora.</li>
   </ol>
 
-  <h2>Trocar para um produto já publicado</h2>
+  <h2>Trocar o produto da TV</h2>
   <ol>
-    <li>No GitHub, edite <code>tv/ativo.json</code>.</li>
-    <li>Troque o nome em <code>"painel"</code> pelo da pasta desejada e salve.</li>
+    <li>Abra a <b>Biblioteca</b>.</li>
+    <li>Clique em <b>Colocar na TV</b> no produto desejado.</li>
     <li>A TV percebe em até 1 minuto e troca sozinha. <b>Ninguém encosta na TV.</b></li>
   </ol>
 
   <div class="nota">
-    <b>As imagens agora ficam fora do HTML.</b> Cada camada é um arquivo próprio, carregado
-    só quando aparece na tela. Um produto saiu de ~8&nbsp;MB para algumas centenas de KB,
-    o que resolve o gargalo de memória do navegador da Smart TV e evita que o
-    repositório cresça a cada troca de produto.
+    <b>Se o banco ficar fora do ar, a TV não apaga.</b> O painel tenta primeiro o
+    Supabase e, se não responder, carrega os arquivos publicados no repositório,
+    avisando <code>MODO RESERVA</code> no rodapé. O botão <b>Baixar .zip</b> do gerador
+    continua existindo para alimentar esse modo manualmente.
   </div>
 
 </div>
