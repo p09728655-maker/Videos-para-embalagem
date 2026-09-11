@@ -57,27 +57,30 @@
 
   /* LAYOUT */
   .container{display:flex;flex:1;overflow:hidden;min-height:0;}
-  .left{width:75%;padding:1.2vh 1.1vw;display:flex;flex-direction:column;overflow:hidden;min-height:0;}
+  .left{width:78%;padding:1.2vh 1.1vw;display:flex;flex-direction:column;overflow:hidden;min-height:0;}
   .left>*+*{margin-top:1vh;}
-  .right{width:25%;padding:1.2vh 0.9vw;border-left:1px solid var(--border);overflow:hidden;
+  .right{width:22%;padding:1.2vh 0.9vw;border-left:1px solid var(--border);overflow:hidden;
          display:flex;flex-direction:column;min-height:0;}
   .right>*+*{margin-top:1vh;}
 
-  #etapaPrincipal{background:var(--accent);color:#fff;padding:1vh 2vh;border-radius:8px;
-                  font-size:6.5vh;font-weight:800;text-align:center;flex-shrink:0;line-height:1;}
-  #etapaPrincipal .tot{font-size:3vh;font-weight:600;opacity:0.55;}
+  #etapaPrincipal{background:var(--accent);color:#fff;padding:0.7vh 2vh;border-radius:8px;
+                  font-size:4.6vh;font-weight:800;text-align:center;flex-shrink:0;line-height:1.05;}
+  #etapaPrincipal .tot{font-size:2.4vh;font-weight:600;opacity:0.55;}
 
   #obsDisplay{background:rgba(234,179,8,0.13);border:2px solid var(--warn);border-radius:6px;
-              padding:1.2vh 2vh;font-size:3.4vh;font-weight:800;color:var(--warn);text-align:center;
+              padding:0.9vh 2vh;font-size:3vh;font-weight:800;color:var(--warn);text-align:center;
               flex-shrink:0;display:none;text-transform:uppercase;line-height:1.15;}
 
-  #componentesGrade{display:flex;flex-wrap:wrap;flex-shrink:0;margin-right:-0.8vh;}
+  /* Na coluna da direita os componentes deixam de empurrar o desenho: a area da
+     imagem passa a ser a mesma em toda camada, com 3 ou com 8 pecas. */
+  #componentesGrade{display:flex;flex-direction:column;flex:1;min-height:0;overflow-y:auto;}
+  #componentesGrade>*+*{margin-top:0.7vh;}
   #componentesGrade .vazio{color:var(--text-muted);font-size:2.2vh;padding:1vh;}
   .comp-card{background:var(--panel);border:1px solid var(--border);border-radius:8px;
-             padding:0.9vh 1.6vh;display:flex;align-items:center;margin:0 0.8vh 0.8vh 0;}
-  .comp-card-qty{font-family:'JetBrains Mono',monospace;font-size:5vh;font-weight:700;
+             padding:0.8vh 1.2vh;display:flex;align-items:center;flex-shrink:0;}
+  .comp-card-qty{font-family:'JetBrains Mono',monospace;font-size:4.2vh;font-weight:700;
                  color:var(--accent);line-height:1;flex-shrink:0;margin-right:1.2vh;}
-  .comp-card-nome{font-size:2.7vh;font-weight:700;color:var(--text);line-height:1.15;}
+  .comp-card-nome{font-size:2.2vh;font-weight:700;color:var(--text);line-height:1.15;}
 
   #desenhoCamada{background:var(--panel);border:1px solid var(--border);border-radius:8px;flex:1;
                  min-height:0;min-width:0;position:relative;overflow:hidden;}
@@ -85,6 +88,20 @@
   #desenhoCamada img.ativo{display:block;}
   #desenhoPh{position:absolute;top:50%;left:0;width:100%;text-align:center;margin-top:-1.2vh;
              color:var(--gray);font-size:2.4vh;}
+
+  /* Pausa por toque: num tablet, para mostrar a camada para alguem, nao ha
+     teclado para o atalho de espaco. */
+  #desenhoCamada{cursor:pointer;}
+  .nav-cam{position:absolute;top:50%;margin-top:-4vh;width:7vh;height:8vh;z-index:6;
+           background:rgba(10,10,11,0.72);border:1px solid var(--border);border-radius:8px;
+           color:var(--text);font-size:4vh;font-weight:700;line-height:8vh;text-align:center;
+           cursor:pointer;display:none;}
+  .nav-cam.ant{left:1.2vh;} .nav-cam.prox{right:1.2vh;}
+  /* Sem selo sobre o desenho: em qualquer canto ele tapava parte do PDF.
+     O proprio timer sinaliza a pausa, ficando amarelo junto com a barra. */
+  #timerDisplay.pausado{color:var(--warn);}
+  .progress-bar.pausado{background:var(--warn);}
+  #desenhoCamada.pausado .nav-cam{display:block;}
 
   .timer-row{display:flex;align-items:center;flex-shrink:0;}
   .timer-row>*+*{margin-left:1.2vw;}
@@ -98,13 +115,13 @@
   .carousel-img{position:absolute;top:0;left:0;width:100%;height:100%;object-fit:contain;
                 opacity:0;transition:opacity .4s;}
   .carousel-img.ativo{opacity:1;}
-  .section-title{font-size:1.5vh;letter-spacing:0.08em;color:var(--text-muted);text-transform:uppercase;
+  .section-title{flex-shrink:0;font-size:1.5vh;letter-spacing:0.08em;color:var(--text-muted);text-transform:uppercase;
                  flex-shrink:0;font-weight:700;}
-  #mapaTrilhos{overflow-y:auto;flex:1;min-height:0;}
-  .op-item{background:var(--panel);padding:1.2vh;border-left:4px solid var(--border);
-           border-radius:0 5px 5px 0;font-size:2vh;font-weight:600;flex-shrink:0;cursor:pointer;
-           color:var(--text-muted);margin-bottom:3px;}
-  .op-item.ativo{border-left-color:var(--accent);background:rgba(255,92,31,0.08);
+  #mapaTrilhos{display:flex;flex-wrap:wrap;flex:0 0 auto;flex-shrink:0;overflow:hidden;}
+  .op-item{background:var(--panel);padding:0.6vh 1vh;border:1px solid var(--border);
+           border-radius:5px;font-size:1.7vh;font-weight:700;flex-shrink:0;cursor:pointer;
+           color:var(--text-muted);margin:0 4px 4px 0;font-family:'JetBrains Mono',monospace;}
+  .op-item.ativo{border-color:var(--accent);background:rgba(255,92,31,0.14);
                  color:var(--accent);font-weight:800;}
 
   .footer{text-align:center;padding:0.5vh;font-family:'JetBrains Mono',monospace;font-size:1.3vh;
@@ -147,8 +164,11 @@
   <div class="left">
     <div id="etapaPrincipal">AGUARDANDO</div>
     <div id="obsDisplay"></div>
-    <div id="componentesGrade"><span class="vazio">Carregando...</span></div>
-    <div id="desenhoCamada"><div id="desenhoPh">Desenho da camada</div></div>
+    <div id="desenhoCamada" onclick="alternarPausa()">
+      <div id="desenhoPh">Desenho da camada</div>
+      <div class="nav-cam ant" onclick="irCamada(-1, event)">&#8249;</div>
+      <div class="nav-cam prox" onclick="irCamada(1, event)">&#8250;</div>
+    </div>
     <div class="timer-row">
       <div id="timerDisplay">--s</div>
       <div class="progress-bar-wrap"><div class="progress-bar" id="progressBar"></div></div>
@@ -156,7 +176,9 @@
   </div>
   <div class="right">
     <div id="fotoProduto"><div class="carousel" id="carousel"></div></div>
-    <div class="section-title">Sequência de Camadas</div>
+    <div class="section-title">Componentes desta camada</div>
+    <div id="componentesGrade"><span class="vazio">Carregando...</span></div>
+    <div class="section-title">Camadas</div>
     <div id="mapaTrilhos"></div>
   </div>
 </div>
@@ -323,8 +345,12 @@ function montar(){
   p.camadas.forEach(function(cam, idx){
     var d = document.createElement('div');
     d.id = 'step' + idx; d.className = 'op-item';
-    d.textContent = (cam.op || ('CAMADA ' + (idx+1))) + ' · ' + (cam.componentes || []).length + ' itens';
-    d.onclick = function(){ etapaAtual = idx; destacarEtapa(); };
+    d.textContent = String(idx + 1).length < 2 ? ('0' + (idx + 1)) : String(idx + 1);
+    d.title = (cam.op || '') + ' · ' + (cam.componentes || []).length + ' itens';
+    d.onclick = function(){
+      if (intervalo){ clearInterval(intervalo); intervalo = null; }
+      etapaAtual = idx; tRestante = tCiclo; destacarEtapa(); pintarPausa();
+    };
     c.appendChild(d);
   });
 
@@ -374,6 +400,39 @@ function tocarSom(){
   }catch(e){}
 }
 
+
+/* Pausa e navegacao manual, para apresentar a sequencia a alguem num tablet.
+   O mesmo toque retoma; enquanto pausado aparecem as setas de camada. */
+function estaPausado(){ return !intervalo; }
+
+function pintarPausa(){
+  var area = $('desenhoCamada'), t = $('timerDisplay'), b = $('progressBar');
+  if (!area) return;
+  var p = estaPausado();
+  area.className = p ? 'pausado' : '';
+  if (t){ t.className = p ? 'pausado' : ''; if (p && painel) t.textContent = 'II'; }
+  if (b){ b.className = p ? 'progress-bar pausado' : 'progress-bar'; }
+}
+
+function alternarPausa(){
+  if (!painel) return;
+  if (intervalo){ clearInterval(intervalo); intervalo = null; }
+  else { iniciarCiclo(tCiclo || tempoConfigurado()); }
+  pintarPausa();
+}
+
+/* As setas param o ciclo: quem esta navegando quer ficar na camada escolhida. */
+function irCamada(passo, ev){
+  if (ev && ev.stopPropagation) ev.stopPropagation();
+  if (!painel) return;
+  if (intervalo){ clearInterval(intervalo); intervalo = null; }
+  var n = painel.camadas.length;
+  etapaAtual = (etapaAtual + passo + n) % n;
+  tRestante = tCiclo;
+  destacarEtapa();
+  pintarPausa();
+}
+
 function iniciarCiclo(seg){
   if (intervalo){ clearInterval(intervalo); intervalo = null; }
   tCiclo = seg; tRestante = seg;
@@ -386,6 +445,7 @@ function iniciarCiclo(seg){
       tRestante = tCiclo; destacarEtapa();
     }
   }, 1000);
+  pintarPausa();   /* depois do setInterval: antes dele, intervalo ainda e null */
 }
 function iniciarTempoManual(){
   if (!painel) return;
@@ -394,6 +454,7 @@ function iniciarTempoManual(){
 }
 function pararTimer(){
   if (intervalo){ clearInterval(intervalo); intervalo = null; }
+  pintarPausa();
   $('timerDisplay').textContent = '--s';
   var bar = $('progressBar'); bar.style.transition = 'none'; bar.style.width = '100%';
   $('etapaPrincipal').textContent = 'AGUARDANDO';
@@ -585,15 +646,12 @@ document.addEventListener('mousemove', function(){
 document.addEventListener('keydown', function(e){
   if (!painel) return;
   if (e.target && e.target.tagName === 'INPUT') return;
-  var n = painel.camadas.length;
   if (e.code === 'Space' || e.keyCode === 32){
-    e.preventDefault();
-    if (intervalo){ clearInterval(intervalo); intervalo = null; $('timerDisplay').textContent = 'II'; }
-    else { iniciarCiclo(tCiclo || tempoConfigurado()); }
+    e.preventDefault(); alternarPausa();
   } else if (e.code === 'ArrowRight' || e.keyCode === 39 || e.code === 'Enter' || e.keyCode === 13){
-    e.preventDefault(); etapaAtual = (etapaAtual + 1) % n; tRestante = tCiclo; destacarEtapa();
+    e.preventDefault(); irCamada(1);
   } else if (e.code === 'ArrowLeft' || e.keyCode === 37){
-    e.preventDefault(); etapaAtual = (etapaAtual - 1 + n) % n; tRestante = tCiclo; destacarEtapa();
+    e.preventDefault(); irCamada(-1);
   }
 });
 
