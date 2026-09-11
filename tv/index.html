@@ -38,7 +38,12 @@
   .rp-sep{color:var(--border);font-size:2vh;font-weight:300;}
   .produto-nome{font-size:2.4vh;font-weight:800;color:var(--text);white-space:nowrap;
                 overflow:hidden;text-overflow:ellipsis;}
-  .controls{display:flex;align-items:center;flex-shrink:0;}
+  /* Na TV nao ha mouse nem teclado: os controles so atrapalham. Ficam ocultos
+     e reaparecem ao mover o mouse, o que cobre o uso no computador sem
+     precisar de modo ou parametro na URL. */
+  .controls{display:flex;align-items:center;flex-shrink:0;opacity:0;
+            pointer-events:none;transition:opacity .25s;}
+  .controls.visivel{opacity:1;pointer-events:auto;}
   .controls>*+*{margin-left:8px;}
   .controls input[type=number]{width:9vh;padding:0.8vh 1vh;border-radius:6px;border:1px solid var(--border);
        background:var(--panel);color:var(--text);font-family:'JetBrains Mono',monospace;
@@ -74,7 +79,7 @@
   .comp-card-nome{font-size:2.7vh;font-weight:700;color:var(--text);line-height:1.15;}
 
   #desenhoCamada{background:var(--panel);border:1px solid var(--border);border-radius:8px;flex:1;
-                 min-height:0;position:relative;overflow:hidden;}
+                 min-height:0;min-width:0;position:relative;overflow:hidden;}
   #desenhoCamada img{position:absolute;top:0;left:0;width:100%;height:100%;object-fit:contain;display:none;}
   #desenhoCamada img.ativo{display:block;}
   #desenhoPh{position:absolute;top:50%;left:0;width:100%;text-align:center;margin-top:-1.2vh;
@@ -465,10 +470,17 @@ function reloadSeguranca(){ if (redeOk) location.reload(); }
 var curTimer;
 function armarCursor(){
   clearTimeout(curTimer);
-  curTimer = setTimeout(function(){ document.body.style.cursor = 'none'; }, 5000);
+  curTimer = setTimeout(function(){
+    document.body.style.cursor = 'none';
+    var c = document.querySelector('.controls');
+    if (c) c.className = 'controls';
+  }, 5000);
 }
 document.addEventListener('mousemove', function(){
-  document.body.style.cursor = 'default'; armarCursor();
+  document.body.style.cursor = 'default';
+  var c = document.querySelector('.controls');
+  if (c) c.className = 'controls visivel';
+  armarCursor();
 });
 
 document.addEventListener('keydown', function(e){
