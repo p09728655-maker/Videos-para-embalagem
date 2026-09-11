@@ -144,6 +144,25 @@ function supaAtivarPainel(slug) {
   });
 }
 
+/* Alterna a exibicao da coluna de componentes sem regerar o painel. */
+function supaDefinirOpcoes(slug, opcoes) {
+  return tokenValido().then(function (token) {
+    return fetch(window.SUPA.url + '/rest/v1/embalagem_paineis?slug=eq.' +
+                 encodeURIComponent(slug), {
+      method: 'PATCH',
+      headers: cabecalhos(token, { 'Content-Type': 'application/json' }),
+      body: JSON.stringify({ opcoes: opcoes })
+    }).then(function (r) {
+      if (!r.ok) {
+        return r.text().then(function (t) {
+          throw new Error('não consegui salvar a opção: ' + r.status + ' ' + t);
+        });
+      }
+      return true;
+    });
+  });
+}
+
 function supaExcluirPainel(slug) {
   return tokenValido().then(function (token) {
     return fetch(window.SUPA.url + '/rest/v1/embalagem_paineis?slug=eq.' +

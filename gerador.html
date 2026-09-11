@@ -213,6 +213,14 @@
     <input type="number" id="tempoPadrao" value="5" min="1" max="9999" style="min-width:110px">
   </div>
   <div class="field">
+    <label>Exibição na TV</label>
+    <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text);
+                  text-transform:none;letter-spacing:0;font-weight:500;cursor:pointer;padding:9px 0">
+      <input type="checkbox" id="mostrarComponentes" checked style="width:16px;height:16px;accent-color:var(--accent)">
+      Mostrar a lista de componentes ao lado
+    </label>
+  </div>
+  <div class="field">
     <label>Fotos do Produto (opcional)</label>
     <input type="file" id="fotoInput" accept="image/*" multiple onchange="previewFoto(this)">
     <div id="fotoPreviewArea" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;"></div>
@@ -648,7 +656,9 @@ function coletarDados() {
     return { op: p.op, obs, components };
   });
   const tempo = parseInt(document.getElementById('tempoPadrao').value, 10) || 5;
-  return { produto, ops, tempo };
+  const cb = document.getElementById('mostrarComponentes');
+  const opcoes = { componentes: cb ? cb.checked : true };
+  return { produto, ops, tempo, opcoes };
 }
 
 function slugify(t) {
@@ -663,7 +673,7 @@ function slugify(t) {
    As imagens saem como arquivo, nao embutidas em base64 no HTML — e o que
    permite a TV carregar uma de cada vez, em vez de tudo na memoria. */
 async function gerarPacote() {
-  const { produto, ops, tempo } = coletarDados();
+  const { produto, ops, tempo, opcoes } = coletarDados();
   const slug = slugify(produto);
 
   if (typeof JSZip === 'undefined') {
@@ -699,7 +709,7 @@ async function gerarPacote() {
 
   const carimbo = new Date().toISOString();
   pasta.file('dados.json', JSON.stringify(
-    { produto, tempo, camadas, fotos, gerado: carimbo }, null, 2));
+    { produto, tempo, camadas, fotos, opcoes, gerado: carimbo }, null, 2));
 
   /* Vai junto para o usuario nao precisar escrever o JSON na mao. */
   zip.file('ativo.json', JSON.stringify({ painel: slug, atualizado: carimbo }, null, 2));
@@ -771,7 +781,7 @@ async function publicarPainel() {
   if (!estaLogado()) { abrirLogin(); return; }
 
   var btn = document.getElementById('btnPublicar');
-  var { produto, ops, tempo } = coletarDados();
+  var { produto, ops, tempo, opcoes } = coletarDados();
   var slug = slugify(produto);
 
   btn.disabled = true;
@@ -804,7 +814,7 @@ async function publicarPainel() {
 
     mostrarStatus('Salvando o painel...', 85);
     await supaSalvarPainel({ slug: slug, produto: produto, tempo: tempo,
-                             camadas: camadas, fotos: fotos });
+                             camadas: camadas, fotos: fotos, opcoes: opcoes });
 
     mostrarStatus('', 100);
     document.getElementById('statusTxt').innerHTML =

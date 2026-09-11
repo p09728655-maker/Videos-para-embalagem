@@ -175,7 +175,7 @@ function carregar(){
   $('estado').textContent = 'Carregando...';
   Promise.all([
     supaGet('embalagem_config?id=eq.1&select=painel_ativo'),
-    supaGet('embalagem_paineis?select=slug,produto,tempo,camadas,atualizado_em&order=produto.asc')
+    supaGet('embalagem_paineis?select=slug,produto,tempo,camadas,opcoes,atualizado_em&order=produto.asc')
   ]).then(function(r){
     ativoAtual = (r[0] && r[0][0]) ? r[0][0].painel_ativo : null;
     render(r[1] || []);
@@ -197,6 +197,7 @@ function render(itens){
   lista.innerHTML = itens.map(function(p){
     var naTV = (p.slug === ativoAtual);
     var n = (p.camadas || []).length;
+    var semComp = !!(p.opcoes && p.opcoes.componentes === false);
     return '<div class="item' + (naTV ? ' natv' : '') + '">' +
              '<div class="info">' +
                '<div class="nome">' + p.produto + '</div>' +
@@ -207,10 +208,23 @@ function render(itens){
                ? '<span class="badge">NA TV AGORA</span>'
                : '<button class="btn primario" onclick="colocarNaTV(\'' + p.slug + '\')">Colocar na TV</button>') +
              '<button class="btn" onclick="verPainel(\'' + p.slug + '\')">Ver</button>' +
+             '<button class="btn" title="Mostrar ou esconder a lista de componentes na TV" ' +
+               'onclick="alternarComponentes(\'' + p.slug + '\',' + (semComp ? 'true' : 'false') + ')">' +
+               (semComp ? 'só desenho' : 'com lista') + '</button>' +
              '<button class="btn perigo" title="Excluir" onclick="excluir(\'' + p.slug + '\',\'' +
                 String(p.produto).replace(/'/g,"\\'") + '\')">&times;</button>' +
            '</div>';
   }).join('');
+}
+
+function alternarComponentes(slug, estaSemComp){
+  if (!estaLogado()){ acaoPendente = function(){ alternarComponentes(slug, estaSemComp); }; abrirLogin(); return; }
+  $('estado').style.display='block'; $('estado').textContent='Salvando...';
+  supaDefinirOpcoes(slug, { componentes: estaSemComp })
+    .then(function(){ carregar(); })
+    ['catch'](function(e){
+      $('estado').innerHTML='<b style="color:var(--error)">Não consegui salvar:</b> '+(e.message||e);
+    });
 }
 
 function verPainel(slug){ window.open('tv/?p=' + encodeURIComponent(slug), '_blank'); }

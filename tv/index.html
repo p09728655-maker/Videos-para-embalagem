@@ -73,8 +73,25 @@
 
   /* Na coluna da direita os componentes deixam de empurrar o desenho: a area da
      imagem passa a ser a mesma em toda camada, com 3 ou com 8 pecas. */
-  #componentesGrade{display:flex;flex-direction:column;flex:1;min-height:0;overflow-y:auto;}
+  #componentesGrade{display:flex;flex-direction:column;flex:1;min-height:0;overflow:hidden;}
   #componentesGrade>*+*{margin-top:0.7vh;}
+  /* Ninguem rola a tela de uma TV: com muitos componentes os cartoes encolhem
+     em degraus ate caberem, em vez de sobrar barra de rolagem. */
+  #componentesGrade.d1 .comp-card{padding:0.6vh 1vh;}
+  #componentesGrade.d1 .comp-card-qty{font-size:3.4vh;margin-right:1vh;}
+  #componentesGrade.d1 .comp-card-nome{font-size:1.9vh;}
+  #componentesGrade.d1>*+*{margin-top:0.5vh;}
+  #componentesGrade.d2 .comp-card{padding:0.45vh 0.9vh;}
+  #componentesGrade.d2 .comp-card-qty{font-size:2.8vh;margin-right:0.8vh;}
+  #componentesGrade.d2 .comp-card-nome{font-size:1.6vh;}
+  #componentesGrade.d2>*+*{margin-top:0.35vh;}
+  #componentesGrade.d3 .comp-card{padding:0.3vh 0.7vh;}
+  #componentesGrade.d3 .comp-card-qty{font-size:2.2vh;margin-right:0.6vh;}
+  #componentesGrade.d3 .comp-card-nome{font-size:1.35vh;}
+  #componentesGrade.d3>*+*{margin-top:0.25vh;}
+  /* Produto publicado sem a coluna: o desenho toma a tela inteira. */
+  body.sem-componentes .right{display:none;}
+  body.sem-componentes .left{width:100%;}
   #componentesGrade .vazio{color:var(--text-muted);font-size:2.2vh;padding:1vh;}
   .comp-card{background:var(--panel);border:1px solid var(--border);border-radius:8px;
              padding:0.8vh 1.2vh;display:flex;align-items:center;flex-shrink:0;}
@@ -274,7 +291,7 @@ function carregarDoSupabase(){
   return pegarSlug.then(function(info){
     if (!info.slug) throw new Error('nenhum painel ativo');
     return window.supaGet('embalagem_paineis?slug=eq.' + encodeURIComponent(info.slug) +
-                          '&select=slug,produto,tempo,camadas,fotos,atualizado_em')
+                          '&select=slug,produto,tempo,camadas,fotos,opcoes,atualizado_em')
       .then(function(rows){
         var r = rows && rows[0];
         if (!r) throw new Error('painel "' + info.slug + '" nao existe no banco');
@@ -282,7 +299,7 @@ function carregarDoSupabase(){
         carimboAtual = (info.carimbo || '') + '|' + (r.atualizado_em || '');
         baseDir = '';
         fonte = 'supabase';
-        painel = { produto: r.produto, tempo: r.tempo,
+        painel = { produto: r.produto, tempo: r.tempo, opcoes: r.opcoes || {},
                    camadas: (r.camadas || []).map(function(c){
                      return { op: c.op, obs: c.obs, componentes: c.componentes || [],
                               img: c.img ? window.supaImagem(c.img) : null };
@@ -303,7 +320,7 @@ function carregarDeArquivos(){
     baseDir = '../paineis/' + slug + '/';
     fonte = 'arquivos';
     return buscarJSON(baseDir + 'dados.json').then(function(d){
-      painel = { produto: d.produto, tempo: d.tempo,
+      painel = { produto: d.produto, tempo: d.tempo, opcoes: d.opcoes || {},
                  camadas: (d.camadas || []).map(function(c){
                    return { op: c.op, obs: c.obs, componentes: c.componentes || [],
                             img: c.img ? (baseDir + c.img) : null };
@@ -340,6 +357,11 @@ function montar(){
     mostrarErro('O painel publicado está sem camadas.', 'Gere o produto novamente e publique a pasta.');
     return;
   }
+  /* opcoes.componentes === false: o produto foi publicado para exibir so o desenho */
+  var mostrarComp = !(p.opcoes && p.opcoes.componentes === false);
+  if (qs('comp') === '0') mostrarComp = false;
+  if (qs('comp') === '1') mostrarComp = true;
+  document.body.className = mostrarComp ? '' : 'sem-componentes';
   document.title = 'RitmoPatrimar · ' + (p.produto || 'Embalagem');
   $('produtoNome').textContent = p.produto || '—';
   $('telaSub').textContent = p.produto || '';
@@ -507,6 +529,24 @@ function mostrarDesenho(idx){
   for (var j in imgCache){ if (imgCache.hasOwnProperty(j)) imgCache[j].className = (j === alvo ? 'ativo' : ''); }
 }
 
+
+/* Reduz os cartoes em degraus ate a lista caber na coluna. Na TV nao ha como
+   rolar, entao um componente que ficasse fora da tela simplesmente nao seria
+   embalado. */
+function ajustarComponentes(){
+  var g = $('componentesGrade');
+  if (!g || document.body.className === 'sem-componentes') return;
+  var graus = ['', 'd1', 'd2', 'd3'];
+  for (var i = 0; i < graus.length; i++){
+    g.className = graus[i];
+    if (g.scrollHeight <= g.clientHeight + 1) return;
+  }
+  /* Passou do menor degrau: a lista e longa demais para a coluna. Melhor cortar
+     a margem do que esconder item — o titulo diz quantos sao. */
+  g.className = 'd3';
+}
+window.addEventListener('resize', function(){ if (painel) ajustarComponentes(); });
+
 function destacarEtapa(){
   var its = document.querySelectorAll('.op-item');
   for (var i = 0; i < its.length; i++) its[i].className = 'op-item';
@@ -522,10 +562,12 @@ function destacarEtapa(){
   if (cam.obs){ obs.innerHTML = '&#9888; ' + cam.obs; obs.style.display = 'block'; }
   else { obs.style.display = 'none'; }
 
-  $('componentesGrade').innerHTML = (cam.componentes || []).map(function(c){
+  var grade = $('componentesGrade');
+  grade.innerHTML = (cam.componentes || []).map(function(c){
     return '<div class="comp-card"><span class="comp-card-qty">&times;' + c.qtd +
            '</span><span class="comp-card-nome">' + c.nome + '</span></div>';
   }).join('');
+  ajustarComponentes();
 
   mostrarDesenho(etapaAtual);
 }
