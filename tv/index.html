@@ -3,6 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!-- Sem isto, abrir /tv (sem barra final) faz o navegador resolver ativo.json
+     como /ativo.json e tudo da 404. Tambem permite servir este player na raiz. -->
+<base href="/tv/">
 <title>RitmoPatrimar · Embalagem</title>
 <meta name="theme-color" content="#1A1A1A">
 <link rel="icon" href="../icones/icone-192.png">
