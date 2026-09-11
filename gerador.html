@@ -373,6 +373,67 @@ fileInput.addEventListener('change', e => {
  *    entao o corte nao usa intensidade: so remove faixa quase vazia LONGA,
  *    porque uma linha de chamada nunca ocupa 8% da altura sozinha.
  */
+
+/* O cabecalho, a tabela, a moldura e o rodape sao identicos em todas as paginas
+   do PDF; so o desenho muda de uma para outra. Comparando as paginas entre si,
+   o que nao muda e template e pode sair — sem adivinhar posicao nem depender
+   do layout da folha. Precisa de pelo menos duas paginas do mesmo tamanho. */
+function blocosTemplate(canvases) {
+  if (canvases.length < 2) return [];
+  const w = canvases[0].width, h = canvases[0].height;
+  if (canvases.some(c => c.width !== w || c.height !== h)) return [];
+  const cinza = canvases.map(c => {
+    const d = c.getContext('2d').getImageData(0, 0, w, h).data;
+    const g = new Uint8Array(w * h);
+    for (let i = 0, j = 0; i < g.length; i++, j += 4) g[i] = (d[j] * 299 + d[j+1] * 587 + d[j+2] * 114) / 1000;
+    return g;
+  });
+  const muda = new Uint8Array(w * h);
+  for (let k = 0; k < cinza.length - 1; k++) {
+    const a = cinza[k], b = cinza[k+1];
+    for (let i = 0; i < muda.length; i++) if (Math.abs(a[i] - b[i]) > 26) muda[i] = 1;
+  }
+  /* engorda 4px o que muda: o antialias faz a borda de uma peca variar um pouco
+     entre paginas, e isso nao pode ser lido como template */
+  const R = 4, tmp = new Uint8Array(w * h), dil = new Uint8Array(w * h);
+  for (let y = 0; y < h; y++) {
+    const off = y * w;
+    for (let x = 0; x < w; x++) {
+      let v = 0;
+      for (let dx = -R; dx <= R && !v; dx++) { const xx = x + dx; if (xx >= 0 && xx < w && muda[off + xx]) v = 1; }
+      tmp[off + x] = v;
+    }
+  }
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+    let v = 0;
+    for (let dy = -R; dy <= R && !v; dy++) { const yy = y + dy; if (yy >= 0 && yy < h && tmp[yy * w + x]) v = 1; }
+    dil[y * w + x] = v;
+  }
+  /* grade de blocos: bloco com tinta que quase toda se repete e template.
+     Limiar de tinta baixo de proposito — fragmento de borda de tabela tem
+     pouca tinta e escapava. */
+  const p0 = cinza[0], NX = 28, NY = 22, blocos = [];
+  for (let j = 0; j < NY; j++) for (let i = 0; i < NX; i++) {
+    const x0 = Math.floor(w * i / NX), x1 = Math.floor(w * (i+1) / NX);
+    const y0 = Math.floor(h * j / NY), y1 = Math.floor(h * (j+1) / NY);
+    let tinta = 0, rep = 0;
+    for (let y = y0; y < y1; y += 2) for (let x = x0; x < x1; x += 2) {
+      const idx = y * w + x;
+      if (p0[idx] < 205) { tinta++; if (!dil[idx]) rep++; }
+    }
+    if (tinta >= 3 && rep / tinta > 0.85) blocos.push([x0, y0, x1 - x0, y1 - y0]);
+  }
+  return blocos;
+}
+
+function apagarBlocos(canvas, blocos) {
+  if (!blocos.length) return canvas;
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = '#fff';
+  for (const b of blocos) ctx.fillRect(b[0], b[1], b[2], b[3]);
+  return canvas;
+}
+
 function apertarDesenho(canvas) {
   try {
     const w = canvas.width, h = canvas.height;
@@ -413,12 +474,14 @@ function apertarDesenho(canvas) {
     if (y < h) blocos.push([y, h]);
     if (blocos.length > 1) {
       const ult = blocos[blocos.length - 1];
-      if (ult[1] - ult[0] < h * 0.06) blocos.pop();   /* rodape administrativo */
+      if (ult[1] - ult[0] < h * 0.06) blocos.pop();   /* rodape / numero da pagina */
     }
+    if (blocos.length > 1 && blocos[0][1] - blocos[0][0] < h * 0.03) blocos.shift(); /* fio no topo */
     if (!blocos.length) return canvas;
 
     const RESP = Math.max(6, Math.floor(h * 0.02));
-    const alt = blocos.reduce((s, b) => s + (b[1] - b[0]), 0) + RESP * (blocos.length - 1);
+    const PAD = Math.floor(h * 0.025);   /* respiro embaixo: a chamada nao encosta na borda */
+    const alt = blocos.reduce((s, b) => s + (b[1] - b[0]), 0) + RESP * (blocos.length - 1) + PAD;
     if (alt >= h * 0.95) return canvas;              /* nao valeu o esforco */
 
     const out = document.createElement('canvas');
@@ -456,7 +519,7 @@ function recortarMargemBranca(canvas) {
     minx = Math.max(0, minx - M); miny = Math.max(0, miny - M);
     maxx = Math.min(w - 1, maxx + M); maxy = Math.min(h - 1, maxy + M);
     const cw = maxx - minx + 1, ch = maxy - miny + 1;
-    if (cw < w * 0.35 || ch < h * 0.35) return canvas; // recorte suspeito
+    if (cw < w * 0.20 || ch < h * 0.20) return canvas; // recorte suspeito
     if (cw > w * 0.95 && ch > h * 0.95) return canvas; // nao vale o esforco
     const out = document.createElement('canvas');
     out.width = cw; out.height = ch;
@@ -482,9 +545,11 @@ async function processar(file) {
 
   mostrarStatus(`Processando ${total} páginas...`, 0);
 
+  /* Duas passadas: a comparacao entre paginas so e possivel com todas
+     renderizadas, entao o corte final espera o fim da leitura. */
+  const canvases = [], paginas = [];
   for (let i = 1; i <= total; i++) {
-    mostrarStatus(`Processando página ${i} de ${total}...`, (i-1)/total * 100);
-
+    mostrarStatus(`Lendo página ${i} de ${total}...`, (i-1)/total * 70);
     const page = await pdf.getPage(i);
     const scale = 1.6;   // suficiente para TV; 2.2 gerava arquivo grande demais
     const viewport = page.getViewport({ scale });
@@ -492,12 +557,23 @@ async function processar(file) {
     canvas.width = viewport.width;
     canvas.height = viewport.height;
     await page.render({ canvasContext: canvas.getContext('2d'), viewport }).promise;
-    const imgBase64 = apertarDesenho(recortarMargemBranca(canvas)).toDataURL('image/jpeg', 0.82);
-
     const { components, obs } = await extrairComponentes(page);
-    const opName = 'CAMADA ' + String(i).padStart(2, '0');
-    pagesData.push({ img: imgBase64, op: opName, components, obs });
-    adicionarCard(i - 1, opName, imgBase64, components, obs);
+    canvases.push(canvas); paginas.push({ components, obs });
+  }
+
+  mostrarStatus('Separando o desenho do cabeçalho...', 75);
+  await new Promise(r => setTimeout(r, 30));
+  const blocos = blocosTemplate(canvases);
+
+  for (let i = 0; i < total; i++) {
+    mostrarStatus(`Preparando camada ${i+1} de ${total}...`, 75 + (i+1)/total * 25);
+    const c = apagarBlocos(canvases[i], blocos);
+    const imgBase64 = recortarMargemBranca(apertarDesenho(recortarMargemBranca(c)))
+                        .toDataURL('image/jpeg', 0.82);
+    const opName = 'CAMADA ' + String(i + 1).padStart(2, '0');
+    pagesData.push({ img: imgBase64, op: opName, components: paginas[i].components, obs: paginas[i].obs });
+    adicionarCard(i, opName, imgBase64, paginas[i].components, paginas[i].obs);
+    canvases[i] = null;
   }
 
   mostrarStatus(`${total} páginas processadas! Revise os componentes e clique em Gerar.`, 100);
