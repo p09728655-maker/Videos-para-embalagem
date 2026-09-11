@@ -337,13 +337,13 @@ function montar(){
       car.appendChild(im);
     });
     $('fotoProduto').style.display = 'block';
-    if (p.fotos.length > 1) setInterval(proximaFoto, 5000);
+    if (p.fotos.length > 1) fotoTimer = setInterval(proximaFoto, 5000);
   }
 
   setTimeout(function(){ pularSplash(); iniciarTempoManual(); }, 2200);
 }
 
-var fotoAtual = 0;
+var fotoAtual = 0, fotoTimer = null;
 function proximaFoto(){
   var fs = document.querySelectorAll('.carousel-img');
   if (fs.length < 2) return;
@@ -499,6 +499,36 @@ document.addEventListener('fullscreenchange', function(){
 /* ---------- troca de produto sem tocar na TV ----------
    ativo.json tem poucos bytes, entao da para checar de minuto em minuto
    sem peso nenhum. Mudou o produto (ou o carimbo), recarrega. */
+
+/* Trocar de produto recarregando a pagina derrubava a tela cheia da TV, e o
+   navegador so devolve o modo tela cheia mediante gesto do usuario — ou seja,
+   alguem teria que ir ate la com o controle a cada troca. Aqui o conteudo e
+   substituido no lugar, sem reload. */
+function trocarPainel(){
+  if (intervalo){ clearInterval(intervalo); intervalo = null; }
+  if (fotoTimer){ clearInterval(fotoTimer); fotoTimer = null; }
+
+  for (var k in imgCache){
+    if (imgCache.hasOwnProperty(k)){
+      try { imgCache[k].parentNode.removeChild(imgCache[k]); } catch(e){}
+    }
+  }
+  imgCache = {};
+  etapaAtual = 0; tRestante = 0; tCiclo = 0; fotoAtual = 0;
+
+  var car = $('carousel'); if (car) car.innerHTML = '';
+  $('fotoProduto').style.display = 'none';
+  $('mapaTrilhos').innerHTML = '';
+  $('desenhoPh').style.display = 'block';
+  $('desenhoPh').textContent = 'Carregando o produto...';
+  $('etapaPrincipal').textContent = 'TROCANDO';
+  $('obsDisplay').style.display = 'none';
+  $('componentesGrade').innerHTML = '<span class="vazio">Carregando...</span>';
+
+  painel = null;
+  carregar();
+}
+
 function checarTroca(){
   if (location.protocol.indexOf('http') !== 0 || !window.fetch) return;
   if (!painel){ carregar(); return; }
@@ -509,13 +539,13 @@ function checarTroca(){
         redeOk = true;
         var c = rows && rows[0]; if (!c) return;
         var slug = c.painel_ativo ? String(c.painel_ativo) : '';
-        if (slug && slug !== slugAtual){ location.reload(); return; }
+        if (slug && slug !== slugAtual){ trocarPainel(); return; }
         /* Mesmo produto: confere se ele foi republicado com correcoes. */
         return window.supaGet('embalagem_paineis?slug=eq.' + encodeURIComponent(slugAtual) +
                               '&select=atualizado_em').then(function(rs){
           var r = rs && rs[0]; if (!r) return;
           var novo = (c.atualizado_em || '') + '|' + (r.atualizado_em || '');
-          if (carimboAtual && novo !== carimboAtual) location.reload();
+          if (carimboAtual && novo !== carimboAtual) trocarPainel();
         });
       })['catch'](function(){ redeOk = false; });
     return;
@@ -526,12 +556,13 @@ function checarTroca(){
     if (!a) return;
     var slug = a.painel ? String(a.painel) : '';
     var carimbo = a.atualizado || null;
-    if (slug && slug !== slugAtual) location.reload();
-    else if (carimbo && carimboAtual && carimbo !== carimboAtual) location.reload();
+    if (slug && slug !== slugAtual) trocarPainel();
+    else if (carimbo && carimboAtual && carimbo !== carimboAtual) trocarPainel();
   })['catch'](function(){ redeOk = false; });
 }
-/* Rede de seguranca: recupera a TV de travamento de memoria depois de horas
-   ligada. So recarrega com a rede respondendo, para nao cair em tela de erro. */
+/* Rede de seguranca contra travamento de memoria depois de muitas horas ligada.
+   Este reload derruba a tela cheia, entao e raro de proposito: a troca de
+   produto, que e o evento frequente, ja acontece sem recarregar. */
 function reloadSeguranca(){ if (redeOk) location.reload(); }
 
 /* ---------- cursor do controle remoto ---------- */
@@ -570,7 +601,7 @@ window.addEventListener('load', function(){
   armarCursor();
   carregar();
   setInterval(checarTroca, 60000);
-  setInterval(reloadSeguranca, 1800000);
+  setInterval(reloadSeguranca, 21600000);
 });
 </script>
 </body>
