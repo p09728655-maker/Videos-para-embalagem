@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gerador TV Embalagem · ritmoprod</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap');
+  :root {
+    --bg:#0A0A0B; --panel:#18181B; --border:#3F3F46;
+    --slate:#3F3F46; --gray:#71717A; --line:#E4E4E7;
+    --accent:#FF5C1F; --tint:#FFE9DF;
+    --success:#16A34A; --warn:#EAB308; --error:#DC2626; --info:#3B82F6;
+    --text:#E4E4E7; --text-muted:#71717A;
+  }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { font-family:'Inter',sans-serif; background:var(--bg); color:var(--text); min-height:100vh; padding:32px 28px; }
+
+  .rp-logo { display:flex; align-items:center; gap:10px; margin-bottom:4px; }
+  .rp-wordmark { font-family:'Inter',sans-serif; font-size:20px; font-weight:700; color:var(--line); letter-spacing:-0.03em; }
+  .rp-wordmark span { color:var(--accent); }
+  .rp-tag { font-family:'JetBrains Mono',monospace; font-size:11px; font-weight:500; color:var(--gray); letter-spacing:0.05em; text-transform:uppercase; }
+
+  h1 { font-size:28px; font-weight:800; color:var(--text); letter-spacing:-0.03em; margin-bottom:4px; margin-top:24px; }
+  .sub { color:var(--text-muted); font-size:14px; margin-bottom:28px; }
+
+  /* Drop zone */
+  #dropZone {
+    border:2px dashed var(--slate); border-radius:12px;
+    padding:56px 40px; text-align:center; cursor:pointer;
+    transition:.15s; margin-bottom:24px;
+  }
+  #dropZone:hover, #dropZone.over { background:var(--tint)11; border-color:var(--accent); }
+  #dropZone .icon { font-size:48px; display:block; margin-bottom:12px; opacity:.6; }
+  #dropZone .txt { font-size:18px; font-weight:600; color:var(--text); }
+  #dropZone .sub2 { font-size:13px; color:var(--text-muted); margin-top:4px; }
+  #fileInput { display:none; }
+
+  /* Config */
+  .config-box {
+    background:var(--panel); border:1px solid var(--border);
+    border-radius:10px; padding:20px 24px; margin-bottom:20px;
+    display:none; gap:20px; flex-wrap:wrap; align-items:flex-end;
+  }
+  .config-box.visible { display:flex; }
+  .field { display:flex; flex-direction:column; gap:6px; }
+  .field label { font-size:11px; color:var(--gray); letter-spacing:0.05em; text-transform:uppercase; font-weight:600; }
+  .field input {
+    padding:10px 14px; border-radius:6px; border:1px solid var(--border);
+    background:var(--bg); color:var(--text); font-family:'Inter',sans-serif;
+    font-size:15px; font-weight:500; min-width:280px;
+  }
+  .field input:focus { outline:none; border-color:var(--accent); }
+
+  /* Status */
+  #status { background:var(--panel); border:1px solid var(--border); border-radius:8px; padding:14px 18px; margin-bottom:20px; font-size:14px; color:var(--text-muted); display:none; }
+  #status.visible { display:block; }
+  #progressBar2 { height:3px; background:var(--slate); border-radius:2px; margin-top:10px; overflow:hidden; }
+  #progressFill { height:100%; background:var(--accent); width:0%; border-radius:2px; transition:width .3s; }
+
+  /* Grid */
+  #pagesGrid { display:grid; grid-template-columns:repeat(auto-fill,minmax(340px,1fr)); gap:16px; margin-bottom:24px; }
+
+  .page-card {
+    background:var(--panel); border:1px solid var(--border); border-radius:10px;
+    overflow:hidden; display:none;
+  }
+  .page-card.visible { display:block; }
+  .page-thumb { width:100%; aspect-ratio:4/3; object-fit:contain; background:var(--bg); display:block; }
+  .page-body { padding:14px 16px; }
+  .page-op { font-size:13px; font-weight:700; color:var(--accent); letter-spacing:0.05em; text-transform:uppercase; margin-bottom:10px; }
+
+  .comp-list { display:flex; flex-direction:column; gap:6px; margin-bottom:10px; }
+  .comp-row { display:flex; gap:6px; align-items:center; }
+  .comp-row input.qty {
+    width:52px; padding:6px 8px; border-radius:5px;
+    border:1px solid var(--border); background:var(--bg);
+    color:var(--accent); font-family:'JetBrains Mono',monospace;
+    font-size:15px; text-align:center; font-weight:700;
+  }
+  .comp-row input.nome {
+    flex:1; padding:6px 10px; border-radius:5px;
+    border:1px solid var(--border); background:var(--bg);
+    color:var(--text); font-family:'JetBrains Mono',monospace;
+    font-size:13px; font-weight:500;
+  }
+  .comp-row input:focus { outline:none; border-color:var(--accent); }
+  .btn-del {
+    background:none; border:none; color:var(--error); font-size:18px;
+    cursor:pointer; padding:4px 8px; border-radius:4px; line-height:1;
+    flex-shrink:0; opacity:.7;
+  }
+  .btn-del:hover { opacity:1; background:#DC262622; }
+  .btn-add {
+    background:none; border:1px dashed var(--slate); color:var(--text-muted);
+    font-size:13px; font-weight:600; cursor:pointer; padding:6px;
+    border-radius:5px; width:100%; transition:.15s; font-family:'Inter',sans-serif;
+  }
+  .btn-add:hover { border-color:var(--accent); color:var(--accent); }
+
+  .obs-row { display:flex; gap:8px; align-items:center; margin-top:8px; }
+  .obs-row label { font-size:11px; color:var(--gray); white-space:nowrap; }
+  .obs-row input {
+    flex:1; padding:6px 10px; border-radius:5px;
+    border:1px solid var(--border); background:var(--bg);
+    color:var(--warn); font-family:'JetBrains Mono',monospace;
+    font-size:13px; font-weight:500;
+  }
+  .obs-row input:focus { outline:none; border-color:var(--warn); }
+
+  /* Botão gerar */
+  #btnGerar {
+    display:none; width:100%; padding:16px; border:none; border-radius:10px;
+    background:var(--accent);
+    color:#fff; font-family:'Inter',sans-serif; font-size:16px;
+    font-weight:700; cursor:pointer; letter-spacing:0.02em;
+    transition:.15s; margin-bottom:20px;
+  }
+  #btnGerar.visible { display:block; }
+  #btnGerar:hover { filter:brightness(1.1); }
+</style>
+</head>
+<body>
+
+<div class="rp-logo">
+  <span class="rp-wordmark">ritmoprod<span>.</span></span>
+  <span class="rp-tag">TV Embalagem</span>
+</div>
+
+<h1>Gerador de Painel de Embalagem</h1>
+<p class="sub">Arraste um PDF de embalagem — gera o HTML pronto para TV em segundos.</p>
+
+<div id="dropZone">
+  <span class="icon">📄</span>
+  <div class="txt">Arraste o PDF aqui</div>
+  <div class="sub2">ou clique para selecionar</div>
+  <input type="file" id="fileInput" accept=".pdf">
+</div>
+
+<div class="config-box" id="configBox">
+  <div class="field">
+    <label>Nome do Produto</label>
+    <input type="text" id="produtoNome" placeholder="Ex: RACK INTENSE">
+  </div>
+  <div class="field">
+    <label>Fotos do Produto (opcional)</label>
+    <input type="file" id="fotoInput" accept="image/*" multiple onchange="previewFoto(this)">
+    <div id="fotoPreviewArea" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;"></div>
+  </div>
+</div>
+
+<div id="status" class="visible" style="display:none">
+  <span id="statusTxt">Processando...</span>
+  <div id="progressBar2"><div id="progressFill"></div></div>
+</div>
+
+<div id="pagesGrid"></div>
+
+<button id="btnGerar" onclick="gerarHTML()">Gerar HTML para TV</button>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script>
+pdfjsLib.GlobalWorkerOptions.workerSrc =
+  'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+const BOILERPLATE = [
+  /^sim$/i, /^n[ãa]o$/i, /^\d+$/, /^\d+[,\.]\d+\s*mm$/i,
+  /^\d+\s*[xX]\s*\d+/, /^t\d+$/i, /^acoplado$/i, /^triplex$/i,
+  /^0,5\s*mm$/i, /^plastificar$/i,
+  /^descri[çc][ãa]o$/i, /^tipo$/i, /^medidas$/i, /^qtd[e]?\.?$/i,
+  /^embalagem$/i, /^volume$/i,
+];
+
+function isBoilerplate(line) {
+  const l = line.trim();
+  if (!l || l.length < 2) return true;
+  return BOILERPLATE.some(rx => rx.test(l));
+}
+
+async function extrairComponentes(page) {
+  const textContent = await page.getTextContent();
+  const pdfH = page.getViewport({ scale: 1 }).height;
+  const yMin = pdfH * 0.08;
+  const yMax = pdfH * 0.60;
+
+  const linhas = textContent.items
+    .filter(it => { const y = it.transform[5]; return y >= yMin && y <= yMax; })
+    .map(it => it.str.trim())
+    .filter(s => s.length > 0);
+
+  const comps = [];
+  for (const linha of linhas) {
+    if (!isBoilerplate(linha)) {
+      const matchQty = linha.match(/^\(?(\d+)\s*[Xx]\s*/);
+      const qty = matchQty ? parseInt(matchQty[1]) : 1;
+      const nome = matchQty ? linha.replace(matchQty[0], '').replace(/\)?$/, '').trim() : linha;
+      if (nome) comps.push({ qty, name: nome });
+    }
+  }
+  const merged = [];
+  for (const c of comps) {
+    if (merged.length > 0 && /^n[°º\.]\s*\d+/i.test(c.name)) {
+      merged[merged.length - 1].name += ' ' + c.name;
+    } else {
+      merged.push(c);
+    }
+  }
+  const OBS_PATTERN = /\bpara\s+(cima|baixo|frente|tr[áa]s|fora|dentro)\b|\bcom\s+pintura\b|\bsem\s+pintura\b|\bpintura\s+para\b|\baten[çc][ãa]o\b|\borientar\b/i;
+  const components = [];
+  const obsItems = [];
+  for (const c of merged) {
+    if (OBS_PATTERN.test(c.name) && c.name.split(' ').length >= 3) {
+      obsItems.push(c.name);
+    } else {
+      components.push(c);
+    }
+  }
+  return { components, obs: obsItems.join(' / ') };
+}
+
+let pagesData = [];
+
+const dropZone = document.getElementById('dropZone');
+const fileInput = document.getElementById('fileInput');
+
+dropZone.addEventListener('click', () => fileInput.click());
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('over'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('over'));
+dropZone.addEventListener('drop', e => {
+  e.preventDefault(); dropZone.classList.remove('over');
+  const file = e.dataTransfer.files[0];
+  if (file && file.type === 'application/pdf') processar(file);
+});
+fileInput.addEventListener('change', e => {
+  if (e.target.files[0]) processar(e.target.files[0]);
+});
+
+async function processar(file) {
+  pagesData = [];
+  document.getElementById('pagesGrid').innerHTML = '';
+  document.getElementById('btnGerar').classList.remove('visible');
+
+  const nomeSugerido = file.name.replace(/\.pdf$/i, '').replace(/_/g, ' ').toUpperCase();
+  document.getElementById('produtoNome').value = nomeSugerido;
+  document.getElementById('configBox').classList.add('visible');
+
+  mostrarStatus('Lendo PDF...');
+
+  const arrayBuffer = await file.arrayBuffer();
+  const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+  const total = pdf.numPages;
+
+  mostrarStatus(`Processando ${total} páginas...`, 0);
+
+  for (let i = 1; i <= total; i++) {
+    mostrarStatus(`Processando página ${i} de ${total}...`, (i-1)/total * 100);
+
+    const page = await pdf.getPage(i);
+    const scale = 2.2;
+    const viewport = page.getViewport({ scale });
+    const canvas = document.createElement('canvas');
+    canvas.width = viewport.width;
+    canvas.height = viewport.height;
+    await page.render({ canvasContext: canvas.getContext('2d'), viewport }).promise;
+    const imgBase64 = canvas.toDataURL('image/jpeg', 0.88);
+
+    const { components, obs } = await extrairComponentes(page);
+    const opName = 'CAMADA ' + String(i).padStart(2, '0');
+    pagesData.push({ img: imgBase64, op: opName, components, obs });
+    adicionarCard(i - 1, opName, imgBase64, components, obs);
+  }
+
+  mostrarStatus(`${total} páginas processadas! Revise os componentes e clique em Gerar.`, 100);
+  document.getElementById('btnGerar').classList.add('visible');
+}
+
+function adicionarCard(idx, opName, imgBase64, comps, obs = '') {
+  const grid = document.getElementById('pagesGrid');
+  const card = document.createElement('div');
+  card.className = 'page-card visible';
+  card.id = 'card' + idx;
+
+  const img = document.createElement('img');
+  img.className = 'page-thumb';
+  img.src = imgBase64;
+  img.alt = opName;
+  card.appendChild(img);
+
+  const body = document.createElement('div');
+  body.className = 'page-body';
+  body.innerHTML = `
+    <div class="page-op">${opName}</div>
+    <div class="comp-list" id="compList${idx}"></div>
+    <button class="btn-add" onclick="addComp(${idx})">+ Adicionar componente</button>
+    <div class="obs-row">
+      <label>OBS:</label>
+      <input type="text" id="obs${idx}" placeholder="Ex: FURAÇÕES PARA CIMA">
+    </div>
+  `;
+  card.appendChild(body);
+  grid.appendChild(card);
+
+  comps.forEach(c => addCompRow(idx, c.qty, c.name));
+  if (obs) document.getElementById('obs' + idx).value = obs;
+}
+
+function addComp(idx) { addCompRow(idx, 1, ''); }
+
+function addCompRow(idx, qty, nome) {
+  const list = document.getElementById('compList' + idx);
+  const row = document.createElement('div');
+  row.className = 'comp-row';
+  row.innerHTML = `
+    <div style="display:flex;flex-direction:column;align-items:center;gap:2px;">
+      <span style="font-size:9px;color:#71717A;letter-spacing:0.05em;font-family:'Inter',sans-serif;font-weight:600;text-transform:uppercase;">Qtd</span>
+      <input class="qty" type="number" value="${qty}" min="1" max="99">
+    </div>
+    <input class="nome" type="text" value="${nome}" placeholder="Nome do componente">
+    <button class="btn-del" onclick="this.parentElement.remove()">×</button>
+  `;
+  list.appendChild(row);
+}
+
+function mostrarStatus(txt, pct) {
+  const el = document.getElementById('status');
+  el.style.display = 'block';
+  document.getElementById('statusTxt').textContent = txt;
+  if (pct !== undefined) document.getElementById('progressFill').style.width = pct + '%';
+}
+
+function coletarDados() {
+  const produto = document.getElementById('produtoNome').value.trim() || 'PRODUTO';
+  const ops = pagesData.map((p, idx) => {
+    const rows = document.querySelectorAll('#compList' + idx + ' .comp-row');
+    const components = [];
+    rows.forEach(row => {
+      const qty = parseInt(row.querySelector('.qty').value) || 1;
+      const name = row.querySelector('.nome').value.trim();
+      if (name) components.push({ qty, name });
+    });
+    const obs = document.getElementById('obs' + idx)?.value.trim() || '';
+    return { op: p.op, obs, components };
+  });
+  return { produto, ops };
+}
+
+function gerarHTML() {
+  const { produto, ops } = coletarDados();
+
+  const imgsJS = pagesData.map((p, i) => `    ${i}: "${p.img}"`).join(',\n');
+  const opsJS  = JSON.stringify(ops, null, 2);
+
+  const fotos = fotosBase64;
+  const carouselImgsHtml = fotos.map((src, i) =>
+    `<img class="carousel-img${i===0?' ativo':''}" src="${src}">`
+  ).join('');
+  const carouselBtnsHtml = fotos.length > 1
+    ? '<button class="carousel-btn prev" onclick="carouselPrev()">&#8249;</button><button class="carousel-btn next" onclick="carouselNext()">&#8250;</button>'
+    : '';
+  const carouselDotsHtml = fotos.length > 1
+    ? '<div class="carousel-dots">' + fotos.map((_, i) =>
+        `<div class="carousel-dot${i===0?' ativo':''}" onclick="carouselGoto(${i})"></div>`
+      ).join('') + '</div>'
+    : '';
+  const fotoHtml = fotos.length
+    ? `<div id="fotoProduto"><div class="carousel">${carouselImgsHtml}${carouselBtnsHtml}</div>${carouselDotsHtml}</div>`
+    : '';
+  const carouselJs = fotos.length > 1
+    ? `let _ci=0;const _imgs=document.querySelectorAll('.carousel-img'),_dots=document.querySelectorAll('.carousel-dot');function carouselGoto(n){_imgs[_ci].classList.remove('ativo');_dots[_ci]&&_dots[_ci].classList.remove('ativo');_ci=(n+_imgs.length)%_imgs.length;_imgs[_ci].classList.add('ativo');_dots[_ci]&&_dots[_ci].classList.add('ativo');}function carouselNext(){carouselGoto(_ci+1);}function carouselPrev(){carouselGoto(_ci-1);}setInterval(carouselNext,4000);`
+    : '';
+
+  const html = `<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TV Embalagem — ${produto} · ritmoprod</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap');
+  :root{
+    --bg:#0A0A0B;--panel:#18181B;--border:#3F3F46;
+    --gray:#71717A;--line:#E4E4E7;
+    --accent:#FF5C1F;--tint:#FFE9DF;
+    --success:#16A34A;--warn:#EAB308;--error:#DC2626;--info:#3B82F6;
+    --text:#E4E4E7;--text-muted:#71717A;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);height:100vh;display:flex;flex-direction:column;overflow:hidden;}
+
+  /* ── HEADER ── */
+  .header{display:flex;justify-content:space-between;align-items:center;padding:8px 20px;border-bottom:1px solid var(--border);background:var(--bg);flex-shrink:0;gap:12px;}
+  .rp-logo{display:flex;align-items:center;gap:8px;}
+  .rp-wordmark{font-family:'Inter',sans-serif;font-size:13px;font-weight:700;color:var(--line);letter-spacing:-0.03em;}
+  .rp-wordmark span{color:var(--accent);}
+  .rp-sep{color:var(--border);font-size:16px;font-weight:300;}
+  .produto-nome{font-size:14px;font-weight:700;color:var(--text);letter-spacing:-0.01em;white-space:nowrap;}
+  .controls{display:flex;align-items:center;gap:8px;flex-shrink:0;}
+  .controls input[type=number]{width:80px;padding:7px 10px;border-radius:6px;border:1px solid var(--border);background:var(--panel);color:var(--text);font-family:'JetBrains Mono',monospace;font-size:16px;text-align:center;font-weight:700;}
+  .controls input[type=number]:focus{outline:none;border-color:var(--accent);}
+  .btn{padding:7px 16px;border-radius:6px;border:none;background:var(--accent);color:#fff;font-weight:700;font-size:13px;cursor:pointer;transition:.15s;white-space:nowrap;font-family:'Inter',sans-serif;}
+  .btn:hover{filter:brightness(1.1);}
+  .btn.stop{background:var(--error);}
+  .btn.fs{background:var(--panel);color:var(--text);border:1px solid var(--border);}
+  .btn.fs:hover{border-color:var(--accent);color:var(--accent);}
+
+  /* ── LAYOUT PRINCIPAL ── */
+  .container{display:grid;grid-template-columns:3fr 1fr;flex:1;overflow:hidden;min-height:0;}
+  .left{padding:10px 14px;display:flex;flex-direction:column;gap:8px;overflow:hidden;min-height:0;}
+  .right{padding:12px;border-left:1px solid var(--border);overflow:hidden;display:flex;flex-direction:column;gap:8px;min-height:0;}
+
+  /* ── CAMADA BADGE ── */
+  #etapaPrincipal{background:var(--accent);color:#fff;padding:8px 16px;border-radius:8px;font-size:48px;font-weight:800;text-align:center;letter-spacing:-0.02em;flex-shrink:0;display:flex;align-items:center;justify-content:center;line-height:1;}
+
+  /* ── ALERTA OBS — destaque máximo ── */
+  #obsDisplay{background:#EAB30820;border:2px solid var(--warn);border-radius:6px;padding:10px 20px;font-size:22px;font-weight:800;color:var(--warn);text-align:center;flex-shrink:0;letter-spacing:0.03em;display:none;text-transform:uppercase;}
+
+  /* ── COMPONENTES — grade fixa, todos visíveis ── */
+  #componentesGrade{display:flex;flex-wrap:wrap;gap:6px;flex-shrink:0;padding:6px 0;}
+  .comp-card{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:8px 16px;display:flex;align-items:center;gap:10px;min-width:0;}
+  .comp-card-qty{font-family:'JetBrains Mono',monospace;font-size:42px;font-weight:700;color:var(--accent);line-height:1;flex-shrink:0;}
+  .comp-card-nome{font-size:16px;font-weight:700;color:var(--text);line-height:1.2;letter-spacing:0.01em;}
+
+  /* ── DESENHO DA CAMADA ── */
+  #desenhoCamada{background:var(--panel);border-radius:8px;flex:1;min-height:0;display:flex;align-items:center;justify-content:center;color:var(--gray);overflow:hidden;border:1px solid var(--border);}
+  #desenhoCamada img{max-width:100%;max-height:100%;object-fit:contain;}
+  #desenhoCamada span{font-size:18px;color:var(--gray);text-align:center;}
+
+  /* ── TIMER ── */
+  .timer-row{display:flex;align-items:center;gap:12px;flex-shrink:0;}
+  #timerDisplay{font-family:'JetBrains Mono',monospace;font-size:44px;color:var(--accent);min-width:80px;text-align:center;font-weight:700;line-height:1;flex-shrink:0;}
+  .progress-bar-wrap{flex:1;height:4px;background:var(--panel);border-radius:2px;overflow:hidden;}
+  .progress-bar{height:100%;background:var(--accent);width:100%;border-radius:2px;}
+
+  /* ── COLUNA DIREITA ── */
+  #fotoProduto{flex-shrink:0;border-bottom:1px solid var(--border);padding-bottom:8px;}
+  .carousel{position:relative;width:100%;flex:0 0 auto;aspect-ratio:1/1;overflow:hidden;border-radius:8px;background:var(--bg);}
+  .carousel-img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;opacity:0;transition:opacity .4s;}
+  .carousel-img.ativo{opacity:1;}
+  .carousel-btn{position:absolute;top:50%;transform:translateY(-50%);background:#00000088;border:none;color:#fff;font-size:20px;cursor:pointer;padding:3px 8px;border-radius:4px;z-index:10;line-height:1;}
+  .carousel-btn.prev{left:4px;} .carousel-btn.next{right:4px;}
+  .carousel-dots{display:flex;justify-content:center;gap:4px;margin-top:4px;}
+  .carousel-dot{width:5px;height:5px;border-radius:50%;background:var(--border);cursor:pointer;transition:.15s;}
+  .carousel-dot.ativo{background:var(--accent);}
+  .section-title{font-size:10px;letter-spacing:0.08em;color:var(--gray);text-transform:uppercase;flex-shrink:0;font-weight:600;}
+  #mapaTrilhos{overflow-y:auto;flex:1;min-height:0;}
+  .op-item{background:var(--panel);padding:10px 12px;border-left:3px solid var(--border);border-radius:0 5px 5px 0;font-size:13px;font-weight:600;transition:.15s;flex-shrink:0;cursor:pointer;color:var(--text-muted);margin-bottom:2px;}
+  .op-item:hover{border-left-color:var(--gray);color:var(--text);}
+  .op-item.ativo{border-left:3px solid var(--accent);background:#FF5C1F0D;color:var(--accent);font-weight:700;}
+
+  /* ── FOOTER + OVERLAY ── */
+  .footer{text-align:center;padding:4px;background:var(--bg);font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:0.08em;color:var(--gray);flex-shrink:0;border-top:1px solid var(--border);}
+  @keyframes pulseEtapa{0%{transform:scale(1);}40%{transform:scale(1.04);}100%{transform:scale(1);}}
+  .pulse{animation:pulseEtapa .35s ease-out;}
+  #overlayInicio{position:fixed;inset:0;background:#000000CC;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:999;cursor:pointer;gap:20px;}
+  #overlayInicio .ol-logo{font-family:'Inter',sans-serif;font-size:18px;font-weight:700;color:var(--line);letter-spacing:-0.03em;}
+  #overlayInicio .ol-logo span{color:var(--accent);}
+  #overlayInicio .ol-title{font-size:32px;font-weight:800;color:var(--text);letter-spacing:-0.02em;}
+  #overlayInicio .ol-sub{font-size:14px;color:var(--text-muted);}
+  #overlayInicio .ol-badge{background:var(--accent);color:#fff;font-size:14px;font-weight:700;padding:10px 28px;border-radius:6px;}
+</style>
+</head>
+<body>
+<div class="header">
+  <div class="rp-logo">
+    <span class="rp-wordmark">ritmoprod<span>.</span></span>
+    <span class="rp-sep">/</span>
+    <span class="produto-nome">${produto}</span>
+  </div>
+  <div class="controls">
+    <input type="number" id="tempoInput" placeholder="seg" min="1" max="9999" value="5">
+    <button class="btn" onclick="iniciarTempoManual()">▶ Iniciar</button>
+    <button class="btn stop" onclick="pararTimer()">■ Parar</button>
+    <button class="btn fs" onclick="toggleFullscreen()">⛶ Tela Cheia</button>
+  </div>
+</div>
+<div class="container">
+  <div class="left">
+    <div id="etapaPrincipal">AGUARDANDO</div>
+    <div id="obsDisplay"></div>
+    <div id="componentesGrade"><span style="color:var(--text-muted);font-size:14px;padding:8px;">Digite o tempo e clique Iniciar</span></div>
+    <div id="desenhoCamada"><span>Desenho da camada</span></div>
+    <div class="timer-row">
+      <div id="timerDisplay">--s</div>
+      <div class="progress-bar-wrap"><div class="progress-bar" id="progressBar"></div></div>
+    </div>
+  </div>
+  <div class="right">
+    ${fotoHtml}
+    <div class="section-title">Sequência de Camadas</div>
+    <div id="mapaTrilhos"></div>
+  </div>
+</div>
+<div class="footer">PADRÃO DE EMBALAGEM · ${produto} · ritmoprod.</div>
+<div id="overlayInicio" onclick="iniciarTela()">
+  <div class="ol-logo">ritmoprod<span>.</span></div>
+  <div class="ol-title">Painel de Embalagem</div>
+  <div class="ol-sub">${produto}</div>
+  <div class="ol-badge">▶ Clique para iniciar</div>
+</div>
+<script>
+  const IMGS={
+${imgsJS}
+  };
+  const opsData=${opsJS};
+  const totalEtapas=opsData.length;
+  let intervalo=null,etapaAtual=0;
+  function init(){const c=document.getElementById('mapaTrilhos');c.innerHTML='';opsData.forEach((op,idx)=>{const d=document.createElement('div');d.id='step'+idx;d.className='op-item';d.textContent=op.op+' · '+op.components.length+' itens';d.addEventListener('click',()=>{etapaAtual=idx;destacarEtapa();});c.appendChild(d);});}
+  function tocarSom(){try{const ctx=new(window.AudioContext||window.webkitAudioContext)();const osc=ctx.createOscillator(),gain=ctx.createGain();osc.connect(gain);gain.connect(ctx.destination);osc.type='sine';osc.frequency.value=880;gain.gain.setValueAtTime(0.35,ctx.currentTime);gain.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.4);osc.start();osc.stop(ctx.currentTime+0.4);}catch(e){}}
+  function iniciarTempoManual(){const v=Number(document.getElementById('tempoInput').value);if(!v||v<=0)return;if(intervalo)clearInterval(intervalo);etapaAtual=0;let t=v;atualizar(t,v);destacarEtapa();intervalo=setInterval(()=>{t--;atualizar(t,v);if(t<=0){tocarSom();etapaAtual=(etapaAtual+1)%totalEtapas;t=v;destacarEtapa();}},1000);}
+  function pararTimer(){if(intervalo){clearInterval(intervalo);intervalo=null;}document.getElementById('timerDisplay').textContent='--s';const bar=document.getElementById('progressBar');bar.style.transition='none';bar.style.width='100%';document.getElementById('etapaPrincipal').textContent='AGUARDANDO';document.getElementById('componentesGrade').innerHTML='<span style="color:var(--text-muted);font-size:14px;padding:8px;">Digite o tempo e clique Iniciar</span>';document.getElementById('obsDisplay').style.display='none';document.querySelectorAll('.op-item').forEach(e=>e.classList.remove('ativo'));document.getElementById('desenhoCamada').innerHTML='<span>Desenho da camada</span>';}
+  function destacarEtapa(){
+    document.querySelectorAll('.op-item').forEach(e=>e.classList.remove('ativo'));
+    const el=document.getElementById('step'+etapaAtual);
+    if(el){el.classList.add('ativo');el.scrollIntoView({block:'nearest',behavior:'smooth'});}
+    const op=opsData[etapaAtual];
+    const _ep=document.getElementById('etapaPrincipal');
+    _ep.innerHTML=op.op+' <span style="font-size:22px;font-weight:600;opacity:0.55;"> / '+totalEtapas+'</span>';
+    _ep.classList.remove('pulse');void _ep.offsetWidth;_ep.classList.add('pulse');
+    const obs=document.getElementById('obsDisplay');
+    if(op.obs){obs.textContent='⚠ '+op.obs;obs.style.display='block';}else{obs.style.display='none';}
+    const grade=document.getElementById('componentesGrade');
+    grade.innerHTML=op.components.map(c=>
+      '<div class="comp-card"><span class="comp-card-qty">×'+c.qty+'</span><span class="comp-card-nome">'+c.name+'</span></div>'
+    ).join('');
+    const area=document.getElementById('desenhoCamada');
+    const src=IMGS[etapaAtual];
+    if(src){area.innerHTML='<img src="'+src+'" alt="'+op.op+'">';}else{area.innerHTML='<span>'+op.op+'</span>';}
+  }
+  function atualizar(s,total){document.getElementById('timerDisplay').textContent=s+'s';const pct=(s/(total||1))*100;const bar=document.getElementById('progressBar');bar.style.transition=s===total?'none':'width 1s linear';bar.style.width=pct+'%';}
+  function iniciarTela(){const o=document.getElementById('overlayInicio');document.documentElement.requestFullscreen().then(()=>{document.querySelector('.btn.fs').textContent='✕ Sair';}).catch(()=>{});o.style.display='none';iniciarTempoManual();}
+  function toggleFullscreen(){const btn=document.querySelector('.btn.fs');if(!document.fullscreenElement){document.documentElement.requestFullscreen().catch(()=>{});btn.textContent='✕ Sair';}else{document.exitFullscreen();btn.textContent='⛶ Tela Cheia';}}
+  document.addEventListener('fullscreenchange',()=>{const btn=document.querySelector('.btn.fs');if(!document.fullscreenElement)btn.textContent='⛶ Tela Cheia';});
+  document.addEventListener('keydown',e=>{if(e.target.tagName==='INPUT')return;if(e.code==='Space'){e.preventDefault();if(intervalo){clearInterval(intervalo);intervalo=null;document.getElementById('timerDisplay').textContent='⏸';}else{const v=Number(document.getElementById('tempoInput').value);if(!v)return;let t=v;atualizar(t,v);destacarEtapa();intervalo=setInterval(()=>{t--;atualizar(t,v);if(t<=0){tocarSom();etapaAtual=(etapaAtual+1)%totalEtapas;t=v;destacarEtapa();}},1000);}}else if(e.code==='ArrowRight'||e.code==='Enter'){e.preventDefault();etapaAtual=(etapaAtual+1)%totalEtapas;destacarEtapa();}else if(e.code==='ArrowLeft'){e.preventDefault();etapaAtual=(etapaAtual-1+totalEtapas)%totalEtapas;destacarEtapa();}});
+  window.addEventListener('load',init);
+  ${carouselJs}
+<\/script>
+</body>
+</html>`;
+
+  const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  const nomeArq = (document.getElementById('produtoNome').value.trim() || 'produto')
+    .replace(/\s+/g, '_').toUpperCase();
+  a.href = url;
+  a.download = 'tv_' + nomeArq + '.html';
+  a.click();
+  URL.revokeObjectURL(url);
+
+  mostrarStatus('HTML gerado e baixado! Abra no browser para usar na TV.', 100);
+}
+
+let fotosBase64 = [];
+function previewFoto(input) {
+  const area = document.getElementById('fotoPreviewArea');
+  fotosBase64 = []; area.innerHTML = '';
+  if (!input.files.length) return;
+  Array.from(input.files).forEach(file => {
+    const reader = new FileReader();
+    reader.onload = e => {
+      fotosBase64.push(e.target.result);
+      const img = document.createElement('img');
+      img.src = e.target.result;
+      img.style.cssText = 'height:72px;border-radius:5px;border:1px solid var(--border);object-fit:cover;';
+      area.appendChild(img);
+    };
+    reader.readAsDataURL(file);
+  });
+}
+</script>
+</body>
+</html>
