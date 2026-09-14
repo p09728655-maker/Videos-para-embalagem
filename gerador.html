@@ -19,7 +19,7 @@
     --slate:#3F3F46; --gray:#71717A; --line:#E4E4E7;
     --accent:#FF5C1F; --tint:#FFE9DF;
     --success:#16A34A; --warn:#EAB308; --error:#DC2626; --info:#3B82F6;
-    --text:#E4E4E7; --text-muted:#71717A;
+    --text:#E4E4E7; --text-muted:#A1A1AA;   /* #71717A ficava abaixo do contraste AA */
   }
   * { box-sizing:border-box; margin:0; padding:0; }
   body { font-family:'Inter',sans-serif; background:var(--bg); color:var(--text); min-height:100vh; padding:32px 28px; }
@@ -38,25 +38,34 @@
     padding:56px 40px; text-align:center; cursor:pointer;
     transition:.15s; margin-bottom:24px;
   }
-  #dropZone:hover, #dropZone.over { background:var(--tint)11; border-color:var(--accent); }
+  #dropZone:hover, #dropZone.over { background:rgba(255,92,31,0.06); border-color:var(--accent); }
   #dropZone .icon { font-size:48px; display:block; margin-bottom:12px; opacity:.6; }
   #dropZone .txt { font-size:18px; font-weight:600; color:var(--text); }
   #dropZone .sub2 { font-size:13px; color:var(--text-muted); margin-top:4px; }
+  /* Com o PDF ja lido, a etapa 1 encolhe: quem esta conferindo camadas nao
+     precisa de meia tela de area de arraste. */
+  #dropZone.compacto { padding:16px 20px; }
+  #dropZone.compacto .icon { font-size:22px; margin-bottom:4px; }
+  #dropZone.compacto .txt { font-size:14px; }
+  #dropZone.compacto .sub2 { font-size:12px; }
   #fileInput { display:none; }
 
   /* Config */
   .config-box {
     background:var(--panel); border:1px solid var(--border);
-    border-radius:10px; padding:20px 24px; margin-bottom:20px;
-    display:none; gap:20px; flex-wrap:wrap; align-items:flex-end;
+    border-radius:10px; padding:22px 24px; margin-bottom:20px;
+    display:none; gap:18px 24px; align-items:end;
+    grid-template-columns:repeat(auto-fit,minmax(210px,1fr));
   }
-  .config-box.visible { display:flex; }
-  .field { display:flex; flex-direction:column; gap:6px; }
+  .config-box.visible { display:grid; }
+  .field { display:flex; flex-direction:column; gap:6px; min-width:0; }
+  .field.largo { grid-column:span 2; }        /* o nome do produto manda na linha */
+  @media (max-width:560px){ .field.largo { grid-column:span 1; } }
   .field label { font-size:11px; color:var(--gray); letter-spacing:0.05em; text-transform:uppercase; font-weight:600; }
   .field input {
     padding:10px 14px; border-radius:6px; border:1px solid var(--border);
     background:var(--bg); color:var(--text); font-family:'Inter',sans-serif;
-    font-size:15px; font-weight:500; min-width:280px;
+    font-size:15px; font-weight:500; width:100%; min-width:0;
   }
   .field input:focus { outline:none; border-color:var(--accent); }
 
@@ -127,6 +136,49 @@
   #btnGerar.visible { display:block; }
   #btnGerar:hover { filter:brightness(1.1); }
 
+  /* ── ETAPAS ──
+     O gerador e um fluxo (arquivo -> produto -> conferencia -> publicacao),
+     nao uma pilha de caixas. O rotulo numerado diz onde a pessoa esta. */
+  .etapa { display:flex; align-items:center; gap:10px; margin:34px 0 12px;
+           font-size:12px; font-weight:700; letter-spacing:0.08em;
+           text-transform:uppercase; color:var(--gray); }
+  .etapa .n { display:inline-flex; align-items:center; justify-content:center;
+              width:22px; height:22px; border-radius:50%; border:1px solid var(--border);
+              color:var(--text-muted); font-size:11px; letter-spacing:0; flex-shrink:0; }
+  .etapa .cont { margin-left:auto; text-transform:none; letter-spacing:0;
+                 font-weight:600; color:var(--text-muted); }
+
+  /* ── VERSAO PUBLICADA ──
+     Aparece na etapa de publicacao, que e onde a data muda uma decisao:
+     publicar cria ou substitui? Faixa de leitura, sem cor de acao — nao
+     disputa com o botao logo abaixo. */
+  #versaoBox { display:none; background:var(--panel); border:1px solid var(--border);
+               border-left:3px solid var(--border); border-radius:0 8px 8px 0;
+               padding:14px 18px; margin-bottom:14px; font-size:13.5px;
+               line-height:1.6; color:var(--text-muted); }
+  #versaoBox.visivel { display:block; }
+  #versaoBox .rot { display:block; font-size:11px; font-weight:700; letter-spacing:0.08em;
+                    text-transform:uppercase; color:var(--gray); margin-bottom:4px; }
+  #versaoBox .data { font-family:'JetBrains Mono',monospace; font-weight:700; color:var(--line); }
+  #versaoBox b { color:var(--text); }
+  #versaoBox.substitui { border-left-color:var(--warn); }
+  #versaoBox.substitui .rot { color:var(--warn); }
+  #versaoBox.novo { border-left-color:var(--success); }
+  #versaoBox.novo .rot { color:var(--success); }
+
+  /* ── RESULTADO ──
+     O que aconteceu depois de publicar fica junto do botao que publicou.
+     Antes a confirmacao aparecia la em cima, fora da tela. */
+  #resultado { display:none; background:var(--panel); border:1px solid var(--border);
+               border-radius:10px; padding:16px 18px; font-size:14px; line-height:1.7;
+               color:var(--text-muted); }
+  #resultado.visivel { display:block; }
+  #resultado b { color:var(--text); }
+  #resultado a { color:var(--accent); font-weight:700; text-decoration:none; }
+  #resultado a:hover { text-decoration:underline; }
+  #resultado .versao-nova { display:block; margin-top:6px; font-size:12.5px; color:var(--gray); }
+  #resultado .versao-nova .data { font-family:'JetBrains Mono',monospace; color:var(--text-muted); }
+
   /* ── SPLASH RITMOPATRIMAR (abertura do app) ── */
   #splash{position:fixed;top:0;left:0;right:0;bottom:0;background:#1A1A1A;z-index:9999;
           display:flex;flex-direction:column;align-items:center;justify-content:center;
@@ -147,8 +199,12 @@
   #btnPublicar{background:var(--accent);color:#fff;}
   #btnPublicar:hover{filter:brightness(1.1);}
   #btnPublicar:disabled{opacity:.5;cursor:default;}
-  #btnGerar2{background:var(--panel);color:var(--text);border:1px solid var(--border);flex:0 0 220px;}
+  /* Baixar .zip e saida manual, nao a acao do dia: peso menor, largura menor. */
+  #btnGerar2{background:transparent;color:var(--text-muted);border:1px solid var(--border);
+             flex:0 0 190px;font-size:14px;font-weight:600;}
   #btnGerar2:hover{border-color:var(--accent);color:var(--accent);}
+  .acoes button:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
+  @media (max-width:640px){ .acoes{flex-wrap:wrap;} #btnGerar2{flex:1 1 100%;} }
 
   .sessao{display:flex;align-items:center;gap:10px;font-size:12px;color:var(--text-muted);
           margin-bottom:18px;}
@@ -196,6 +252,8 @@
 <h1>Gerador de Painel de Embalagem</h1>
 <p class="sub">Arraste o PDF de embalagem, revise os componentes e publique direto para a TV.</p>
 
+<h2 class="etapa"><span class="n">1</span>PDF de embalagem</h2>
+
 <div id="dropZone">
   <span class="icon">📄</span>
   <div class="txt">Arraste o PDF aqui</div>
@@ -203,14 +261,16 @@
   <input type="file" id="fileInput" accept=".pdf">
 </div>
 
+<h2 class="etapa" id="etapa2" style="display:none"><span class="n">2</span>Produto e exibição</h2>
+
 <div class="config-box" id="configBox">
-  <div class="field">
+  <div class="field largo">
     <label>Nome do Produto</label>
     <input type="text" id="produtoNome" placeholder="Ex: RACK INTENSE">
   </div>
   <div class="field">
     <label>Tempo por camada (seg)</label>
-    <input type="number" id="tempoPadrao" value="5" min="1" max="9999" style="min-width:110px">
+    <input type="number" id="tempoPadrao" value="5" min="1" max="9999">
   </div>
   <div class="field">
     <label>Exibição na TV</label>
@@ -232,14 +292,25 @@
   <div id="progressBar2"><div id="progressFill"></div></div>
 </div>
 
+<h2 class="etapa" id="etapa3" style="display:none">
+  <span class="n">3</span>Conferência das camadas
+  <span class="cont" id="contCamadas"></span>
+</h2>
+
 <div id="pagesGrid"></div>
+
+<h2 class="etapa" id="etapa4" style="display:none"><span class="n">4</span>Publicação</h2>
+
+<div id="versaoBox"></div>
 
 <div class="sessao" id="sessao"></div>
 
 <div class="acoes" id="acoes">
   <button id="btnPublicar" onclick="publicarPainel()">Publicar para a TV</button>
-  <button id="btnGerar2" onclick="gerarPacote()">Baixar .zip</button>
+  <button id="btnGerar2" onclick="gerarPacote()" title="Saída manual: pacote para subir no repositório">Baixar .zip</button>
 </div>
+
+<div id="resultado"></div>
 
 <div id="modalLogin">
   <div class="caixa-login">
@@ -261,8 +332,22 @@
 <script src="supabase-config.js"></script>
 <script src="publicar.js"></script>
 <script>
-pdfjsLib.GlobalWorkerOptions.workerSrc =
-  'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+/* Sem o pdf.js do CDN, esta linha derrubava o script inteiro: a tela ficava de
+   pe mas nada respondia — nem login, nem link da biblioteca. Agora a falha
+   aparece na propria caixa do PDF e o resto da pagina continua de pe. */
+if (window.pdfjsLib) {
+  pdfjsLib.GlobalWorkerOptions.workerSrc =
+    'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+} else {
+  window.addEventListener('load', function () {
+    var dz = document.getElementById('dropZone');
+    if (!dz) return;
+    var t = dz.querySelector('.txt'), s = dz.querySelector('.sub2');
+    if (t) t.textContent = 'O leitor de PDF não carregou';
+    if (s) s.textContent = 'Precisa de internet na primeira abertura. Reconecte e recarregue.';
+    dz.style.borderColor = 'var(--warn)';
+  });
+}
 
 const BOILERPLATE = [
   /^sim$/i, /^n[ãa]o$/i, /^\d+$/, /^\d+[,\.]\d+\s*mm$/i,
@@ -540,10 +625,18 @@ async function processar(file) {
   pagesData = [];
   document.getElementById('pagesGrid').innerHTML = '';
   document.getElementById('acoes').classList.remove('visible');
+  mostrarEtapas(2);
+  esconderResultado();
+
+  const dz = document.getElementById('dropZone');
+  dz.classList.add('compacto');
+  dz.querySelector('.txt').textContent = file.name;
+  dz.querySelector('.sub2').textContent = 'clique para trocar o PDF';
 
   const nomeSugerido = file.name.replace(/\.pdf$/i, '').replace(/_/g, ' ').toUpperCase();
   document.getElementById('produtoNome').value = nomeSugerido;
   document.getElementById('configBox').classList.add('visible');
+  conferirVersao();
 
   mostrarStatus('Lendo PDF...');
 
@@ -584,8 +677,12 @@ async function processar(file) {
     canvases[i] = null;
   }
 
-  mostrarStatus(`${total} páginas processadas! Revise os componentes e clique em Gerar.`, 100);
+  mostrarStatus(`${total} páginas processadas. Revise os componentes de cada camada.`, 100);
+  document.getElementById('contCamadas').textContent =
+    total + (total === 1 ? ' camada' : ' camadas');
+  mostrarEtapas(4);
   document.getElementById('acoes').classList.add('visible');
+  conferirVersao();
 }
 
 function adicionarCard(idx, opName, imgBase64, comps, obs = '') {
@@ -635,6 +732,80 @@ function addCompRow(idx, qty, nome) {
   list.appendChild(row);
 }
 
+/* Revela os rotulos de etapa ate o nivel pedido. Os blocos em si continuam
+   com a logica de exibicao que ja tinham — aqui so o rotulo acompanha. */
+function mostrarEtapas(ate) {
+  [2, 3, 4].forEach(function (n) {
+    var el = document.getElementById('etapa' + n);
+    if (el) el.style.display = (n <= ate) ? 'flex' : 'none';
+  });
+  pintarVersao();   /* a faixa de versao vive na etapa 4 */
+}
+function etapaPublicacaoAberta() {
+  var el = document.getElementById('etapa4');
+  return !!el && el.style.display !== 'none';
+}
+
+function mostrarResultado(html) {
+  var el = document.getElementById('resultado');
+  el.innerHTML = html;
+  el.className = 'visivel';
+  var st = document.getElementById('status');
+  if (st) st.style.display = 'none';        /* a barra de progresso ja cumpriu o papel */
+}
+function esconderResultado() {
+  var el = document.getElementById('resultado');
+  if (el) { el.className = ''; el.innerHTML = ''; }
+}
+
+/* ── Versão publicada deste produto ──────────────────────────────────────
+   Le a data que ja existe no banco (embalagem_paineis.atualizado_em) e mostra
+   antes de publicar. Nao numera versao, nao guarda historico, nao cria nada:
+   so responde "esse produto ja esta la, e de quando". */
+var versaoTimer = null, versaoConsulta = null, versaoEstado = { estado: '', iso: null };
+
+/* Sem argumentos redesenha o que ja se sabe — e o que mostrarEtapas usa. */
+function pintarVersao(estado, iso) {
+  var el = document.getElementById('versaoBox');
+  if (!el) return;
+  if (arguments.length) versaoEstado = { estado: estado, iso: iso };
+  estado = versaoEstado.estado; iso = versaoEstado.iso;
+  if (!etapaPublicacaoAberta()) { el.className = ''; return; }
+  if (estado === 'novo') {
+    el.className = 'visivel novo';
+    el.innerHTML = '<span class="rot">Produto novo</span>' +
+      'Ainda não está na biblioteca. Publicar cria a primeira versão deste painel.';
+  } else if (estado === 'existe') {
+    var rel = window.haQuantoTempo ? window.haQuantoTempo(iso) : '';
+    el.className = 'visivel substitui';
+    el.innerHTML = '<span class="rot">Já está na biblioteca</span>' +
+      'Versão publicada em <span class="data">' + window.dataBR(iso) + '</span>' +
+      (rel ? ' · ' + rel : '') +
+      '. Publicar <b>substitui</b> essa versão — não há histórico para voltar atrás.';
+  } else {
+    el.className = '';                       /* sem rede ou sem nome: nao inventa estado */
+  }
+}
+
+function conferirVersao() {
+  var campo = document.getElementById('produtoNome');
+  var nome = campo ? (campo.value || '').trim() : '';
+  if (nome.length < 3 || !window.supaGet) { pintarVersao(''); return; }
+  var slug = slugify(nome);
+  versaoConsulta = slug;
+  window.supaGet('embalagem_paineis?slug=eq.' + encodeURIComponent(slug) +
+                 '&select=atualizado_em')
+    .then(function (rows) {
+      if (versaoConsulta !== slug) return;    /* o nome mudou durante a consulta */
+      var r = rows && rows[0];
+      pintarVersao(r ? 'existe' : 'novo', r ? r.atualizado_em : null);
+    })['catch'](function () { pintarVersao(''); });
+}
+function agendarConferirVersao() {
+  clearTimeout(versaoTimer);
+  versaoTimer = setTimeout(conferirVersao, 500);
+}
+
 function mostrarStatus(txt, pct) {
   const el = document.getElementById('status');
   el.style.display = 'block';
@@ -677,10 +848,8 @@ async function gerarPacote() {
   const slug = slugify(produto);
 
   if (typeof JSZip === 'undefined') {
-    mostrarStatus('', 100);
-    document.getElementById('statusTxt').innerHTML =
-      '<b style="color:var(--error)">Não consegui carregar o compactador (JSZip).</b> ' +
-      'Verifique a internet e recarregue a página.';
+    mostrarResultado('<b style="color:var(--error)">Não consegui carregar o compactador (JSZip).</b> ' +
+                     'Verifique a internet e recarregue a página.');
     return;
   }
 
@@ -726,16 +895,16 @@ async function gerarPacote() {
   setTimeout(() => URL.revokeObjectURL(url), 3000);
 
   const mb = blob.size / 1048576;
-  mostrarStatus('', 100);
-  document.getElementById('statusTxt').innerHTML =
+  mostrarResultado(
     'Pacote <b>' + slug + '.zip</b> baixado (' + mb.toFixed(1) + ' MB, ' +
-    camadas.length + ' camadas). Extraia e faça duas coisas no GitHub:' +
+    camadas.length + ' camadas). É a <b>saída manual</b>, para o Supabase fora do ar. No GitHub:' +
     '<ol style="margin:10px 0 0 20px;line-height:1.7">' +
     '<li>suba a pasta <b>' + slug + '</b> dentro de <code>paineis/</code>' +
-    ' <span style="color:var(--text-muted)">(uma vez só — depois ela fica guardada)</span></li>' +
-    '<li>substitua <code>tv/ativo.json</code> pelo <b>ativo.json</b> do pacote' +
-    ' <span style="color:var(--text-muted)">(é o que manda esse produto para a TV)</span></li>' +
-    '</ol>';
+    ' <span style="color:var(--gray)">(uma vez só — depois ela fica guardada)</span></li>' +
+    '<li>só para forçar a reserva: copie o <b>painel</b> do <code>ativo.json</code> do pacote ' +
+    'para <code>tv/ativo.json</code>' +
+    ' <span style="color:var(--gray)">(e esvazie depois, senão esse produto volta à TV a cada queda do banco)</span></li>' +
+    '</ol>');
 }
 
 
@@ -813,40 +982,47 @@ async function publicarPainel() {
     }
 
     mostrarStatus('Salvando o painel...', 85);
-    await supaSalvarPainel({ slug: slug, produto: produto, tempo: tempo,
-                             camadas: camadas, fotos: fotos, opcoes: opcoes });
+    var salvo = await supaSalvarPainel({ slug: slug, produto: produto, tempo: tempo,
+                                         camadas: camadas, fotos: fotos, opcoes: opcoes });
 
-    mostrarStatus('', 100);
-    document.getElementById('statusTxt').innerHTML =
+    /* A linha devolvida pelo banco traz o carimbo da versao que acabou de ser
+       publicada — e a mesma data que a biblioteca e a TV vao mostrar. */
+    var linha = salvo && salvo[0];
+    var carimbo = linha ? linha.atualizado_em : null;
+
+    mostrarResultado(
       '<b>' + produto + '</b> publicado na biblioteca.' +
-      ' <a href="#" onclick="enviarParaTV(\'' + slug + '\');return false;" ' +
-      'style="color:var(--accent);font-weight:700">Colocar na TV agora</a>' +
-      ' · <a href="biblioteca.html" style="color:var(--text-muted)">ver biblioteca</a>';
+      ' <a href="#" onclick="enviarParaTV(\'' + slug + '\');return false;">Colocar na TV agora</a>' +
+      ' · <a href="biblioteca.html" style="color:var(--text-muted);font-weight:400">ver biblioteca</a>' +
+      (carimbo ? '<span class="versao-nova">Versão publicada em ' +
+                 '<span class="data">' + window.dataBR(carimbo) + '</span></span>' : ''));
+    pintarVersao('existe', carimbo);
   } catch (e) {
-    mostrarStatus('', 100);
-    document.getElementById('statusTxt').innerHTML =
+    mostrarResultado(
       '<b style="color:var(--error)">Falhou:</b> ' + (e.message || e) +
-      '<br><span style="color:var(--text-muted);font-size:13px">' +
+      '<br><span style="color:var(--gray);font-size:13px">' +
       'Se disser que a sessão expirou, entre de novo. O botão Baixar .zip continua ' +
-      'disponível como saída manual.</span>';
+      'disponível como saída manual.</span>');
   } finally {
     btn.disabled = false;
   }
 }
 
 function enviarParaTV(slug) {
-  mostrarStatus('Trocando o painel da TV...', 50);
+  mostrarResultado('Trocando o painel da TV...');
   supaAtivarPainel(slug).then(function () {
-    mostrarStatus('', 100);
-    document.getElementById('statusTxt').innerHTML =
-      'Pronto. A TV troca sozinha em até 1 minuto.';
+    mostrarResultado('<b>Na TV.</b> Ela troca sozinha em até 1 minuto — ninguém precisa ir lá.' +
+                     ' <a href="biblioteca.html">ver biblioteca</a>');
   })['catch'](function (e) {
-    document.getElementById('statusTxt').innerHTML =
-      '<b style="color:var(--error)">Não consegui trocar:</b> ' + (e.message || e);
+    mostrarResultado('<b style="color:var(--error)">Não consegui trocar:</b> ' + (e.message || e));
   });
 }
 
-window.addEventListener('load', pintarSessao);
+window.addEventListener('load', function () {
+  pintarSessao();
+  var campo = document.getElementById('produtoNome');
+  if (campo) campo.addEventListener('input', agendarConferirVersao);
+});
 
 let fotosBase64 = [];
 function previewFoto(input) {

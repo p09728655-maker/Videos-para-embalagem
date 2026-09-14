@@ -49,6 +49,22 @@ Antes, cada troca de produto gravava um HTML de ~8 MB no histórico do Git, para
 sempre. Com as imagens fora do HTML, um produto fica em algumas centenas de KB
 e é publicado uma vez, não a cada troca.
 
+### Onde a versão do painel aparece
+
+O painel não tem número de versão: quem identifica a versão publicada é a data em
+que ela foi publicada — `embalagem_paineis.atualizado_em`. Republicar o mesmo
+produto **substitui** a publicação anterior e carimba a data nova; não há
+histórico. As três telas mostram essa mesma data, cada uma no seu nível:
+
+| Tela | Onde | Para quê |
+|---|---|---|
+| Gerador | faixa na etapa **4 · Publicação**, acima do botão | avisa, antes de publicar, se o produto já está na biblioteca e de quando é a versão que será substituída |
+| Biblioteca | linha `Versão publicada em …` de cada produto | comparar o que está guardado e escolher o que vai para a TV |
+| TV | rodapé, `VERSÃO dd/mm/aaaa` | quem confere de perto sabe se o padrão na tela é o vigente |
+
+A formatação dessas datas vive em `supabase-config.js` (`dataBR`, `dataCurtaBR`,
+`haQuantoTempo`), o único arquivo que as três telas carregam.
+
 ### Formato do `dados.json`
 
 ```json

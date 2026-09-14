@@ -325,6 +325,7 @@ function carregarDoSupabase(){
         baseDir = '';
         fonte = 'supabase';
         painel = { produto: r.produto, tempo: r.tempo, opcoes: r.opcoes || {},
+                   atualizado: r.atualizado_em,
                    camadas: (r.camadas || []).map(function(c){
                      return { op: c.op, obs: c.obs, componentes: c.componentes || [],
                               img: c.img ? window.supaImagem(c.img) : null };
@@ -346,6 +347,7 @@ function carregarDeArquivos(){
     fonte = 'arquivos';
     return buscarJSON(baseDir + 'dados.json').then(function(d){
       painel = { produto: d.produto, tempo: d.tempo, opcoes: d.opcoes || {},
+                 atualizado: d.gerado || (a && a.atualizado) || null,
                  camadas: (d.camadas || []).map(function(c){
                    return { op: c.op, obs: c.obs, componentes: c.componentes || [],
                             img: c.img ? (baseDir + c.img) : null };
@@ -396,7 +398,11 @@ function montar(){
   $('telaSub').className = 'ol-sub';
   $('telaSub').style.display = 'block';
   $('telaSub').textContent = p.produto || '';
+  /* Rodape: quem olha de perto precisa saber se o padrao na tela e o vigente.
+     A data e a mesma versao que a biblioteca mostra — nao ha outro numero. */
+  var versao = (p.atualizado && window.dataCurtaBR) ? window.dataCurtaBR(p.atualizado) : '';
   $('rodape').textContent = 'PADRÃO DE EMBALAGEM · ' + (p.produto || '') +
+                            (versao ? ' · VERSÃO ' + versao : '') +
                             ' · RITMOPATRIMAR' + (fonte === 'arquivos' ? ' · MODO RESERVA' : '');
   var tUrl = parseInt(qs('t'), 10);
   $('tempoInput').value = (tUrl > 0) ? tUrl : (p.tempo > 0 ? p.tempo : 5);

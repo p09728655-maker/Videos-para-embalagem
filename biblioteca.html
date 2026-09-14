@@ -26,27 +26,60 @@
   .sessao a{color:var(--accent);text-decoration:none;cursor:pointer;}
   .sessao a:hover{text-decoration:underline;}
 
+  /* Cartao do produto. Quatro niveis de leitura, nesta ordem:
+     1 produto  ·  2 acao principal  ·  3 versao publicada  ·  4 acoes secundarias.
+     Cada nivel tem tamanho, peso e cor proprios — nada disputa com o de cima. */
   .item{background:var(--panel);border:1px solid var(--border);border-radius:10px;
-        padding:18px 20px;margin-bottom:10px;display:flex;align-items:center;gap:16px;
-        flex-wrap:wrap;}
+        padding:20px 22px;margin-bottom:12px;}
   .item.natv{border-color:var(--accent);background:rgba(255,92,31,0.06);}
-  .item .info{flex:1 1 240px;min-width:0;}   /* no celular o nome fica numa linha so */
-  .item .nome{font-size:17px;font-weight:700;margin-bottom:4px;}
-  .item .meta{font-size:12.5px;color:var(--text-muted);font-family:ui-monospace,Menlo,monospace;}
-  .badge{background:var(--accent);color:#fff;font-size:11px;font-weight:800;padding:6px 12px;
-         border-radius:5px;letter-spacing:0.06em;white-space:nowrap;}
+
+  /* faixa de estado: so existe no que esta no ar */
+  .estado{display:flex;align-items:center;gap:8px;margin-bottom:12px;font-size:11px;
+          font-weight:800;letter-spacing:0.08em;text-transform:uppercase;color:var(--accent);}
+  .ponto{width:8px;height:8px;border-radius:50%;background:var(--accent);flex-shrink:0;}
+
+  /* nivel 1 + 2 na mesma linha: o nome puxa a leitura, a acao fecha a linha */
+  .cabeca{display:flex;align-items:flex-start;gap:16px;flex-wrap:wrap;}
+  .nome{flex:1 1 240px;min-width:0;font-size:19px;font-weight:700;line-height:1.25;
+        letter-spacing:-0.01em;}
+  .acao{flex:0 0 auto;}
+
+  /* nivel 3: versao publicada — identificada por rotulo, nunca solta no meio dos numeros */
+  .versao{margin-top:10px;font-size:12.5px;color:var(--text-muted);line-height:1.5;}
+  .versao .rot{color:var(--gray);}
+  .versao .data{font-family:ui-monospace,Menlo,Consolas,monospace;font-weight:600;
+                color:var(--text-muted);}
+  .versao .rel{color:var(--gray);}
+  .item.natv .versao .data{color:var(--line);}   /* a versao no ar le-se um pouco mais forte */
+
+  /* nivel 4: numeros do painel e acoes de apoio */
+  .meta{margin-top:4px;font-size:12.5px;color:var(--gray);
+        font-family:ui-monospace,Menlo,Consolas,monospace;}
+  .apoio{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:14px;padding-top:14px;
+         border-top:1px solid rgba(63,63,70,0.55);}
+  .apoio .espaco{flex:1;}
+
   .btn{padding:9px 16px;border-radius:6px;border:1px solid var(--border);background:transparent;
        color:var(--text);font-weight:700;font-size:13px;cursor:pointer;white-space:nowrap;
        font-family:inherit;transition:.15s;}
   .btn:hover{border-color:var(--accent);color:var(--accent);}
-  .btn.primario{background:var(--accent);color:#fff;border-color:var(--accent);}
+  .btn:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
+  .btn.primario{background:var(--accent);color:#fff;border-color:var(--accent);
+                padding:11px 20px;font-size:14px;}
   .btn.primario:hover{filter:brightness(1.1);color:#fff;}
-  .btn.perigo{color:var(--gray);border-color:transparent;padding:9px 10px;}
+  /* apoio: mesma area de clique, peso visual menor — nao competem com a acao principal */
+  .btn.apoio-btn{border-color:transparent;color:var(--text-muted);font-weight:600;padding:9px 12px;}
+  .btn.apoio-btn:hover{border-color:var(--border);color:var(--text);}
+  .btn.perigo{color:var(--gray);border-color:transparent;padding:9px 12px;}
   .btn.perigo:hover{color:var(--error);border-color:var(--error);}
 
+  /* Amarelo so para o que pede atencao agora. A explicacao permanente
+     do rodape e neutra — duas caixas amarelas na mesma tela anulam as duas. */
   .aviso{border-left:3px solid var(--warn);background:rgba(234,179,8,0.07);padding:14px 18px;
          border-radius:0 6px 6px 0;font-size:13.5px;color:var(--text-muted);line-height:1.6;}
   .aviso b{color:var(--warn);}
+  .aviso.neutro{border-left-color:var(--border);background:rgba(63,63,70,0.18);margin-top:8px;}
+  .aviso.neutro b{color:var(--text);}
   .vazio{text-align:center;padding:50px 20px;color:var(--text-muted);font-size:15px;line-height:1.7;}
   .vazio a{color:var(--accent);text-decoration:none;font-weight:700;}
   #estado{font-size:14px;color:var(--text-muted);padding:14px 0;}
@@ -93,7 +126,7 @@
 
   <div id="lista"></div>
 
-  <div class="aviso" id="avisoRodape" style="display:none">
+  <div class="aviso neutro" id="avisoRodape" style="display:none">
     <b>A TV troca sozinha.</b> Depois de colocar um produto na TV, ela percebe em até
     1 minuto e recarrega. Ninguém precisa ir até lá nem mexer no controle remoto.
   </div>
@@ -169,14 +202,8 @@ function fazerLogin(){
   });
 }
 
-function dataBR(iso){
-  if(!iso) return '—';
-  try{
-    var d = new Date(iso);
-    return d.toLocaleDateString('pt-BR') + ' ' +
-           d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
-  }catch(e){ return iso; }
-}
+/* dataBR e haQuantoTempo vem de supabase-config.js — as tres telas mostram
+   a mesma data de versao e devem formata-la do mesmo jeito. */
 
 function carregar(){
   $('estado').textContent = 'Carregando...';
@@ -202,27 +229,60 @@ function render(itens){
     return;
   }
   $('avisoRodape').style.display = 'block';
+
+  /* O que esta no ar vem primeiro: e a informacao que muda decisao. */
+  itens = itens.slice().sort(function(a, b){
+    if (a.slug === ativoAtual) return -1;
+    if (b.slug === ativoAtual) return 1;
+    return String(a.produto).localeCompare(String(b.produto));
+  });
+
   lista.innerHTML = itens.map(function(p){
     var naTV = (p.slug === ativoAtual);
     var n = (p.camadas || []).length;
     var semComp = !!(p.opcoes && p.opcoes.componentes === false);
+    var arg = "'" + String(p.slug).replace(/'/g, "\\'") + "'";
+    var rel = haQuantoTempo(p.atualizado_em);
+
     return '<div class="item' + (naTV ? ' natv' : '') + '">' +
-             '<div class="info">' +
-               '<div class="nome">' + p.produto + '</div>' +
-               '<div class="meta">' + n + ' camada' + (n===1?'':'s') +
-               ' · ' + p.tempo + 's por camada · atualizado ' + dataBR(p.atualizado_em) + '</div>' +
+
+             /* estado: so aparece no painel que esta no ar */
+             (naTV ? '<div class="estado"><span class="ponto"></span>Na TV agora</div>' : '') +
+
+             /* 1 produto · 2 acao principal */
+             '<div class="cabeca">' +
+               '<div class="nome">' + esc(p.produto) + '</div>' +
+               '<div class="acao">' +
+                 (naTV
+                   ? '<button class="btn" onclick="tirarDaTV()" ' +
+                       'title="Deixar a TV sem nenhum produto">Tirar da TV</button>'
+                   : '<button class="btn primario" onclick="colocarNaTV(' + arg + ')">' +
+                       'Colocar na TV</button>') +
+               '</div>' +
              '</div>' +
-             (naTV
-               ? '<span class="badge">NA TV AGORA</span>' +
-                 '<button class="btn" title="Deixar a TV sem nenhum produto" ' +
-                   'onclick="tirarDaTV()">Tirar da TV</button>'
-               : '<button class="btn primario" onclick="colocarNaTV(\'' + p.slug + '\')">Colocar na TV</button>') +
-             '<button class="btn" onclick="verPainel(\'' + p.slug + '\')">Ver</button>' +
-             '<button class="btn" title="Mostrar ou esconder a lista de componentes na TV" ' +
-               'onclick="alternarComponentes(\'' + p.slug + '\',' + (semComp ? 'true' : 'false') + ')">' +
-               (semComp ? 'só desenho' : 'com lista') + '</button>' +
-             '<button class="btn perigo" title="Excluir" onclick="excluir(\'' + p.slug + '\',\'' +
-                String(p.produto).replace(/'/g,"\\'") + '\')">&times;</button>' +
+
+             /* 3 versao publicada */
+             '<div class="versao"><span class="rot">Versão publicada em</span> ' +
+               '<span class="data">' + dataBR(p.atualizado_em) + '</span>' +
+               (rel ? ' <span class="rel">· ' + rel + '</span>' : '') +
+             '</div>' +
+
+             /* 4 numeros do painel e acoes de apoio */
+             '<div class="meta">' + n + ' camada' + (n===1?'':'s') +
+               ' · ' + p.tempo + 's por camada · ' +
+               (semComp ? 'só desenho na TV' : 'com lista de componentes') + '</div>' +
+
+             '<div class="apoio">' +
+               '<button class="btn apoio-btn" onclick="verPainel(' + arg + ')" ' +
+                 'title="Abrir o painel numa aba, sem mexer na TV">Ver</button>' +
+               '<button class="btn apoio-btn" onclick="alternarComponentes(' + arg + ',' +
+                 (semComp ? 'true' : 'false') + ')" ' +
+                 'title="Mostrar ou esconder a lista de componentes na TV">' +
+                 (semComp ? 'Mostrar lista' : 'Esconder lista') + '</button>' +
+               '<span class="espaco"></span>' +
+               '<button class="btn perigo" onclick="excluir(' + arg + ',\'' +
+                  String(p.produto).replace(/'/g,"\\'") + '\')">Excluir</button>' +
+             '</div>' +
            '</div>';
   }).join('');
 }

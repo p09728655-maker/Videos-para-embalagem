@@ -30,17 +30,23 @@
   a.card{display:block;background:var(--panel);border:1px solid var(--border);border-radius:10px;
          padding:22px;text-decoration:none;color:inherit;transition:.15s;}
   a.card:hover{border-color:var(--accent);}
+  a.card:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
   a.card .t{font-size:17px;font-weight:700;margin-bottom:6px;}
   a.card .d{font-size:13px;color:var(--text-muted);line-height:1.45;}
   a.card .t em{font-style:normal;color:var(--accent);}
+  /* Trocar o produto da TV e a tarefa do dia a dia; publicar produto novo e
+     eventual. O cartao maior diz isso sem precisar de texto explicando. */
+  a.card.principal{border-left:3px solid var(--accent);margin-bottom:14px;padding:24px 26px;}
+  a.card.principal .t{font-size:21px;margin-bottom:8px;}
+  a.card.principal .d{font-size:14px;}
   h2{font-size:12px;letter-spacing:0.08em;text-transform:uppercase;color:var(--gray);
-     font-weight:700;margin-bottom:14px;}
+     font-weight:700;margin:32px 0 14px;}   /* cada bloco precisa do proprio respiro */
   ol{margin-left:20px;font-size:15px;line-height:1.75;color:var(--text);}
   ol li{margin-bottom:8px;}
   code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:13px;background:var(--panel);
        border:1px solid var(--border);border-radius:4px;padding:2px 7px;color:var(--accent);}
   .url-box{background:var(--panel);border:1px solid var(--border);border-radius:10px;
-           padding:20px 22px;margin-bottom:32px;}
+           padding:20px 22px;margin-bottom:12px;}
   .url-box .lbl{font-size:11px;letter-spacing:0.08em;text-transform:uppercase;color:var(--gray);
                 font-weight:700;margin-bottom:10px;}
   .url-box .u{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:19px;font-weight:700;
@@ -63,14 +69,16 @@
   <h1>Painel de Embalagem</h1>
   <p class="sub">Gerador de painel a partir do PDF de embalagem e publicação para a TV do setor.</p>
 
+  <a class="card principal" href="biblioteca.html">
+    <div class="t">Biblioteca de painéis <em>&rarr;</em></div>
+    <div class="d">Produtos já publicados, com a data da versão de cada um. Um clique coloca
+      qualquer um deles na TV — ou tira o que está no ar.</div>
+  </a>
+
   <div class="cards">
     <a class="card" href="gerador.html">
       <div class="t">Gerador <em>&rarr;</em></div>
-      <div class="d">Arraste o PDF, revise os componentes de cada camada e gere o arquivo do painel.</div>
-    </a>
-    <a class="card" href="biblioteca.html">
-      <div class="t">Biblioteca <em>&rarr;</em></div>
-      <div class="d">Produtos já publicados. Um clique coloca qualquer um deles na TV.</div>
+      <div class="d">Produto novo: arraste o PDF, revise os componentes de cada camada e publique.</div>
     </a>
     <a class="card" href="tv/">
       <div class="t">Painel ativo <em>&rarr;</em></div>
@@ -89,9 +97,12 @@
   <ol>
     <li>No <b>Gerador</b>, arraste o PDF de embalagem e revise os componentes de cada camada.</li>
     <li>Preencha o nome do produto e o <b>tempo por camada</b>.</li>
+    <li>Confira a faixa de <b>versão</b> antes de publicar: se o produto já estiver na
+        biblioteca, ela mostra a data da versão publicada e avisa que publicar substitui.</li>
     <li>Clique em <b>Publicar para a TV</b>. Na primeira vez ele pede login —
         é o mesmo e-mail e senha do RitmoProd.</li>
-    <li>Pronto: o produto entra na biblioteca e você escolhe se vai para a TV agora.</li>
+    <li>Pronto: o produto entra na biblioteca com a data da nova versão, e você escolhe
+        se vai para a TV agora.</li>
   </ol>
 
   <h2>Trocar o produto da TV</h2>
@@ -99,6 +110,8 @@
     <li>Abra a <b>Biblioteca</b>.</li>
     <li>Clique em <b>Colocar na TV</b> no produto desejado.</li>
     <li>A TV percebe em até 1 minuto e troca sozinha. <b>Ninguém encosta na TV.</b></li>
+    <li>Para deixar a TV sem produto nenhum, use <b>Tirar da TV</b>. A tela fica em espera
+        até alguém escolher outro.</li>
   </ol>
 
   <h2>Exibição de cada produto</h2>
@@ -106,16 +119,18 @@
     Alguns desenhos já trazem os nomes das peças na própria imagem. Para esses, a lista
     de componentes ao lado é repetição e pode ser desligada — o desenho passa a ocupar
     a tela inteira. Escolha ao publicar, no gerador, ou depois na <b>Biblioteca</b>, no
-    botão <code>com lista</code> / <code>só desenho</code> de cada produto.
+    botão <code>Mostrar lista</code> / <code>Esconder lista</code> de cada produto.
     Quando a lista está ligada, os cartões se ajustam sozinhos para caber:
     numa TV ninguém rola a tela, então um componente fora dela não seria embalado.
   </p>
 
   <div class="nota">
-    <b>Se o banco ficar fora do ar, a TV não apaga.</b> O painel tenta primeiro o
-    Supabase e, se não responder, carrega os arquivos publicados no repositório,
-    avisando <code>MODO RESERVA</code> no rodapé. O botão <b>Baixar .zip</b> do gerador
-    continua existindo para alimentar esse modo manualmente.
+    <b>Quem decide o que aparece na TV é a Biblioteca.</b> O player lê o Supabase; sem
+    produto escolhido, a TV fica em espera, sem exibir nada. A reserva
+    <code>tv/ativo.json</code> só entra quando o Supabase não responde e vem
+    <b>vazia de propósito</b> — com um produto fixo ali, a TV voltaria a exibir um padrão
+    antigo a cada queda do banco. Para uma emergência, o <b>Baixar .zip</b> do gerador
+    alimenta essa reserva manualmente, e o rodapé da TV avisa <code>MODO RESERVA</code>.
   </div>
 
 </div>
