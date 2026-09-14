@@ -442,6 +442,40 @@ function apagarBlocos(canvas, blocos) {
   return canvas;
 }
 
+
+/* Recolore o desenho para o tema escuro do painel.
+ *
+ * Na TV o desenho era uma mancha branca no meio de um painel preto: choque de
+ * luminosidade e reflexo forte sob a luz do galpao. O papel vira o fundo do
+ * painel, o traco vira claro, e o cinza das pecas vira azul-aco — que nao
+ * disputa atencao com o laranja da interface nem com o amarelo dos alertas.
+ *
+ * A decisao e por luminancia, entao hachura muito clara ou sombreado pode sair
+ * com tom errado: vale conferir as miniaturas ao publicar um produto novo.
+ * Roda por ultimo, depois dos cortes — eles analisam papel branco.
+ */
+function temaEscuroDesenho(canvas) {
+  try {
+    const w = canvas.width, h = canvas.height;
+    const ctx = canvas.getContext('2d');
+    const img = ctx.getImageData(0, 0, w, h);
+    const d = img.data;
+    for (let i = 0; i < d.length; i += 4) {
+      const v = (d[i] * 299 + d[i+1] * 587 + d[i+2] * 114) / 1000;
+      if (v > 235)      { d[i] = 24;  d[i+1] = 24;  d[i+2] = 27;  }   /* papel -> fundo */
+      else if (v < 90)  { d[i] = 235; d[i+1] = 235; d[i+2] = 238; }   /* traco -> claro */
+      else {                                                          /* peca -> azul-aco */
+        const t = (235 - v) / 145;
+        d[i]   = 60 + (96  - 60) * t;
+        d[i+1] = 70 + (116 - 70) * t;
+        d[i+2] = 88 + (148 - 88) * t;
+      }
+    }
+    ctx.putImageData(img, 0, 0);
+    return canvas;
+  } catch (e) { return canvas; }
+}
+
 function apertarDesenho(canvas) {
   try {
     const w = canvas.width, h = canvas.height;
@@ -576,8 +610,8 @@ async function processar(file) {
   for (let i = 0; i < total; i++) {
     mostrarStatus(`Preparando camada ${i+1} de ${total}...`, 75 + (i+1)/total * 25);
     const c = apagarBlocos(canvases[i], blocos);
-    const imgBase64 = recortarMargemBranca(apertarDesenho(recortarMargemBranca(c)))
-                        .toDataURL('image/jpeg', 0.82);
+    const imgBase64 = temaEscuroDesenho(recortarMargemBranca(apertarDesenho(recortarMargemBranca(c))))
+                        .toDataURL('image/jpeg', 0.86);
     const opName = 'CAMADA ' + String(i + 1).padStart(2, '0');
     pagesData.push({ img: imgBase64, op: opName, components: paginas[i].components, obs: paginas[i].obs });
     adicionarCard(i, opName, imgBase64, paginas[i].components, paginas[i].obs);
