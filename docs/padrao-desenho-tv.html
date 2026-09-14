@@ -65,11 +65,13 @@
   <tr><td>Proporção que chega na TV</td><td>varia de camada para camada (2,17:1 a 2,55:1 no produto publicado)</td><td>sempre 16:9 — a mesma da área do player</td></tr>
   <tr><td>Aproveitamento da tela</td><td>70 % a 82 % da altura disponível</td><td><b>100 %</b></td></tr>
   <tr><td>Resolução da imagem</td><td>≈ 1 080 px de largura</td><td><b>≈ 2 994 px</b> (2,8× mais pixels por traço)</td></tr>
-  <tr><td>Onde o texto é lido</td><td>só na faixa de 24 mm a 178 mm da folha — nome fora dela some da lista, sem avisar</td><td>folha inteira</td></tr>
+  <tr><td>Leitura dos nomes</td><td>folha inteira, com o carimbo saindo por filtro de conteúdo</td><td>folha inteira, sem carimbo para filtrar</td></tr>
   <tr><td>Tamanho do desenho na tela</td><td>referência</td><td><b>22 % a 42 % maior</b></td></tr>
 </table>
 
 <p>Na prática: o desenho fica maior, mais nítido e igual em todas as camadas, e nada mais depende de heurística de imagem.</p>
+
+<div class="nota"><b>A faixa de leitura de 24 a 178 mm acabou.</b> Ela existia para escapar do carimbo, e cobrava caro: num modelo real de embalagem o carimbo fica embaixo (dentro da faixa) e os nomes das peças ficam acima dela — o painel publicava a lista de componentes <u>vazia</u>, sem avisar ninguém. Agora a folha é lida inteira, nas duas versões, e o carimbo sai pelo que está escrito: campo com rótulo e dois-pontos (<code>Produto:</code>, <code>Escala:</code>), data, número de página, palavra de tabela — e qualquer texto que se repita em <b>todas</b> as páginas.</div>
 
 <div class="nota"><b>A folha antiga continua funcionando.</b> O gerador reconhece a folha pela proporção da página: 16:9 entra pelo caminho novo, qualquer outra continua no caminho antigo, com o recorte automático e a faixa de leitura de 24 a 178 mm. Não há data de corte — os produtos já publicados seguem válidos, e a folha nova vale para o que for desenhado de agora em diante.</p></div>
 
@@ -143,6 +145,7 @@
 <h3>Regras</h3>
 <ul>
   <li><b>Tudo em maiúsculas</b>, uma peça por texto. Não junte duas peças na mesma linha.</li>
+  <li><b>O nome inteiro numa linha só.</b> <code>PRATELEIRA MENOR DIREITA Nº 12</code> quebrado em três linhas vira três itens na lista. Só o <code>Nº 12</code> pode ficar na linha de baixo — esse o painel junta sozinho, desde que esteja na mesma coluna.</li>
   <li>A quantidade vem <b>antes</b> do nome, no formato <code>(nX)</code>. Sem quantidade = 1.</li>
   <li>O painel separa observação de peça pela forma da frase: começa com verbo (<code>DOBRAR</code>, <code>VIRAR</code>, <code>POSICIONAR</code>, <code>CONFERIR</code>, <code>ENCAIXAR</code>, <code>APLICAR</code>, <code>FECHAR</code>) ou contém <code>PARA CIMA / PARA BAIXO / PARA FRENTE / PARA TRÁS</code>, <code>COM PINTURA / SEM PINTURA</code>, <code>ATENÇÃO</code>, <code>ORIENTAR</code>. Fora desses casos, vira peça.</li>
   <li>Uma observação por camada. Se houver duas, o painel junta as duas na mesma faixa.</li>
@@ -215,7 +218,27 @@
 </ul>
 
 <h2>9. Se ainda for usar a folha antiga</h2>
-<p>Vale o padrão v1, que continua aceito: A3 paisagem, e os nomes das peças <b>obrigatoriamente</b> entre 24 mm e 178 mm de altura da folha — fora dessa faixa o nome não entra na lista e ninguém é avisado. O recorte automático continua tirando moldura, carimbo e tabela comparando as páginas, o que exige pelo menos duas páginas do mesmo tamanho.</p>
+<p>Qualquer folha fora do 16:9 continua aceita e entra pelo caminho antigo: recorte automático da moldura, do carimbo e da tabela comparando as páginas entre si, e leitura do texto da folha inteira. Não há faixa de altura: o que separa peça de carimbo é o conteúdo do texto.</p>
+
+<h3>O que o painel descarta sozinho</h3>
+<ul>
+  <li>Campo de carimbo com rótulo: <code>Produto:</code>, <code>Descrição:</code>, <code>Data:</code>, <code>Medida Caixa:</code>, <code>Atualizado:</code>, <code>Desenho:</code>, <code>Escala:</code>, <code>Operador:</code>, <code>Projeto:</code> — e qualquer linha terminada em dois-pontos.</li>
+  <li>Linha com data (<code>08/07/2024</code>), número de página (<code>Pag. 10</code>, <code>FL 2/3</code>) e número solto.</li>
+  <li>Palavra de tabela de embalagem: <code>DESCRIÇÃO</code>, <code>TIPO</code>, <code>QTDE</code>, <code>SIM</code>, <code>NÃO</code>, <code>TRIPLEX</code>, <code>ACOPLADO</code>.</li>
+  <li>Qualquer texto que apareça em <b>todas</b> as páginas — carimbo e tabela aparecem; peça de verdade, não. Vale a partir de três páginas.</li>
+</ul>
+
+<h3>O que continua exigindo cuidado do desenhista</h3>
+<table>
+  <tr><th style="width:38%">Situação na folha antiga</th><th>O que acontece</th></tr>
+  <tr><td>Nome quebrado em duas ou três linhas (<code>PRATELEIRA</code> / <code>MENOR DIREITA</code> / <code>Nº 12</code>)</td><td>vira dois itens na lista; só o <code>Nº 12</code> é reagrupado. Escreva o nome numa linha só.</td></tr>
+  <tr><td>Quantidade escrita como <code>02 TRAVESSA Nº 04</code></td><td>entra como <b>×1</b> com o "02" dentro do nome. Use <code>(2X) TRAVESSA Nº 04</code>.</td></tr>
+  <tr><td>Observação quebrada em duas linhas (<code>VIRADO COM</code> / <code>PINTURA PARA BAIXO</code>)</td><td>metade vira alerta, metade vira peça. Escreva a observação numa linha só.</td></tr>
+  <tr><td>Primeira página de capa, sem camada</td><td>vira <b>CAMADA 01</b> na TV. Tire a capa do PDF.</td></tr>
+  <tr><td>Nome escrito na vertical dentro de peça estreita</td><td>é lido normalmente, no sentido certo. Sem problema.</td></tr>
+</table>
+
+<div class="nota"><b>Antes de publicar, confira a lista.</b> A etapa 3 do gerador mostra os componentes lidos de cada camada e deixa corrigir, apagar e acrescentar. Numa folha antiga isso não é opcional: é onde se arruma o que a folha não deixou claro. Na folha TV, a lista costuma sair pronta.</div>
 
 <footer>RitmoPatrimar · Vídeos Embalagem — padrão de desenho v2 · substitui a v1 (setembro/2026). Dúvidas sobre o padrão: PPCP.</footer>
 </div>

@@ -355,6 +355,15 @@ const BOILERPLATE = [
   /^0,5\s*mm$/i, /^plastificar$/i,
   /^descri[çc][ãa]o$/i, /^tipo$/i, /^medidas$/i, /^qtd[e]?\.?$/i,
   /^embalagem$/i, /^volume$/i,
+  /* Campos de carimbo. Na folha antiga o carimbo fica na altura que o painel
+     le, entao "Produto: RACK" entraria na lista como se fosse peca. */
+  /^\s*(produto|descri[çc][ãa]o|medida[s]?\s*caixa|medida[s]?|data|atualizado|desenho|desenhista|des\.?|escala|operador|projeto|cliente|refer[êe]ncia|rev(is[ãa]o)?)\s*:/i,
+  /* Data no meio da linha e carimbo: nome de peca nao tem data. */
+  /\b\d{2}\/\d{2}\/\d{2,4}\b/,
+  /^\s*p[áa]g(\.|ina)?\s*\d+/i, /^\s*(fl|folha)\s*\.?\s*\d+/i,
+  /* Rotulo de carimbo termina em dois-pontos; nome de peca nunca termina.
+     Pega tambem o pedaco solto que sobra quando o PDF quebra o rotulo. */
+  /:\s*$/,
 ];
 
 
@@ -386,22 +395,117 @@ function ehFolhaTV(page) {
   return Math.abs((v.width / v.height) - RAZAO_TV) <= RAZAO_TV * 0.02;
 }
 
-/* folhaInteira: na folha TV todo texto da pagina e componente ou observacao.
-   Na folha antiga so vale a faixa de 8% a 60% da altura, porque acima dela
-   ficam carimbo e identificacao, que nao sao peca. */
-async function extrairComponentes(page, folhaInteira) {
-  const textContent = await page.getTextContent();
-  const pdfH = page.getViewport({ scale: 1 }).height;
-  const yMin = folhaInteira ? 0 : pdfH * 0.08;
-  const yMax = folhaInteira ? pdfH : pdfH * 0.60;
+/* Remonta o texto do PDF em linhas.
+ *
+ * O PDF pode entregar o texto de tres jeitos, e nao ha como escolher: frase
+ * inteira num item, palavra por palavra, ou LETRA POR LETRA. O modelo antigo de
+ * embalagem sai letra por letra — cada glifo um item — e por isso a lista de
+ * componentes saia vazia: item de um caractere e descartado como ruido.
+ *
+ * Aqui os pedacos voltam a ser frase pela posicao:
+ *  - mesma linha de base e proximos na horizontal viram um texto so;
+ *  - vao grande na horizontal separa dois nomes que so por acaso estao na mesma
+ *    altura (numa folha TV, "LATERAL" e "FUNDO" ficam lado a lado);
+ *  - texto girado 90 graus (nome na vertical dentro de peca estreita) e
+ *    remontado pela coluna, no sentido da leitura.
+ */
+function linhasDoTexto(items) {
+  const saida = [];
+  const pedacos = items.map(it => {
+    const t = it.transform;
+    const alt = Math.hypot(t[1], t[3]) || it.height || 8;
+    return { s: it.str, x: t[4], y: t[5], w: it.width || 0, alt,
+             girado: Math.abs(t[1]) > Math.abs(t[0]), sentido: t[1] >= 0 ? 1 : -1 };
+  /* O pdf.js inventa um item " " para representar o vao entre dois textos, com
+     largura igual ao vao inteiro. Somado ao fim da frase, ele emendava
+     "LATERAL Nº 03" com "FUNDO Nº 01" — dois nomes lado a lado viravam um so.
+     O vao entre pedacos ja diz onde cabe espaco; o item em branco nao serve. */
+  }).filter(p => p.s && p.s.trim() !== '');
 
-  const linhas = textContent.items
-    .filter(it => { const y = it.transform[5]; return y >= yMin && y <= yMax; })
-    .map(it => it.str.trim())
-    .filter(s => s.length > 0);
+  for (const girado of [false, true]) {
+    const ps = pedacos.filter(p => p.girado === girado);
+    if (!ps.length) continue;
+    /* eixo: onde a linha "mora"; avanco: para onde a leitura caminha */
+    const eixo = p => girado ? p.x : p.y;
+    const avanco = p => girado ? p.y * p.sentido : p.x;
+
+    /* Fase 1 — junta os pedacos que estao na mesma linha de base.
+       Ordenar por eixo E avanco na mesma comparacao invertia o texto girado:
+       o x de cada letra varia centesimos, e essa variacao vencia o desempate.
+       Por isso a linha e fechada primeiro, e so depois lida. */
+    const linhas = [];
+    for (const p of ps.slice().sort((a, b) => eixo(b) - eixo(a))) {
+      const ult = linhas[linhas.length - 1];
+      if (ult && Math.abs(eixo(p) - ult.eixo) <= Math.max(p.alt * 0.5, 0.8)) {
+        ult.itens.push(p);
+        ult.eixo = (ult.eixo * (ult.itens.length - 1) + eixo(p)) / ult.itens.length;
+      } else linhas.push({ eixo: eixo(p), itens: [p] });
+    }
+
+    /* Fase 2 — dentro da linha, le no sentido do texto e corta nos vaos
+       grandes: dois nomes lado a lado nao sao a mesma frase. */
+    for (const linha of linhas) {
+      linha.itens.sort((a, b) => avanco(a) - avanco(b));
+      let atual = null;
+      const fechar = () => {
+        if (!atual) return;
+        const txt = atual.s.replace(/\s+/g, ' ').trim();
+        if (txt) saida.push({ txt, x: atual.x, y: atual.y, alt: atual.alt });
+        atual = null;
+      };
+      for (const p of linha.itens) {
+        if (atual) {
+          const vao = avanco(p) - atual.fim;
+          if (vao <= atual.alt * 1.5) {
+            if (vao > atual.alt * 0.18 && !/\s$/.test(atual.s)) atual.s += ' ';
+            atual.s += p.s;
+            atual.fim = avanco(p) + (p.w || p.alt * 0.5 * p.s.length);
+            continue;
+          }
+          fechar();
+        }
+        atual = { s: p.s, fim: avanco(p) + (p.w || p.alt * 0.5 * p.s.length),
+                  x: p.x, y: p.y, alt: p.alt };
+      }
+      fechar();
+    }
+  }
+  return saida;
+}
+
+/* Le a folha inteira e filtra pelo conteudo, nao pela posicao.
+ *
+ * Antes valia so a faixa de 8% a 60% da altura, para escapar do carimbo. Custava
+ * caro: num modelo real de embalagem o carimbo fica embaixo (dentro da faixa) e
+ * os nomes das pecas ficam acima de 60% — o painel publicava a lista vazia e
+ * ninguem era avisado. Agora o carimbo sai pelo que esta escrito (campo com
+ * rotulo e dois-pontos, palavra de tabela, numero solto), e o que sobrar
+ * aparece na conferencia do gerador, onde da para apagar o que nao for peca.
+ * Item a mais e visivel e se remove; item a menos some calado. */
+async function extrairComponentes(page) {
+  const textContent = await page.getTextContent();
+  let linhas = linhasDoTexto(textContent.items);
+
+  /* "Nº 07" numa linha propria pertence ao nome logo acima, na mesma coluna.
+     Seguindo so a ordem de leitura, com duas pecas lado a lado o numero de uma
+     grudava no nome da outra. */
+  linhas.sort((a, b) => b.y - a.y);
+  const juntas = [];
+  for (const l of linhas) {
+    if (/^n[°º\.]\s*\d+\s*$/i.test(l.txt)) {
+      let alvo = null, melhor = Infinity;
+      for (const r of juntas) {
+        if (r.y <= l.y || r.y - l.y > Math.max(r.alt, l.alt) * 4) continue;
+        const d = Math.abs(r.x - l.x);
+        if (d < melhor && d <= Math.max(r.alt, l.alt) * 8) { melhor = d; alvo = r; }
+      }
+      if (alvo) { alvo.txt += ' ' + l.txt; continue; }
+    }
+    juntas.push(l);
+  }
 
   const comps = [];
-  for (const linha of linhas) {
+  for (const linha of juntas.map(l => l.txt)) {
     if (!isBoilerplate(linha)) {
       /* O PDF traz "(3X) NOME". O \)? no fim do padrao evita que o parentese
          de fechamento sobre grudado no comeco do nome. */
@@ -412,14 +516,7 @@ async function extrairComponentes(page, folhaInteira) {
       if (nome) comps.push({ qty, name: nome });
     }
   }
-  const merged = [];
-  for (const c of comps) {
-    if (merged.length > 0 && /^n[°º\.]\s*\d+/i.test(c.name)) {
-      merged[merged.length - 1].name += ' ' + c.name;
-    } else {
-      merged.push(c);
-    }
-  }
+  const merged = comps;
   const OBS_PATTERN = /\bpara\s+(cima|baixo|frente|tr[áa]s|fora|dentro)\b|\bcom\s+pintura\b|\bsem\s+pintura\b|\bpintura\s+para\b|\baten[çc][ãa]o\b|\borientar\b/i;
   /* Linhas que mandam fazer algo sao instrucao de montagem, nao peca da caixa. */
   const INSTRUCAO = /^\s*(dobrar|virar|posicionar|conferir|encaixar|aplicar|fechar)\b/i;
@@ -427,8 +524,10 @@ async function extrairComponentes(page, folhaInteira) {
   const components = [];
   const obsItems = [];
   for (const c of merged) {
+    /* Duas palavras bastam: no modelo antigo a observacao vem quebrada em duas
+       linhas e "PARA BAIXO" sozinho caia na lista de pecas. */
     if (INSTRUCAO.test(c.name) ||
-        (OBS_PATTERN.test(c.name) && c.name.split(' ').length >= 3)) {
+        (OBS_PATTERN.test(c.name) && c.name.split(' ').length >= 2)) {
       obsItems.push(c.name);
     } else {
       /* O mesmo componente pode vir repetido linha a linha; soma em vez de listar
@@ -685,10 +784,27 @@ async function processar(file) {
     canvas.width = viewport.width;
     canvas.height = viewport.height;
     await page.render({ canvasContext: canvas.getContext('2d'), viewport }).promise;
-    const { components, obs } = await extrairComponentes(page, folhaTV);
+    const { components, obs } = await extrairComponentes(page);
     paginas.push({ components, obs });
     if (folhaTV) imagens.push(canvas.toDataURL('image/jpeg', 0.82));  /* canvas livre já */
     else canvases.push(canvas);
+  }
+
+  /* Mesmo raciocinio do recorte de imagem, aplicado ao texto: o que aparece em
+     TODAS as paginas e carimbo, tabela ou rodape — peca de verdade nao entra em
+     todas as camadas. Vale so com tres paginas ou mais, senao duas camadas que
+     por acaso levam a mesma peca esvaziariam a lista. */
+  if (total >= 3) {
+    const vezes = new Map();
+    paginas.forEach(pg => {
+      new Set(pg.components.map(c => c.name)).forEach(nome =>
+        vezes.set(nome, (vezes.get(nome) || 0) + 1));
+    });
+    const template = new Set();
+    vezes.forEach((n, nome) => { if (n === total) template.add(nome); });
+    if (template.size) {
+      paginas.forEach(pg => { pg.components = pg.components.filter(c => !template.has(c.name)); });
+    }
   }
 
   if (!folhaTV) {
