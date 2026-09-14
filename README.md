@@ -13,6 +13,8 @@ as observações críticas (furação, pintura) e o desenho técnico da camada.
 | `tv/index.html` | **Player da TV** — arquivo fixo, não muda ao trocar de produto |
 | `tv/ativo.json` | Reserva manual, usada só se o Supabase não responder |
 | `paineis/<slug>/` | Biblioteca: um produto por pasta, publicado uma vez só |
+| `docs/padrao-desenho-tv.html` | **Padrão de folha para o desenhista** (publicado em `/padrao`) |
+| `docs/modelo-folha-tv.dxf` | Modelo da folha TV 16:9 para abrir no CAD |
 | `manifest.webmanifest`, `sw.js` | App instalável (PWA) do gerador |
 | `logo/`, `icones/` | Marca Patrimar preparada para fundo escuro |
 

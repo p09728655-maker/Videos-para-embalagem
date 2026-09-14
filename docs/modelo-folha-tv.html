@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Modelo de folha TV 16:9 — RitmoPatrimar Embalagem</title>
+<style>
+  /* Folha TV: 480 x 270 mm = 16:9, a mesma proporcao da area do desenho no
+     player. Tudo aqui esta em milimetros da folha real — o que se ve nesta
+     pagina e, tamanho por tamanho, o que aparece na TV.
+     Altura de texto na norma = altura da MAIUSCULA. Em Arial a maiuscula tem
+     ~0,716 do corpo da fonte, entao corpo = altura desejada / 0,716.        */
+  @page { size: 480mm 270mm; margin: 0; }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  html,body{background:#fff;}
+  .folha{position:relative;width:480mm;height:270mm;background:#fff;overflow:hidden;
+         font-family:Arial,Helvetica,sans-serif;color:#000;page-break-after:always;}
+  .folha:last-child{page-break-after:auto;}
+
+  /* peca que entra nesta camada */
+  .peca{position:absolute;background:#E9E9E9;border:0.8mm solid #000;}
+  /* peca que ja estava na caixa: contorno fino, sem preenchimento e SEM NOME */
+  .antes{position:absolute;background:none;border:0.4mm solid #9A9A9A;}
+
+  .nome{position:absolute;font-size:16.8mm;line-height:1;font-weight:bold;letter-spacing:0.3mm;}
+  .nome.menor{font-size:14mm;}
+  .chamada{position:absolute;font-size:16.8mm;line-height:1;font-weight:bold;}
+  .linha{position:absolute;background:#000;transform-origin:0 0;height:0.5mm;}
+  .obs{position:absolute;left:12mm;bottom:10mm;font-size:16.8mm;line-height:1;font-weight:bold;}
+
+  /* guias: so na folha de referencia, nunca no desenho de verdade */
+  .guia{position:absolute;border:0.4mm dashed #FF5C1F;}
+  .guia-txt{position:absolute;font-size:6mm;color:#FF5C1F;font-weight:bold;letter-spacing:0.2mm;}
+  .cota{position:absolute;font-size:5mm;color:#777;}
+</style>
+</head>
+<body>
+
+<!-- ─────────── FOLHA 1 · exemplo preenchido ─────────── -->
+<div class="folha">
+  <div class="peca" style="left:26mm;top:52mm;width:186mm;height:104mm;"></div>
+  <div class="nome" style="left:34mm;top:94mm;">(2X) LATERAL Nº 03</div>
+
+  <div class="peca" style="left:232mm;top:52mm;width:222mm;height:104mm;"></div>
+  <div class="nome" style="left:240mm;top:94mm;">FUNDO Nº 01</div>
+
+  <div class="peca" style="left:26mm;top:172mm;width:110mm;height:46mm;"></div>
+  <div class="nome menor" style="left:34mm;top:189mm;">BASE Nº 05</div>
+
+  <div class="linha" style="left:156mm;top:196mm;width:58mm;"></div>
+  <div class="chamada" style="left:216mm;top:188mm;">ISOMANTA</div>
+
+  <div class="obs">TODAS AS PEÇAS COM PINTURA PARA BAIXO</div>
+</div>
+
+<!-- ─────────── FOLHA 2 · camada seguinte ─────────── -->
+<div class="folha">
+  <div class="antes" style="left:26mm;top:52mm;width:186mm;height:104mm;"></div>
+  <div class="antes" style="left:232mm;top:52mm;width:222mm;height:104mm;"></div>
+  <div class="antes" style="left:26mm;top:172mm;width:110mm;height:46mm;"></div>
+
+  <div class="peca" style="left:60mm;top:74mm;width:150mm;height:64mm;"></div>
+  <div class="nome" style="left:68mm;top:99mm;">PRATELEIRA Nº 07</div>
+
+  <div class="peca" style="left:252mm;top:74mm;width:182mm;height:30mm;"></div>
+  <div class="nome menor" style="left:260mm;top:84mm;">(4X) TRAVESSA Nº 09</div>
+
+  <div class="peca" style="left:252mm;top:120mm;width:182mm;height:30mm;"></div>
+  <div class="nome menor" style="left:260mm;top:130mm;">TAMPO Nº 02</div>
+</div>
+
+</body>
+</html>

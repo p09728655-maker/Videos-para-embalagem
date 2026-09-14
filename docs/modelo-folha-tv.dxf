@@ -489,7 +489,7 @@ $SKPOLY
   9
 $TDCREATE
  40
-2461295.822800926
+2461298.5666087964
   9
 $TDUCREATE
  40
@@ -497,7 +497,7 @@ $TDUCREATE
   9
 $TDUPDATE
  40
-2461295.822800926
+2461298.5666087964
   9
 $TDUUPDATE
  40
@@ -549,7 +549,7 @@ $SPLINESEGS
   9
 $HANDSEED
   5
-B0
+AB
   9
 $SURFTAB1
  70
@@ -929,11 +929,11 @@ $PSTYLEMODE
   9
 $FINGERPRINTGUID
   2
-{67516785-61BF-449C-B555-643AC934C153}
+{DC973F71-83EC-4672-87CC-FF5C2AB84EE9}
   9
 $VERSIONGUID
   2
-{351E102E-7363-40B8-9CC1-4384135E97C0}
+{DF04BD32-3032-4526-9821-EF382F158BD9}
   9
 $EXTNAMES
 290
@@ -1323,9 +1323,9 @@ ISM
   0
 CLASS
   1
-ACDBPLACEHOLDER
+LAYOUT
   2
-AcDbPlaceHolder
+AcDbLayout
   3
 ObjectDBX Classes
  90
@@ -1339,9 +1339,9 @@ ObjectDBX Classes
   0
 CLASS
   1
-LAYOUT
+ACDBPLACEHOLDER
   2
-AcDbLayout
+AcDbPlaceHolder
   3
 ObjectDBX Classes
  90
@@ -1373,7 +1373,7 @@ AcDbSymbolTable
   0
 VPORT
   5
-23
+A7
 330
 8
 100
@@ -1393,9 +1393,9 @@ AcDbViewportTableRecord
  21
 1.0
  12
-0.0
+240.0
  22
-0.0
+135.0
  13
 0.0
  23
@@ -1421,7 +1421,7 @@ AcDbViewportTableRecord
  37
 0.0
  40
-1000.0
+286.2
  41
 1.34
  42
@@ -1453,6 +1453,26 @@ AcDbViewportTableRecord
 281
 0
  65
+1
+110
+0.0
+120
+0.0
+130
+0.0
+111
+1.0
+121
+0.0
+131
+0.0
+112
+0.0
+122
+1.0
+132
+0.0
+ 79
 0
 146
 0.0
@@ -2233,7 +2253,7 @@ LAYER
 100
 AcDbSymbolTable
  70
-11
+10
   0
 LAYER
   5
@@ -2295,17 +2315,15 @@ AcDbSymbolTableRecord
 100
 AcDbLayerTableRecord
   2
-GUIA_NAO_PLOTAR
+DESENHO
  70
 0
  62
-4
+7
   6
-Continuous
-290
-0
+CONTINUOUS
 370
--3
+80
 390
 13
 347
@@ -2321,17 +2339,15 @@ AcDbSymbolTableRecord
 100
 AcDbLayerTableRecord
   2
-NOTAS_NAO_PLOTAR
+PECA_ANTERIOR
  70
 0
  62
-4
+8
   6
-Continuous
-290
-0
+DASHED
 370
--3
+40
 390
 13
 347
@@ -2347,15 +2363,15 @@ AcDbSymbolTableRecord
 100
 AcDbLayerTableRecord
   2
-DESENHO
+PREENCHIMENTO
  70
 0
  62
-7
+254
   6
-Continuous
+CONTINUOUS
 370
--3
+0
 390
 13
 347
@@ -2371,15 +2387,15 @@ AcDbSymbolTableRecord
 100
 AcDbLayerTableRecord
   2
-PREENCHIMENTO
+TEXTO
  70
 0
  62
-254
+7
   6
-Continuous
+CONTINUOUS
 370
--3
+35
 390
 13
 347
@@ -2395,15 +2411,15 @@ AcDbSymbolTableRecord
 100
 AcDbLayerTableRecord
   2
-NOMES
+CHAMADA
  70
 0
  62
 7
   6
-Continuous
+CONTINUOUS
 370
--3
+50
 390
 13
 347
@@ -2419,15 +2435,15 @@ AcDbSymbolTableRecord
 100
 AcDbLayerTableRecord
   2
-CHAMADAS
+OBSERVACAO
  70
 0
  62
 7
   6
-Continuous
+CONTINUOUS
 370
--3
+50
 390
 13
 347
@@ -2443,15 +2459,17 @@ AcDbSymbolTableRecord
 100
 AcDbLayerTableRecord
   2
-OBS
+GUIA_NAO_PLOTAR
  70
 0
  62
-1
+30
   6
-Continuous
+DASHED
+290
+0
 370
--3
+20
 390
 13
 347
@@ -2467,39 +2485,17 @@ AcDbSymbolTableRecord
 100
 AcDbLayerTableRecord
   2
-ISOMETRICA
- 70
-0
- 62
-7
-  6
-Continuous
-370
--3
-390
-13
-347
-21
-  0
-LAYER
-  5
-93
-330
-1
-100
-AcDbSymbolTableRecord
-100
-AcDbLayerTableRecord
-  2
-IDENTIFICACAO
+NOTAS_NAO_PLOTAR
  70
 0
  62
 8
   6
-Continuous
+CONTINUOUS
+290
+0
 370
--3
+18
 390
 13
 347
@@ -3333,7 +3329,7 @@ ACAD
   0
 APPID
   5
-AD
+A8
 330
 3
 100
@@ -3347,7 +3343,7 @@ HATCHBACKGROUNDCOLOR
   0
 APPID
   5
-AE
+A9
 330
 3
 100
@@ -5459,6 +5455,38 @@ ENTITIES
   0
 LWPOLYLINE
   5
+93
+330
+17
+100
+AcDbEntity
+  8
+GUIA_NAO_PLOTAR
+100
+AcDbPolyline
+ 90
+4
+ 70
+1
+ 10
+0.0
+ 20
+0.0
+ 10
+480.0
+ 20
+0.0
+ 10
+480.0
+ 20
+270.0
+ 10
+0.0
+ 20
+270.0
+  0
+LWPOLYLINE
+  5
 94
 330
 17
@@ -5473,23 +5501,23 @@ AcDbPolyline
  70
 1
  10
-0.0
+12.0
  20
-0.0
+12.0
  10
-420.0
+468.0
  20
-0.0
+12.0
  10
-420.0
+468.0
  20
-297.0
+258.0
  10
-0.0
+12.0
  20
-297.0
+258.0
   0
-LWPOLYLINE
+TEXT
   5
 95
 330
@@ -5497,31 +5525,29 @@ LWPOLYLINE
 100
 AcDbEntity
   8
-GUIA_NAO_PLOTAR
-  6
-DASHED
+NOTAS_NAO_PLOTAR
 100
-AcDbPolyline
- 90
-4
- 70
-1
+AcDbText
  10
-15.0
+1.5
  20
-30.0
- 10
-405.0
- 20
-30.0
- 10
-405.0
- 20
-155.0
- 10
-15.0
- 20
-155.0
+263.0
+ 30
+0.0
+ 40
+5.5
+  1
+FOLHA TV 16:9 · 480 x 270 mm · tudo que estiver aqui vai para a TV, na mesma proporcao
+  7
+ARIAL
+ 11
+1.5
+ 21
+263.0
+ 31
+0.0
+100
+AcDbText
   0
 TEXT
   5
@@ -5531,31 +5557,31 @@ TEXT
 100
 AcDbEntity
   8
-GUIA_NAO_PLOTAR
+NOTAS_NAO_PLOTAR
 100
 AcDbText
  10
-17.0
+1.5
  20
-150.0
+3.5
  30
 0.0
  40
-3.2
+4.5
   1
-AREA DO DESENHO DA CAMADA  (x 15-405 / y 30-155)  pecas, nomes e chamadas
+GUIA_NAO_PLOTAR e NOTAS_NAO_PLOTAR nao entram no PDF. Apague o exemplo antes de desenhar.
   7
 ARIAL
  11
-17.0
+1.5
  21
-150.0
+3.5
  31
 0.0
 100
 AcDbText
   0
-LWPOLYLINE
+TEXT
   5
 97
 330
@@ -5563,33 +5589,31 @@ LWPOLYLINE
 100
 AcDbEntity
   8
-GUIA_NAO_PLOTAR
-  6
-DASHED
+NOTAS_NAO_PLOTAR
 100
-AcDbPolyline
- 90
-4
- 70
-1
+AcDbText
  10
-15.0
+14.0
  20
-160.0
- 10
-405.0
- 20
-160.0
- 10
-405.0
- 20
-170.0
- 10
-15.0
- 20
-170.0
+251.0
+ 30
+0.0
+ 40
+5.0
+  1
+margem de seguranca 12 mm — nada de texto ou peca fora dela
+  7
+ARIAL
+ 11
+14.0
+ 21
+251.0
+ 31
+0.0
+100
+AcDbText
   0
-TEXT
+HATCH
   5
 98
 330
@@ -5597,29 +5621,63 @@ TEXT
 100
 AcDbEntity
   8
-GUIA_NAO_PLOTAR
+PREENCHIMENTO
+ 62
+254
 100
-AcDbText
+AcDbHatch
  10
-17.0
+0.0
  20
-171.5
+0.0
  30
 0.0
- 40
-3.2
-  1
-LINHA DE OBSERVACAO (opcional)  altura de texto 12 mm
-  7
-ARIAL
- 11
-17.0
- 21
-171.5
- 31
+210
 0.0
-100
-AcDbText
+220
+0.0
+230
+1.0
+  2
+SOLID
+ 70
+1
+ 71
+0
+ 91
+1
+ 92
+3
+ 72
+0
+ 73
+1
+ 93
+4
+ 10
+26.0
+ 20
+114.0
+ 10
+212.0
+ 20
+114.0
+ 10
+212.0
+ 20
+218.0
+ 10
+26.0
+ 20
+218.0
+ 97
+0
+ 75
+0
+ 76
+1
+ 98
+0
   0
 LWPOLYLINE
   5
@@ -5629,9 +5687,7 @@ LWPOLYLINE
 100
 AcDbEntity
   8
-GUIA_NAO_PLOTAR
-  6
-DASHED
+DESENHO
 100
 AcDbPolyline
  90
@@ -5639,21 +5695,21 @@ AcDbPolyline
  70
 1
  10
-260.0
+26.0
  20
-185.0
+114.0
  10
-405.0
+212.0
  20
-185.0
+114.0
  10
-405.0
+212.0
  20
-285.0
+218.0
  10
-260.0
+26.0
  20
-285.0
+218.0
   0
 TEXT
   5
@@ -5663,31 +5719,35 @@ TEXT
 100
 AcDbEntity
   8
-GUIA_NAO_PLOTAR
+TEXTO
 100
 AcDbText
  10
-262.0
+119.0
  20
-286.5
+166.0
  30
 0.0
  40
-3.2
+12.0
   1
-VISTA ISOMETRICA  (x 260-405 / y 185-285)
+(2X) LATERAL N 03
   7
 ARIAL
+ 72
+1
  11
-262.0
+119.0
  21
-286.5
+166.0
  31
 0.0
 100
 AcDbText
+ 73
+2
   0
-LWPOLYLINE
+HATCH
   5
 9B
 330
@@ -5695,33 +5755,65 @@ LWPOLYLINE
 100
 AcDbEntity
   8
-GUIA_NAO_PLOTAR
-  6
-DASHED
+PREENCHIMENTO
+ 62
+254
 100
-AcDbPolyline
- 90
-4
+AcDbHatch
+ 10
+0.0
+ 20
+0.0
+ 30
+0.0
+210
+0.0
+220
+0.0
+230
+1.0
+  2
+SOLID
  70
 1
+ 71
+0
+ 91
+1
+ 92
+3
+ 72
+0
+ 73
+1
+ 93
+4
  10
-15.0
+232.0
  20
-185.0
+114.0
  10
-250.0
+454.0
  20
-185.0
+114.0
  10
-250.0
+454.0
  20
-285.0
+218.0
  10
-15.0
+232.0
  20
-285.0
+218.0
+ 97
+0
+ 75
+0
+ 76
+1
+ 98
+0
   0
-TEXT
+LWPOLYLINE
   5
 9C
 330
@@ -5729,29 +5821,29 @@ TEXT
 100
 AcDbEntity
   8
-GUIA_NAO_PLOTAR
+DESENHO
 100
-AcDbText
+AcDbPolyline
+ 90
+4
+ 70
+1
  10
-17.0
+232.0
  20
-286.5
- 30
-0.0
- 40
-3.2
-  1
-IDENTIFICACAO (opcional): produto e camada. O painel ignora.
-  7
-ARIAL
- 11
-17.0
- 21
-286.5
- 31
-0.0
-100
-AcDbText
+114.0
+ 10
+454.0
+ 20
+114.0
+ 10
+454.0
+ 20
+218.0
+ 10
+232.0
+ 20
+218.0
   0
 TEXT
   5
@@ -5761,29 +5853,33 @@ TEXT
 100
 AcDbEntity
   8
-GUIA_NAO_PLOTAR
+TEXTO
 100
 AcDbText
  10
-15.0
+343.0
  20
-20.0
+166.0
  30
 0.0
  40
-3.2
+12.0
   1
-FAIXA DE LEITURA DO PAINEL: y 24 a 178 mm. Nome de peca fora daqui NAO entra na lista de componentes.
+FUNDO N 01
   7
 ARIAL
+ 72
+1
  11
-15.0
+343.0
  21
-20.0
+166.0
  31
 0.0
 100
 AcDbText
+ 73
+2
   0
 HATCH
   5
@@ -5827,21 +5923,21 @@ SOLID
  93
 4
  10
-50.0
+26.0
  20
-55.0
+52.0
  10
-230.0
+136.0
  20
-55.0
+52.0
  10
-230.0
+136.0
  20
-120.0
+98.0
  10
-50.0
+26.0
  20
-120.0
+98.0
  97
 0
  75
@@ -5860,8 +5956,6 @@ LWPOLYLINE
 AcDbEntity
   8
 DESENHO
-370
-50
 100
 AcDbPolyline
  90
@@ -5869,23 +5963,23 @@ AcDbPolyline
  70
 1
  10
-50.0
+26.0
  20
-55.0
+52.0
  10
-230.0
+136.0
  20
-55.0
+52.0
  10
-230.0
+136.0
  20
-120.0
+98.0
  10
-50.0
+26.0
  20
-120.0
+98.0
   0
-HATCH
+TEXT
   5
 A0
 330
@@ -5893,65 +5987,35 @@ A0
 100
 AcDbEntity
   8
-PREENCHIMENTO
- 62
-254
+TEXTO
 100
-AcDbHatch
+AcDbText
  10
-0.0
+81.0
  20
-0.0
+75.0
  30
 0.0
-210
-0.0
-220
-0.0
-230
-1.0
-  2
-SOLID
- 70
-1
- 71
-0
- 91
-1
- 92
-3
+ 40
+10.0
+  1
+BASE N 05
+  7
+ARIAL
  72
-0
+1
+ 11
+81.0
+ 21
+75.0
+ 31
+0.0
+100
+AcDbText
  73
-1
- 93
-4
- 10
-230.0
- 20
-55.0
- 10
-330.0
- 20
-55.0
- 10
-330.0
- 20
-120.0
- 10
-230.0
- 20
-120.0
- 97
-0
- 75
-0
- 76
-1
- 98
-0
+2
   0
-LWPOLYLINE
+LINE
   5
 A1
 330
@@ -5959,31 +6023,21 @@ A1
 100
 AcDbEntity
   8
-DESENHO
-370
-50
+CHAMADA
 100
-AcDbPolyline
- 90
-4
- 70
-1
+AcDbLine
  10
-230.0
+156.0
  20
-55.0
- 10
-330.0
- 20
-55.0
- 10
-330.0
- 20
-120.0
- 10
-230.0
- 20
-120.0
+74.0
+ 30
+0.0
+ 11
+214.0
+ 21
+74.0
+ 31
+0.0
   0
 TEXT
   5
@@ -5993,27 +6047,25 @@ A2
 100
 AcDbEntity
   8
-NOMES
+CHAMADA
 100
 AcDbText
  10
-140.0
+218.0
  20
-87.5
+74.0
  30
 0.0
  40
-10.0
+12.0
   1
-BASE Nº 03
+ISOMANTA
   7
 ARIAL
- 72
-1
  11
-140.0
+218.0
  21
-87.5
+74.0
  31
 0.0
 100
@@ -6029,33 +6081,29 @@ A3
 100
 AcDbEntity
   8
-NOMES
+OBSERVACAO
 100
 AcDbText
  10
-280.0
+12.0
  20
-92.0
+20.0
  30
 0.0
  40
-8.0
+12.0
   1
-(2X) ISOPOR
+TODAS AS PECAS COM PINTURA PARA BAIXO
   7
 ARIAL
- 72
-1
  11
-280.0
+12.0
  21
-92.0
+20.0
  31
 0.0
 100
 AcDbText
- 73
-2
   0
 TEXT
   5
@@ -6065,35 +6113,31 @@ A4
 100
 AcDbEntity
   8
-NOMES
+NOTAS_NAO_PLOTAR
 100
 AcDbText
  10
-280.0
+232.0
  20
-80.0
+40.0
  30
 0.0
  40
-8.0
+4.5
   1
-Nº 07
+Observacao: uma linha, comecando por verbo (DOBRAR, VIRAR, CONFERIR...)
   7
 ARIAL
- 72
-1
  11
-280.0
+232.0
  21
-80.0
+40.0
  31
 0.0
 100
 AcDbText
- 73
-2
   0
-LEADER
+TEXT
   5
 A5
 330
@@ -6101,29 +6145,29 @@ A5
 100
 AcDbEntity
   8
-CHAMADAS
-370
-35
+NOTAS_NAO_PLOTAR
 100
-AcDbLeader
-  3
-EZDXF
- 73
-3
- 76
-2
+AcDbText
  10
-110.0
+232.0
  20
-60.0
+33.0
  30
 0.0
- 10
-150.0
- 20
-42.0
- 30
+ 40
+4.5
+  1
+ou contendo PARA CIMA / PARA BAIXO / COM PINTURA. Vira o alerta amarelo.
+  7
+ARIAL
+ 11
+232.0
+ 21
+33.0
+ 31
 0.0
+100
+AcDbText
   0
 TEXT
   5
@@ -6133,229 +6177,29 @@ A6
 100
 AcDbEntity
   8
-CHAMADAS
-100
-AcDbText
- 10
-152.0
- 20
-40.0
- 30
-0.0
- 40
-10.0
-  1
-ISOMANTA
-  7
-ARIAL
- 11
-152.0
- 21
-40.0
- 31
-0.0
-100
-AcDbText
-  0
-TEXT
-  5
-A7
-330
-17
-100
-AcDbEntity
-  8
-OBS
-100
-AcDbText
- 10
-210.0
- 20
-165.0
- 30
-0.0
- 40
-12.0
-  1
-TODAS AS PEÇAS COM PINTURA PARA BAIXO
-  7
-ARIAL
- 72
-1
- 11
-210.0
- 21
-165.0
- 31
-0.0
-100
-AcDbText
- 73
-2
-  0
-TEXT
-  5
-A8
-330
-17
-100
-AcDbEntity
-  8
-IDENTIFICACAO
-100
-AcDbText
- 10
-20.0
- 20
-262.0
- 30
-0.0
- 40
-10.0
-  1
-SAPATEIRA VIVARE
-  7
-ARIAL
- 11
-20.0
- 21
-262.0
- 31
-0.0
-100
-AcDbText
-  0
-TEXT
-  5
-A9
-330
-17
-100
-AcDbEntity
-  8
-IDENTIFICACAO
-100
-AcDbText
- 10
-20.0
- 20
-248.0
- 30
-0.0
- 40
-8.0
-  1
-CAMADA 03 / 7
-  7
-ARIAL
- 11
-20.0
- 21
-248.0
- 31
-0.0
-100
-AcDbText
-  0
-LWPOLYLINE
-  5
-AA
-330
-17
-100
-AcDbEntity
-  8
-ISOMETRICA
-370
-35
-100
-AcDbPolyline
- 90
-4
- 70
-1
- 10
-290.0
- 20
-235.0
- 10
-370.0
- 20
-255.0
- 10
-395.0
- 20
-245.0
- 10
-315.0
- 20
-225.0
-  0
-LWPOLYLINE
-  5
-AB
-330
-17
-100
-AcDbEntity
-  8
-ISOMETRICA
-370
-35
-100
-AcDbPolyline
- 90
-4
- 70
-1
- 10
-315.0
- 20
-225.0
- 10
-395.0
- 20
-245.0
- 10
-395.0
- 20
-240.0
- 10
-315.0
- 20
-220.0
-  0
-MTEXT
-  5
-AC
-330
-17
-100
-AcDbEntity
-  8
 NOTAS_NAO_PLOTAR
 100
-AcDbMText
+AcDbText
  10
-432.0
+232.0
  20
-290.0
+26.0
  30
 0.0
  40
 4.5
- 41
-150.0
- 71
-1
-  3
-REGRAS DO PADRAO TV\P1. A3 paisagem, uma camada por pagina, na ordem de embalagem.\P2. Sem logo, carimbo, moldura, rodape, tabela e cotas.\P3. Nome da peca em MAIUSCULAS, Arial, 10 mm, dentro da area do desenho.\P4. Quantidade antes do nome: (3X) TRA
-  3
-VESSA Nº 09.\P5. Observacao na linha propria, 12 mm, comecando com verbo (DOBRAR, VIRAR, CONFERIR...) ou com PARA CIMA / PARA BAIXO.\P6. Contorno 0,5 mm; preenchimento cinza claro.\P7. PDF: exportar todas as folhas, texto como texto (nao converter em
   1
- curvas).\P8. Nome do arquivo = nome do produto: SAPATEIRA VIVARE.pdf\PAs camadas *_NAO_PLOTAR sao so referencia.
+Peca de camada anterior: contorno fino e SEM NOME, senao volta na lista.
   7
 ARIAL
+ 11
+232.0
+ 21
+26.0
+ 31
+0.0
+100
+AcDbText
   0
 ENDSEC
   0
@@ -7447,7 +7291,7 @@ CREATED_BY_EZDXF
   3
 WRITTEN_BY_EZDXF
 350
-AF
+AA
   0
 DICTIONARYVAR
   5
@@ -7459,7 +7303,7 @@ DictionaryVariables
 280
 0
   1
-1.4.4 @ 2026-09-11T19:44:50.297469+00:00
+1.4.4 @ 2026-09-14T13:35:55.047373+00:00
   0
 VISUALSTYLE
   5
@@ -8163,7 +8007,7 @@ X-Ray
   0
 DICTIONARYVAR
   5
-AF
+AA
 330
 2D
 100
@@ -8171,7 +8015,7 @@ DictionaryVariables
 280
 0
   1
-1.4.4 @ 2026-09-11T19:44:50.303349+00:00
+1.4.4 @ 2026-09-14T13:35:55.053680+00:00
   0
 ENDSEC
   0

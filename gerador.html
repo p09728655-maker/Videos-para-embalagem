@@ -375,11 +375,25 @@ function isBoilerplate(line) {
   return BOILERPLATE.some(rx => rx.test(l));
 }
 
-async function extrairComponentes(page) {
+/* ── Folha TV ──────────────────────────────────────────────────────────────
+   Folha 16:9 sem cabecalho, tabela nem moldura: a pagina inteira e o desenho.
+   Nela nao ha o que adivinhar — o que o desenhista desenhou e o que vai para a
+   TV, na mesma proporcao da area do player. As heuristicas de recorte existem
+   para as folhas antigas (A3 com carimbo e tabela) e ficam so para elas. */
+const RAZAO_TV = 16 / 9;
+function ehFolhaTV(page) {
+  const v = page.getViewport({ scale: 1 });
+  return Math.abs((v.width / v.height) - RAZAO_TV) <= RAZAO_TV * 0.02;
+}
+
+/* folhaInteira: na folha TV todo texto da pagina e componente ou observacao.
+   Na folha antiga so vale a faixa de 8% a 60% da altura, porque acima dela
+   ficam carimbo e identificacao, que nao sao peca. */
+async function extrairComponentes(page, folhaInteira) {
   const textContent = await page.getTextContent();
   const pdfH = page.getViewport({ scale: 1 }).height;
-  const yMin = pdfH * 0.08;
-  const yMax = pdfH * 0.60;
+  const yMin = folhaInteira ? 0 : pdfH * 0.08;
+  const yMax = folhaInteira ? pdfH : pdfH * 0.60;
 
   const linhas = textContent.items
     .filter(it => { const y = it.transform[5]; return y >= yMin && y <= yMax; })
@@ -646,40 +660,61 @@ async function processar(file) {
 
   mostrarStatus(`Processando ${total} páginas...`, 0);
 
-  /* Duas passadas: a comparacao entre paginas so e possivel com todas
-     renderizadas, entao o corte final espera o fim da leitura. */
-  const canvases = [], paginas = [];
+  /* Folha TV so se TODAS as paginas forem 16:9 — um PDF misturado cai no
+     caminho antigo inteiro, sem meio-termo que seria pior que os dois. */
+  const paginasPdf = [];
+  let folhaTV = true;
   for (let i = 1; i <= total; i++) {
-    mostrarStatus(`Lendo página ${i} de ${total}...`, (i-1)/total * 70);
-    const page = await pdf.getPage(i);
-    const scale = 1.6;   // suficiente para TV; 2.2 gerava arquivo grande demais
-    const viewport = page.getViewport({ scale });
+    const pg = await pdf.getPage(i);
+    paginasPdf.push(pg);
+    if (!ehFolhaTV(pg)) folhaTV = false;
+  }
+
+  /* Na folha TV a pagina nao passa por recorte, entao vale render maior: sai
+     nitida numa TV 4K. A folha antiga continua em 1.6 — ali todas as paginas
+     ficam na memoria ao mesmo tempo para a comparacao, e dobrar a escala
+     quadruplica esse pico num tablet. */
+  const escala = folhaTV ? 2.2 : 1.6;
+
+  const canvases = [], paginas = [], imagens = [];
+  for (let i = 0; i < total; i++) {
+    mostrarStatus(`Lendo página ${i + 1} de ${total}...`, i / total * 70);
+    const page = paginasPdf[i];
+    const viewport = page.getViewport({ scale: escala });
     const canvas = document.createElement('canvas');
     canvas.width = viewport.width;
     canvas.height = viewport.height;
     await page.render({ canvasContext: canvas.getContext('2d'), viewport }).promise;
-    const { components, obs } = await extrairComponentes(page);
-    canvases.push(canvas); paginas.push({ components, obs });
+    const { components, obs } = await extrairComponentes(page, folhaTV);
+    paginas.push({ components, obs });
+    if (folhaTV) imagens.push(canvas.toDataURL('image/jpeg', 0.82));  /* canvas livre já */
+    else canvases.push(canvas);
   }
 
-  mostrarStatus('Separando o desenho do cabeçalho...', 75);
-  await new Promise(r => setTimeout(r, 30));
-  const blocos = blocosTemplate(canvases);
+  if (!folhaTV) {
+    mostrarStatus('Separando o desenho do cabeçalho...', 75);
+    await new Promise(r => setTimeout(r, 30));
+    const blocos = blocosTemplate(canvases);
+    for (let i = 0; i < total; i++) {
+      mostrarStatus(`Preparando camada ${i + 1} de ${total}...`, 75 + (i + 1) / total * 20);
+      const c = apagarBlocos(canvases[i], blocos);
+      imagens.push(recortarMargemBranca(apertarDesenho(recortarMargemBranca(c)))
+                     .toDataURL('image/jpeg', 0.82));
+      canvases[i] = null;
+    }
+  }
 
   for (let i = 0; i < total; i++) {
-    mostrarStatus(`Preparando camada ${i+1} de ${total}...`, 75 + (i+1)/total * 25);
-    const c = apagarBlocos(canvases[i], blocos);
-    const imgBase64 = recortarMargemBranca(apertarDesenho(recortarMargemBranca(c)))
-                        .toDataURL('image/jpeg', 0.82);
     const opName = 'CAMADA ' + String(i + 1).padStart(2, '0');
-    pagesData.push({ img: imgBase64, op: opName, components: paginas[i].components, obs: paginas[i].obs });
-    adicionarCard(i, opName, imgBase64, paginas[i].components, paginas[i].obs);
-    canvases[i] = null;
+    pagesData.push({ img: imagens[i], op: opName,
+                     components: paginas[i].components, obs: paginas[i].obs });
+    adicionarCard(i, opName, imagens[i], paginas[i].components, paginas[i].obs);
   }
 
   mostrarStatus(`${total} páginas processadas. Revise os componentes de cada camada.`, 100);
   document.getElementById('contCamadas').textContent =
-    total + (total === 1 ? ' camada' : ' camadas');
+    total + (total === 1 ? ' camada' : ' camadas') +
+    (folhaTV ? ' · folha TV 16:9' : ' · folha antiga, com recorte automático');
   mostrarEtapas(4);
   document.getElementById('acoes').classList.add('visible');
   conferirVersao();
