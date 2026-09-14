@@ -163,6 +163,8 @@
            text-indent:0.19em;line-height:1;}
   .ol-pulso{width:28vh;max-width:320px;display:block;}
   .ol-sub{font-size:2.8vh;color:var(--text-muted);font-weight:600;}
+  /* Em espera a frase e o conteudo da tela: tem que ser lida da linha, a 4 m. */
+  .ol-sub.espera{font-size:4.6vh;color:#E8E8E8;font-weight:800;}
   .ol-erro{font-size:2.2vh;color:var(--warn);font-weight:600;max-width:70vw;line-height:1.5;}
   .ol-dica{font-size:1.8vh;color:var(--gray);max-width:70vw;line-height:1.5;}
 </style>
@@ -239,6 +241,7 @@ var carimboAtual = null;
 
 var intervalo = null, etapaAtual = 0, tRestante = 0, tCiclo = 0;
 var imgCache = {}, splashFeita = false, redeOk = false;
+var emEspera = false;     /* TV sem produto escolhido — e um estado valido, nao erro */
 
 function $(id){ return document.getElementById(id); }
 window.onerror = function(m){ try{ $('rodape').textContent = 'ERRO: ' + m; }catch(e){} return false; };
@@ -253,8 +256,26 @@ function mostrarErro(msg, dica){
   var t = $('tela');
   t.className = ''; t.style.display = 'flex'; t.style.opacity = '1';
   $('telaSub').style.display = 'none';
+  $('telaSub').className = 'ol-sub';
   $('telaErro').style.display = 'block'; $('telaErro').textContent = msg;
   if (dica){ $('telaDica').style.display = 'block'; $('telaDica').textContent = dica; }
+  splashFeita = false;
+}
+/* Ninguem escolheu produto: a TV fica em espera, sem nada rodando. Antes ela
+   caia no arquivo de reserva e prendia um produto fixo na tela para sempre. */
+function mostrarEspera(){
+  emEspera = true;
+  painel = null;
+  var t = $('tela');
+  t.className = ''; t.style.display = 'flex'; t.style.opacity = '1';
+  $('telaSub').style.display = 'block';
+  $('telaSub').className = 'ol-sub espera';
+  $('telaSub').textContent = 'Nenhum produto na TV';
+  $('telaErro').style.display = 'none';
+  $('telaDica').style.display = 'block';
+  $('telaDica').textContent = 'Escolha o produto na biblioteca do RitmoPatrimar. ' +
+                              'A TV liga sozinha em até 1 minuto.';
+  document.title = 'RitmoPatrimar · Embalagem';
   splashFeita = false;
 }
 function pularSplash(){
@@ -289,7 +310,11 @@ function carregarDoSupabase(){
         });
 
   return pegarSlug.then(function(info){
-    if (!info.slug) throw new Error('nenhum painel ativo');
+    if (!info.slug){
+      var vazio = new Error('nenhum painel ativo');
+      vazio.semPainel = true;   /* o banco respondeu: e TV vazia, nao queda */
+      throw vazio;
+    }
     return window.supaGet('embalagem_paineis?slug=eq.' + encodeURIComponent(info.slug) +
                           '&select=slug,produto,tempo,camadas,fotos,opcoes,atualizado_em')
       .then(function(rows){
@@ -339,6 +364,9 @@ function carregar(){
   carregarDoSupabase().then(function(){
     redeOk = true; montar();
   })['catch'](function(e1){
+    /* Sem produto escolhido a TV fica em espera. O arquivo de reserva so entra
+       quando o banco nao responde — ele nunca decide sozinho o que exibir. */
+    if (e1 && e1.semPainel){ redeOk = true; irParaEspera(); return; }
     carregarDeArquivos().then(function(){
       redeOk = true; montar();
     })['catch'](function(e2){
@@ -352,6 +380,7 @@ function carregar(){
 
 /* ---------- montagem ---------- */
 function montar(){
+  emEspera = false;
   var p = painel;
   if (!p || !p.camadas || !p.camadas.length){
     mostrarErro('O painel publicado está sem camadas.', 'Gere o produto novamente e publique a pasta.');
@@ -364,6 +393,8 @@ function montar(){
   document.body.className = mostrarComp ? '' : 'sem-componentes';
   document.title = 'RitmoPatrimar · ' + (p.produto || 'Embalagem');
   $('produtoNome').textContent = p.produto || '—';
+  $('telaSub').className = 'ol-sub';
+  $('telaSub').style.display = 'block';
   $('telaSub').textContent = p.produto || '';
   $('rodape').textContent = 'PADRÃO DE EMBALAGEM · ' + (p.produto || '') +
                             ' · RITMOPATRIMAR' + (fonte === 'arquivos' ? ' · MODO RESERVA' : '');
@@ -618,7 +649,7 @@ document.addEventListener('fullscreenchange', function(){
    navegador so devolve o modo tela cheia mediante gesto do usuario — ou seja,
    alguem teria que ir ate la com o controle a cada troca. Aqui o conteudo e
    substituido no lugar, sem reload. */
-function trocarPainel(){
+function limparTela(rotulo){
   if (intervalo){ clearInterval(intervalo); intervalo = null; }
   if (fotoTimer){ clearInterval(fotoTimer); fotoTimer = null; }
 
@@ -635,16 +666,21 @@ function trocarPainel(){
   $('mapaTrilhos').innerHTML = '';
   $('desenhoPh').style.display = 'block';
   $('desenhoPh').textContent = 'Carregando o produto...';
-  $('etapaPrincipal').textContent = 'TROCANDO';
+  $('etapaPrincipal').textContent = rotulo || 'TROCANDO';
   $('obsDisplay').style.display = 'none';
   $('componentesGrade').innerHTML = '<span class="vazio">Carregando...</span>';
-
+  $('produtoNome').textContent = '—';
   painel = null;
-  carregar();
 }
+
+function trocarPainel(){ limparTela('TROCANDO'); carregar(); }
+
+/* Tira o produto da tela sem recarregar a pagina — a TV perderia a tela cheia. */
+function irParaEspera(){ limparTela('SEM PRODUTO'); mostrarEspera(); }
 
 function checarTroca(){
   if (location.protocol.indexOf('http') !== 0 || !window.fetch) return;
+  if (emEspera){ checarSaidaDaEspera(); return; }
   if (!painel){ carregar(); return; }
 
   if (fonte === 'supabase'){
@@ -653,7 +689,8 @@ function checarTroca(){
         redeOk = true;
         var c = rows && rows[0]; if (!c) return;
         var slug = c.painel_ativo ? String(c.painel_ativo) : '';
-        if (slug && slug !== slugAtual){ trocarPainel(); return; }
+        if (!slug){ irParaEspera(); return; }          /* tiraram o produto da TV */
+        if (slug !== slugAtual){ trocarPainel(); return; }
         /* Mesmo produto: confere se ele foi republicado com correcoes. */
         return window.supaGet('embalagem_paineis?slug=eq.' + encodeURIComponent(slugAtual) +
                               '&select=atualizado_em').then(function(rs){
@@ -670,10 +707,27 @@ function checarTroca(){
     if (!a) return;
     var slug = a.painel ? String(a.painel) : '';
     var carimbo = a.atualizado || null;
-    if (slug && slug !== slugAtual) trocarPainel();
+    if (!slug){ irParaEspera(); return; }
+    if (slug !== slugAtual) trocarPainel();
     else if (carimbo && carimboAtual && carimbo !== carimboAtual) trocarPainel();
   })['catch'](function(){ redeOk = false; });
 }
+/* Em espera a TV so pergunta se ja escolheram um produto. Nao tenta o arquivo
+   de reserva: tela vazia aqui e decisao de quem opera, nao falha para contornar. */
+function checarSaidaDaEspera(){
+  if (!window.supaGet) return;
+  window.supaGet('embalagem_config?id=eq.1&select=painel_ativo')
+    .then(function(rows){
+      redeOk = true;
+      var c = rows && rows[0];
+      var slug = (c && c.painel_ativo) ? String(c.painel_ativo) : '';
+      if (!slug) return;
+      emEspera = false;
+      limparTela('CARREGANDO');
+      carregar();
+    })['catch'](function(){ redeOk = false; });
+}
+
 /* Rede de seguranca contra travamento de memoria depois de muitas horas ligada.
    Este reload derruba a tela cheia, entao e raro de proposito: a troca de
    produto, que e o evento frequente, ja acontece sem recarregar. */

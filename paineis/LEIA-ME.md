@@ -14,14 +14,10 @@ paineis/
     ...
 ```
 
-Qual desses aparece na TV é definido em `tv/ativo.json`:
+Qual desses aparece na TV é definido na **biblioteca** (`biblioteca.html`), que
+grava em `embalagem_config.painel_ativo` no Supabase. Um clique em **Colocar na
+TV** troca o produto; **Tirar da TV** deixa a tela em espera, sem produto nenhum.
+A TV percebe em até 1 minuto e se ajusta sozinha, sem controle remoto.
 
-```json
-{ "painel": "rack-intense-180", "atualizado": "2026-09-11T13:40:00Z" }
-```
-
-Trocar o produto da TV = trocar esse nome. A TV percebe em até 1 minuto e
-troca sozinha. Não precisa mexer na TV nem republicar o painel.
-
-O campo `atualizado` serve para forçar a TV a recarregar quando você
-republica a **mesma** pasta com correções: mude o carimbo e a TV recarrega.
+`tv/ativo.json` é só reserva para o Supabase fora do ar, e fica vazio de
+propósito — slug preenchido ali prende o produto na tela em toda queda do banco.

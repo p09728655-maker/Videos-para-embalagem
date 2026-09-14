@@ -11,22 +11,39 @@ as observações críticas (furação, pintura) e o desenho técnico da camada.
 | `index.html` | Página inicial: atalhos e instruções |
 | `gerador.html` | Lê o PDF de embalagem e monta o pacote do produto |
 | `tv/index.html` | **Player da TV** — arquivo fixo, não muda ao trocar de produto |
-| `tv/ativo.json` | Define qual produto está na TV agora |
+| `tv/ativo.json` | Reserva manual, usada só se o Supabase não responder |
 | `paineis/<slug>/` | Biblioteca: um produto por pasta, publicado uma vez só |
 | `manifest.webmanifest`, `sw.js` | App instalável (PWA) do gerador |
 | `logo/`, `icones/` | Marca Patrimar preparada para fundo escuro |
 
 ## Como funciona
 
-O player é fixo. Ele lê `tv/ativo.json` para saber qual produto exibir, carrega
-`paineis/<slug>/dados.json` e monta a tela. As imagens das camadas são arquivos
-separados, carregados só quando a camada aparece.
+O player é fixo. Ele pergunta ao Supabase qual produto está ativo
+(`embalagem_config.painel_ativo`), carrega esse painel e monta a tela. As imagens
+das camadas são arquivos separados, carregados só quando a camada aparece.
 
 Isso separa três coisas que antes eram uma só:
 
-- **publicar um produto** → sobe a pasta em `paineis/`, uma vez na vida
-- **trocar o da TV** → edita uma linha em `tv/ativo.json`
+- **publicar um produto** → sobe uma vez pelo gerador, fica na biblioteca
+- **trocar o da TV** → um clique na biblioteca
 - **mudar o player** → mexe em `tv/index.html`, sem tocar em nenhum produto
+
+### Nada fica fixo na TV
+
+Quem decide o que aparece é a biblioteca, e só ela. O botão **Tirar da TV** zera
+`painel_ativo`: em até 1 minuto a TV entra em **espera** — logo da Patrimar e
+"Nenhum produto na TV" — e fica assim até alguém escolher outro produto. Ela sai
+da espera sozinha, sem ninguém precisar ir até lá com o controle.
+
+Excluir da biblioteca o produto que está na TV também é permitido: o painel sai
+do ar antes da exclusão, e a TV fica em espera.
+
+O arquivo `tv/ativo.json` é **reserva manual** e vem vazio de propósito. Ele só é
+lido quando o Supabase não responde. Preencher um slug ali prende esse produto na
+tela toda vez que o banco cair — o que já causou o problema de a TV exibir um
+padrão de embalagem antigo, de um produto que nem estava mais na biblioteca.
+Sem produto escolhido no banco, o player **não** cai na reserva: espera vazia é
+decisão de quem opera, não falha para contornar.
 
 Antes, cada troca de produto gravava um HTML de ~8 MB no histórico do Git, para
 sempre. Com as imagens fora do HTML, um produto fica em algumas centenas de KB
@@ -46,14 +63,16 @@ e é publicado uma vez, não a cada troca.
 }
 ```
 
-### Formato do `tv/ativo.json`
+### Formato do `tv/ativo.json` (reserva)
 
 ```json
-{ "painel": "rack-intense-180", "atualizado": "2026-09-11T13:40:00Z" }
+{ "painel": "", "atualizado": null }
 ```
 
-`atualizado` força a TV a recarregar quando você republica a **mesma** pasta com
-correções — mude o carimbo e a TV recarrega.
+`painel` vazio = sem reserva. Para uma emergência com o Supabase fora do ar, ponha
+o slug de uma pasta que exista em `paineis/` — e **lembre de esvaziar depois**,
+senão esse produto volta à tela em toda queda do banco. `atualizado` força a TV a
+recarregar quando a mesma pasta é republicada com correções.
 
 ## Restrições da Smart TV consideradas no player
 

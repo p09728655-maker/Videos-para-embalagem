@@ -27,9 +27,10 @@
   .sessao a:hover{text-decoration:underline;}
 
   .item{background:var(--panel);border:1px solid var(--border);border-radius:10px;
-        padding:18px 20px;margin-bottom:10px;display:flex;align-items:center;gap:16px;}
+        padding:18px 20px;margin-bottom:10px;display:flex;align-items:center;gap:16px;
+        flex-wrap:wrap;}
   .item.natv{border-color:var(--accent);background:rgba(255,92,31,0.06);}
-  .item .info{flex:1;min-width:0;}
+  .item .info{flex:1 1 240px;min-width:0;}   /* no celular o nome fica numa linha so */
   .item .nome{font-size:17px;font-weight:700;margin-bottom:4px;}
   .item .meta{font-size:12.5px;color:var(--text-muted);font-family:ui-monospace,Menlo,monospace;}
   .badge{background:var(--accent);color:#fff;font-size:11px;font-weight:800;padding:6px 12px;
@@ -84,6 +85,12 @@
   <div class="sessao" id="sessao"></div>
 
   <div id="estado">Carregando...</div>
+
+  <div class="aviso" id="avisoSemTV" style="display:none">
+    <b>Nenhum produto na TV.</b> A tela da embalagem está em espera até alguém
+    colocar um produto. Nada fica fixo lá sozinho.
+  </div>
+
   <div id="lista"></div>
 
   <div class="aviso" id="avisoRodape" style="display:none">
@@ -187,6 +194,7 @@ function carregar(){
 
 function render(itens){
   $('estado').style.display = 'none';
+  $('avisoSemTV').style.display = ativoAtual ? 'none' : 'block';
   var lista = $('lista');
   if (!itens.length){
     lista.innerHTML = '<div class="vazio">Nenhum produto publicado ainda.<br>' +
@@ -205,7 +213,9 @@ function render(itens){
                ' · ' + p.tempo + 's por camada · atualizado ' + dataBR(p.atualizado_em) + '</div>' +
              '</div>' +
              (naTV
-               ? '<span class="badge">NA TV AGORA</span>'
+               ? '<span class="badge">NA TV AGORA</span>' +
+                 '<button class="btn" title="Deixar a TV sem nenhum produto" ' +
+                   'onclick="tirarDaTV()">Tirar da TV</button>'
                : '<button class="btn primario" onclick="colocarNaTV(\'' + p.slug + '\')">Colocar na TV</button>') +
              '<button class="btn" onclick="verPainel(\'' + p.slug + '\')">Ver</button>' +
              '<button class="btn" title="Mostrar ou esconder a lista de componentes na TV" ' +
@@ -240,6 +250,26 @@ function colocarNaTV(slug){
     });
 }
 
+/* Tira o produto do ar. A TV fica em espera, sem produto nenhum, e volta a
+   exibir assim que alguem escolher outro. */
+function tirarDaTV(){
+  if (!estaLogado()){ acaoPendente = tirarDaTV; abrirLogin(); return; }
+  dialogo({ titulo:'Tirar o produto da TV?',
+            texto:'A TV da embalagem fica <b>sem nenhum produto na tela</b> até você ' +
+                  'colocar outro. Ela percebe em até 1 minuto.',
+            ok:'Tirar da TV', cancelar:'Cancelar' })
+  .then(function(sim){
+    if (!sim) return;
+    $('estado').style.display = 'block';
+    $('estado').textContent = 'Tirando o painel da TV...';
+    supaAtivarPainel(null).then(function(){ carregar(); })
+      ['catch'](function(e){
+        $('estado').innerHTML = '<b style="color:var(--error)">Não consegui tirar:</b> ' +
+                                (e.message || e);
+      });
+  });
+}
+
 /* Dialogo do proprio app. A caixa nativa do navegador vem com "vercel.app diz",
    fora da identidade e sem controle de texto e cor. */
 function esc(t){ return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
@@ -257,19 +287,19 @@ function dialogo(op){
 
 function excluir(slug, nome){
   if (!estaLogado()){ acaoPendente = function(){ excluir(slug, nome); }; abrirLogin(); return; }
-  if (slug === ativoAtual){
-    dialogo({ titulo:'Este produto está na TV agora',
-              texto:'Coloque outro produto na TV antes de excluir <b>'+esc(nome)+'</b>.', ok:'Entendi' });
-    return;
-  }
+  var naTV = (slug === ativoAtual);
   dialogo({ titulo:'Excluir da biblioteca?',
-            texto:'<b>'+esc(nome)+'</b> sai do banco. Para usar de novo, seria preciso gerar outra vez a partir do PDF.',
-            ok:'Excluir', cancelar:'Cancelar', perigo:true })
+            texto:'<b>'+esc(nome)+'</b> sai do banco. Para usar de novo, seria preciso gerar outra vez a partir do PDF.' +
+                  (naTV ? '<br><br>Ele está na TV agora: a tela da embalagem fica em espera ' +
+                          'até você colocar outro produto.' : ''),
+            ok: naTV ? 'Tirar da TV e excluir' : 'Excluir', cancelar:'Cancelar', perigo:true })
   .then(function(sim){
     if (!sim) return;
     $('estado').style.display = 'block';
     $('estado').textContent = 'Excluindo...';
-    supaExcluirPainel(slug).then(function(){ carregar(); })
+    (naTV ? supaAtivarPainel(null) : Promise.resolve())
+      .then(function(){ return supaExcluirPainel(slug); })
+      .then(function(){ carregar(); })
       ['catch'](function(e){
         $('estado').innerHTML = '<b style="color:var(--error)">Não consegui excluir:</b> ' + (e.message || e);
       });

@@ -123,8 +123,10 @@ function supaSalvarPainel(registro) {
   });
 }
 
-/* Troca o painel exibido na TV. */
+/* Troca o painel exibido na TV. slug nulo ou vazio deixa a TV em espera, sem
+   produto nenhum — e assim que se tira um painel do ar. */
 function supaAtivarPainel(slug) {
+  var valor = slug ? String(slug) : null;
   return tokenValido().then(function (token) {
     return fetch(window.SUPA.url + '/rest/v1/embalagem_config?id=eq.1', {
       method: 'PATCH',
@@ -132,11 +134,12 @@ function supaAtivarPainel(slug) {
         'Content-Type': 'application/json',
         'Prefer': 'return=representation'
       }),
-      body: JSON.stringify({ painel_ativo: slug })
+      body: JSON.stringify({ painel_ativo: valor })
     }).then(function (r) {
       if (!r.ok) {
         return r.text().then(function (t) {
-          throw new Error('não consegui trocar o painel da TV: ' + r.status + ' ' + t);
+          throw new Error((valor ? 'não consegui trocar o painel da TV: '
+                                : 'não consegui tirar o painel da TV: ') + r.status + ' ' + t);
         });
       }
       return r.json();
