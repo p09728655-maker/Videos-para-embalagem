@@ -1230,10 +1230,12 @@ function pintarSessao() {
   if (estaLogado()) {
     el.innerHTML = 'Conectado como <b>' + (emailLogado() || '—') + '</b> · ' +
                    '<a onclick="sairDaConta()">sair</a> · ' +
-                   '<a href="biblioteca.html">ver biblioteca</a>';
+                   '<a href="biblioteca.html">ver biblioteca</a> · ' +
+                   '<a href="docs/como-pedir.html">documentos</a>';
   } else {
     el.innerHTML = 'Não conectado — <a onclick="abrirLogin()">entrar para publicar</a> · ' +
-                   '<a href="biblioteca.html">ver biblioteca</a>';
+                   '<a href="biblioteca.html">ver biblioteca</a> · ' +
+                   '<a href="docs/como-pedir.html">documentos</a>';
   }
 }
 function abrirLogin() {
