@@ -412,16 +412,17 @@ function $(id){ return document.getElementById(id); }
 
 function pintarSessao(){
   var el = $('sessao');
+  if (ehAparelho()){
+    /* No tablet não aparece o caminho para gerar painel: o banco recusaria de
+       qualquer forma, e link que leva a uma recusa é armadilha. */
+    var nome = (eu && eu.nome) || (aparelhoSalvo() || {}).nome || 'autorizado';
+    el.innerHTML = 'Tablet <b>' + esc(nome) + '</b> · ' +
+                   'opera a TV daqui; gerar painel novo é no computador';
+    return;
+  }
   if (!estaLogado()){
     el.innerHTML = 'Não conectado — <a onclick="abrirLogin()">entrar</a> · ' +
                    '<a href="gerador.html">gerador</a>';
-    return;
-  }
-  /* No tablet autorizado não aparece o caminho para publicar: o banco recusaria
-     de qualquer forma, e link que leva a uma recusa é armadilha. */
-  if (ehDispositivo(eu)){
-    el.innerHTML = 'Tablet <b>' + esc(eu.nome || 'autorizado') + '</b> · ' +
-                   'opera a TV daqui; gerar painel novo é no computador';
     return;
   }
   el.innerHTML = 'Conectado como <b>' + (emailLogado() || '—') + '</b> · ' +
@@ -431,16 +432,20 @@ function pintarSessao(){
 
 /* Lê o papel de quem entrou e repinta a tela com o que essa pessoa pode fazer. */
 function conferirPapel(){
-  if (!estaLogado()){ eu = null; pintarSessao(); pintarAparelhos(); return Promise.resolve(); }
+  if (!temAcesso()){ eu = null; papelLido = false; pintarSessao(); pintarAparelhos();
+                     return Promise.resolve(); }
   return supaUsuarioAtual(true).then(function(u){
     eu = u; papelLido = true;
     pintarSessao();
     pintarAparelhos();
     render(todosPaineis);
     if (podeOperar(u)) supaMarcarAcesso();
-    if (u && !podeOperar(u)){
-      recado('<b>Este acesso está revogado.</b> A conta entra, mas não opera a TV. ' +
-             'Peça ao administrador para reativar o aparelho na biblioteca.', 'atencao');
+    if (u && u.papel === 'aparelho' && !u.ativo){
+      recado('<b>Este tablet foi revogado.</b> Ele ainda abre a biblioteca, mas não ' +
+             'opera mais a TV. Peça um código novo no computador.', 'atencao');
+    } else if (u && u.papel !== 'aparelho' && !podeOperar(u)){
+      recado('<b>Esta conta não opera a TV.</b> ' +
+             'Peça ao administrador do RitmoProd o papel de analista ou admin.', 'atencao');
     } else if ($('recado').className === 'atencao'){
       recado('');       /* voltou a ter permissão: o aviso de revogado sai */
     }
@@ -645,7 +650,7 @@ function render(itens){
                '</div>' +
                '<span class="quebra"></span>' +
                '<span class="espaco"></span>' +
-               (!papelLido || podePublicar(eu) || !estaLogado()
+               (!ehAparelho() && (!papelLido || podePublicar(eu) || !estaLogado())
                  ? '<button class="btn perigo" onclick="excluir(' + arg + ',\'' +
                       String(p.produto).replace(/'/g,"\\'") + '\')">Excluir</button>'
                  : '') +
@@ -694,7 +699,7 @@ function definirTempo(slug, campo){
     return;
   }
   if (String(n) === String(antes)) return;
-  if (!estaLogado()){
+  if (!temAcesso()){
     campo.value = antes;
     acaoPendente = function(){ definirTempoDireto(slug, n); };
     abrirLogin(); return;
@@ -714,7 +719,7 @@ function definirTempoDireto(slug, n){
    objeto inteiro, entao as duas chaves vao sempre juntas. */
 function definirExibicao(slug, modo){
   var m = MODOS[modo]; if (!m) return;
-  if (!estaLogado()){ acaoPendente = function(){ definirExibicao(slug, modo); }; abrirLogin(); return; }
+  if (!temAcesso()){ acaoPendente = function(){ definirExibicao(slug, modo); }; abrirLogin(); return; }
   $('estado').style.display='block'; $('estado').textContent='Salvando...';
   supaDefinirOpcoes(slug, m.opcoes)
     .then(function(){ carregar(); })
@@ -745,11 +750,11 @@ function pintarAparelhos(){
   /* Quem já é aparelho autorizado não precisa ver como se autoriza; quem é
      admin autoriza pelo computador, não digitando código nele mesmo. */
   var digitar = $('caixaDigitarCodigo');
-  if (digitar) digitar.style.display = (eu && (podeOperar(eu) || podePublicar(eu))) ? 'none' : 'block';
+  if (digitar) digitar.style.display = temAcesso() ? 'none' : 'block';
 
   var caixa = $('caixaAparelhos');
   if (!caixa) return;
-  if (!eu || eu.papel !== 'admin'){ caixa.style.display = 'none'; return; }
+  if (!podePublicar(eu)){ caixa.style.display = 'none'; return; }
   caixa.style.display = 'block';
   supaListarDispositivos().then(function(lista){
     aparelhos = lista || [];
@@ -760,11 +765,12 @@ function pintarAparelhos(){
       return;
     }
     el.innerHTML = aparelhos.map(function(a){
-      var visto = a.ultimo_acesso_em ? dataBR(a.ultimo_acesso_em) : 'nunca entrou';
+      var visto = a.ultimo_acesso_em ? dataBR(a.ultimo_acesso_em)
+                : (a.pareado_em ? 'pareado, sem uso' : 'aguardando o código');
       return '<div class="apar-item' + (a.ativo ? '' : ' inativo') + '">' +
                '<span class="nome-ap">' + esc(a.nome || 'Aparelho') + '</span>' +
-               '<span class="selo' + (a.ativo ? ' ok' : '') + '">' +
-                 (a.ativo ? 'ativo' : 'revogado') + '</span>' +
+               '<span class="selo' + (a.ativo && a.pareado_em ? ' ok' : '') + '">' +
+                 (!a.ativo ? 'revogado' : (a.pareado_em ? 'ativo' : 'pendente')) + '</span>' +
                '<span class="quando">' + visto + '</span>' +
                '<span class="espaco" style="flex:1"></span>' +
                '<button class="btn apoio-btn" onclick="trocarAparelho(\'' + a.id + '\',' +
@@ -1010,7 +1016,7 @@ function pintarPausaTV(){
   }
 }
 function alternarPausaTV(){
-  if (!estaLogado()){ acaoPendente = alternarPausaTV; abrirLogin(); return; }
+  if (!temAcesso()){ acaoPendente = alternarPausaTV; abrirLogin(); return; }
   var pausar = !pausaAtual;
   var bt = $('btnPausaTV');
   bt.disabled = true;
@@ -1027,7 +1033,7 @@ function alternarPausaTV(){
    do player so entra com um reload. Sem isto, alguem teria que ir ate a TV com
    o controle a cada ajuste. */
 function atualizarTV(){
-  if (!estaLogado()){ acaoPendente = atualizarTV; abrirLogin(); return; }
+  if (!temAcesso()){ acaoPendente = atualizarTV; abrirLogin(); return; }
   dialogo({ titulo:'Atualizar a TV?',
             texto:'A TV recarrega a página e volta pela primeira camada, em até 5 segundos. ' +
                   'Use depois de uma versão nova do painel.<br><br>' +
@@ -1050,7 +1056,7 @@ function atualizarTV(){
 function verPainel(slug){ window.open('tv/?p=' + encodeURIComponent(slug), '_blank'); }
 
 function colocarNaTV(slug){
-  if (!estaLogado()){ acaoPendente = function(){ colocarNaTV(slug); }; abrirLogin(); return; }
+  if (!temAcesso()){ acaoPendente = function(){ colocarNaTV(slug); }; abrirLogin(); return; }
   $('estado').style.display = 'block';
   $('estado').textContent = 'Trocando o painel da TV...';
   supaAtivarPainel(slug).then(function(){ carregar(); })
@@ -1063,7 +1069,7 @@ function colocarNaTV(slug){
 /* Tira o produto do ar. A TV fica em espera, sem produto nenhum, e volta a
    exibir assim que alguem escolher outro. */
 function tirarDaTV(){
-  if (!estaLogado()){ acaoPendente = tirarDaTV; abrirLogin(); return; }
+  if (!temAcesso()){ acaoPendente = tirarDaTV; abrirLogin(); return; }
   dialogo({ titulo:'Tirar o produto da TV?',
             texto:'A TV da embalagem fica <b>sem nenhum produto na tela</b> até você ' +
                   'colocar outro. Ela percebe em até 1 minuto.',

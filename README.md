@@ -138,28 +138,36 @@ por falha de rede confundiria mais do que ajuda.
 
 ### Tablet autorizado, sem senha no chão de fábrica
 
-Um aparelho por conta, registrado em `embalagem_dispositivos`. O administrador clica em
-**Autorizar um tablet** na biblioteca, dá um nome, e a tela mostra um **código de oito
-caracteres** (`ABCD-EFGH`) com o tempo que resta. No tablet, a biblioteca mostra
-**Autorizar este aparelho**: digita o código e pronto — dali em diante entra sozinho, sem
-senha e sem código, porque a sessão se renova.
+Aparelho não é pessoa e **não tem conta de e-mail**. A primeira tentativa criava o tablet
+como usuário do Supabase Auth e esbarrava na confirmação por e-mail: cada aparelho novo
+gastava um envio para uma caixa que não existe, até estourar o limite do projeto. Agora o
+tablet guarda um **token**, e ninguém precisa de caixa de e-mail nenhuma.
 
-- a senha do aparelho é sorteada com 32 caracteres e **ninguém precisa decorá-la** nem vê-la;
-- o código **vale 15 minutos e serve uma vez só**; a linha some do banco assim que é usado;
-- o QR leva o mesmo código, não a senha: se a imagem for parar noutro lugar, o que vaza é
-  um código que já venceu. A versão anterior punha a credencial dentro do link, que ficava
-  no histórico do navegador e em qualquer conversa por onde o link passasse;
-- o e-mail do aparelho sai do **domínio de quem autoriza**. O Supabase recusa e-mail cujo
-  domínio não existe em DNS, e `dispositivo.ritmopatrimar.app` não resolve — toda criação
-  falhava com *"Email address is invalid"*;
-- **revogar é desligar o aparelho na lista**: nenhuma senha de pessoa muda, e os outros
-  aparelhos seguem funcionando. A conta continua entrando, mas toda ação é recusada, e a
+Como funciona:
+
+1. no computador, **Autorizar um tablet** cria a linha em `embalagem_dispositivos`
+   (ainda **sem token**) e um código de oito caracteres válido por 15 minutos;
+2. no tablet, a biblioteca mostra **Autorizar este aparelho**: digita o código;
+3. a função `embalagem_parear` gera o token no banco, guarda só o `sha256` dele e devolve
+   o token em claro **uma única vez** — é o tablet que passa a guardá-lo;
+4. dali em diante o tablet opera a TV chamando `embalagem_op_*`, que confere o token.
+
+O tablet **não tem sessão do Supabase Auth**: `embalagem_pode_operar()` vale para pessoas
+(admin, analista) e as funções `embalagem_op_*` valem para o aparelho. Cada ação do tablet
+tem a sua função — ativar, pausar, recarregar, tempo e exibição —, e o que ele não faz
+simplesmente não existe ali: **gerar e excluir painel continuam só no computador**, com
+sessão de gente.
+
+- **revogar** é desligar o aparelho na lista: o token para de valer na mesma hora, e a
   biblioteca avisa isso na tela do próprio tablet;
-- a lista mostra o último acesso de cada aparelho, para saber o que está em uso e o que
-  ficou na gaveta.
+- o código é de **uso único** e a linha some do banco quando usado;
+- o QR leva o mesmo código, não o token: se a imagem for parar noutro lugar, o que vaza
+  é um código que vence em 15 minutos;
+- a lista mostra **pendente** (criado, aguardando o código), **ativo** (já pareado) ou
+  **revogado**, com o último acesso de cada aparelho.
 
-No tablet, a biblioteca esconde o caminho para gerar painel e o botão de excluir: o banco
-recusaria de qualquer forma, e link que leva a uma recusa é armadilha.
+Força bruta no código é impraticável: 32⁸ combinações, 15 minutos de validade e poucos
+códigos ativos por vez.
 
 ### Esqueci minha senha
 
@@ -180,7 +188,6 @@ silêncio:
 |---|---|---|
 | Authentication → URL Configuration → Redirect URLs | `https://<domínio>/**` | o link cai na Site URL e `nova-senha.html` abre sem token |
 | Authentication → Emails → SMTP | servidor de e-mail próprio | ~2 e-mails por hora e entrega ruim: o link não chega |
-| Authentication → Sign In / Providers → Email → **Confirm email** | **desligado** | autorizar tablet falha com *email rate limit exceeded*: o Supabase tenta confirmar por e-mail uma conta de aparelho, que não tem caixa nenhuma |
 
 Sem SMTP próprio o botão existe mas não é confiável no dia a dia. **Com poucas pessoas
 usando, redefinir a senha pelo painel do Supabase continua sendo o caminho mais rápido** —

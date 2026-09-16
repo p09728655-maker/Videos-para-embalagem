@@ -73,34 +73,29 @@ function idDoToken(token) {
 var usuarioCache = null;
 function supaUsuarioAtual(forcar) {
   if (usuarioCache && !forcar) return Promise.resolve(usuarioCache);
+  /* Aparelho não tem sessão nem linha em usuarios: a identidade dele vem do
+     token, conferida no banco a cada abertura. */
+  if (ehAparelho()) {
+    return supaEstadoAparelho().then(function (a) {
+      usuarioCache = { id: null, papel: 'aparelho', nome: a ? a.nome : null,
+                       email: null, ativo: !!(a && a.ativo), empresa_id: null };
+      return usuarioCache;
+    });
+  }
   return tokenValido().then(function (token) {
     var id = idDoToken(token);
     if (!id) throw new Error('sessão sem identificação');
-    var cab = { headers: cabecalhos(token, {}) };
-    /* Duas naturezas de acesso, em registros separados de propósito:
-       pessoa (usuarios, papel do RitmoProd) e aparelho da embalagem
-       (embalagem_dispositivos). Um tablet de cronoanálise não vira operador
-       da TV só por existir. */
-    return Promise.all([
-      fetch(window.SUPA.url + '/rest/v1/usuarios?id=eq.' + id +
-            '&select=id,nome,email,papel,ativo,empresa_id', cab)
-        .then(function (r) { return r.ok ? r.json() : []; }),
-      fetch(window.SUPA.url + '/rest/v1/embalagem_dispositivos?usuario_id=eq.' + id +
-            '&select=usuario_id,nome,ativo', cab)
-        .then(function (r) { return r.ok ? r.json() : []; })
-    ]).then(function (res) {
-      var pessoa = res[0] && res[0][0];
-      var aparelho = res[1] && res[1][0];
-      if (aparelho) {
-        usuarioCache = { id: id, papel: 'aparelho', nome: aparelho.nome,
-                         email: null, ativo: !!aparelho.ativo, empresa_id: null };
-      } else if (pessoa) {
-        usuarioCache = pessoa;
-      } else {
-        /* Sem registro em lugar nenhum: entra, mas não faz nada. */
-        usuarioCache = { id: id, papel: null, nome: null, email: null,
-                         ativo: false, empresa_id: null };
-      }
+    return fetch(window.SUPA.url + '/rest/v1/usuarios?id=eq.' + id +
+                 '&select=id,nome,email,papel,ativo,empresa_id', {
+      headers: cabecalhos(token, {})
+    }).then(function (r) {
+      if (!r.ok) throw new Error('não consegui ler o perfil: ' + r.status);
+      return r.json();
+    }).then(function (rows) {
+      /* Conta sem linha em usuarios não tem papel nenhum: entra, mas não faz
+         nada. É o caso de quem foi criado direto no painel do Supabase. */
+      usuarioCache = (rows && rows[0]) || { id: id, papel: null, nome: null,
+                                            email: null, ativo: false, empresa_id: null };
       return usuarioCache;
     });
   });
@@ -111,19 +106,15 @@ function limparUsuarioCache() { usuarioCache = null; }
  * ainda está em uso ou foi esquecido numa gaveta. Uma vez por abertura da
  * página, e falha em silêncio: é informação de apoio, não pode travar a tela. */
 function supaMarcarAcesso() {
-  return supaUsuarioAtual().then(function (u) {
-    return tokenValido().then(function (token) {
-      var id = idDoToken(token);
-      if (!id) return false;
-      var alvo = (u && u.papel === 'aparelho')
-        ? '/rest/v1/embalagem_dispositivos?usuario_id=eq.' + id
-        : '/rest/v1/usuarios?id=eq.' + id;
-      return fetch(window.SUPA.url + alvo, {
-        method: 'PATCH',
-        headers: cabecalhos(token, { 'Content-Type': 'application/json' }),
-        body: JSON.stringify({ ultimo_acesso_em: new Date().toISOString() })
-      }).then(function () { return true; });
-    });
+  if (ehAparelho()) return Promise.resolve(true);   /* o estado do aparelho já carimba */
+  return tokenValido().then(function (token) {
+    var id = idDoToken(token);
+    if (!id) return false;
+    return fetch(window.SUPA.url + '/rest/v1/usuarios?id=eq.' + id, {
+      method: 'PATCH',
+      headers: cabecalhos(token, { 'Content-Type': 'application/json' }),
+      body: JSON.stringify({ ultimo_acesso_em: new Date().toISOString() })
+    }).then(function () { return true; });
   })['catch'](function () { return false; });
 }
 
@@ -135,41 +126,35 @@ function podeOperar(u) {
 function podePublicar(u) { return !!u && u.ativo && ['admin','analista'].indexOf(u.papel) >= 0; }
 function ehDispositivo(u) { return !!u && u.papel === 'aparelho'; }
 
-/* ── Tablet autorizado ─────────────────────────────────────────────────────
- * Uma conta por aparelho, como o RitmoProd já faz com os coletores. A senha é
- * sorteada, fica guardada só no tablet e ninguém precisa decorá-la: o aparelho
- * é autorizado uma vez e não pede senha nunca mais.
+/* ── Tablet autorizado, sem conta de e-mail ────────────────────────────────
+ * Aparelho não é pessoa: não tem caixa de e-mail e não deveria precisar de
+ * uma. A tentativa anterior criava o tablet como usuário do Supabase Auth e
+ * esbarrava na confirmação por e-mail — cada aparelho novo gastava um envio
+ * para uma caixa inexistente, até estourar o limite.
  *
- * Revogar é desativar a conta na lista — sem trocar senha de ninguém e sem
- * mexer nos outros aparelhos.
+ * Agora o computador gera um código, o tablet digita, e o banco devolve um
+ * token que fica guardado só naquele aparelho. Revogar é desligar o aparelho
+ * na lista; o token para de valer na mesma hora.
  */
-function senhaSorteada(tamanho) {
-  var letras = 'abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-  var saida = '', i;
-  try {
-    var buf = new Uint32Array(tamanho || 32);
-    (window.crypto || window.msCrypto).getRandomValues(buf);
-    for (i = 0; i < buf.length; i++) saida += letras[buf[i] % letras.length];
-  } catch (e) {
-    for (i = 0; i < (tamanho || 32); i++) {
-      saida += letras[Math.floor(Math.random() * letras.length)];
-    }
-  }
-  return saida;
-}
+var APARELHO_KEY = 'ritmopatrimar_aparelho';
 
-/* O Supabase recusa e-mail cujo domínio não existe — "dispositivo.ritmopatrimar.app"
- * não resolve em DNS, e toda criação de aparelho falhava com "Email address is
- * invalid". O endereço do aparelho passa a sair do domínio de quem autoriza, que
- * é um domínio real. Ninguém escreve para essa caixa: é só um par de acesso. */
-function apelidoDispositivo(emailDeQuemAutoriza) {
-  var dominio = String(emailDeQuemAutoriza || '').split('@')[1] || 'patrimarmoveis.com.br';
-  return 'tablet-' + senhaSorteada(8).toLowerCase() + '@' + dominio;
+function aparelhoSalvo() {
+  try { return JSON.parse(localStorage.getItem(APARELHO_KEY) || 'null'); }
+  catch (e) { return null; }
 }
+function salvarAparelho(a) {
+  try { localStorage.setItem(APARELHO_KEY, JSON.stringify(a)); } catch (e) {}
+}
+function esquecerAparelho() {
+  try { localStorage.removeItem(APARELHO_KEY); } catch (e) {}
+}
+function ehAparelho() { var a = aparelhoSalvo(); return !!(a && a.token); }
+function tokenAparelho() { var a = aparelhoSalvo(); return a ? a.token : null; }
+/* Quem pode agir: pessoa com sessão ou aparelho autorizado. */
+function temAcesso() { return estaLogado() || ehAparelho(); }
 
 /* Código de autorização: oito caracteres, em dois blocos, sem os que se
- * confundem à mão (I, O, 0, 1). Digitar isto num tablet é mais rápido e mais
- * seguro que abrir um link que carrega a senha dentro dele. */
+ * confundem à mão (I, O, 0, 1). */
 function codigoSorteado() {
   var letras = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789', saida = '', i;
   try {
@@ -186,91 +171,112 @@ function formatarCodigo(c) {
   return c.length > 4 ? c.slice(0, 4) + '-' + c.slice(4, 8) : c;
 }
 
-/* Cria a conta do aparelho e devolve as credenciais para o link de autorização.
- * Não mexe na sessão de quem está criando: o signup devolve uma sessão nova,
- * que é descartada aqui de propósito. */
-function supaCriarDispositivo(nome) {
-  var senha = senhaSorteada(32);
-  var codigo = codigoSorteado();
-  var guardada = sessaoSalva();
-  var email;
+/* Chamada de função no banco usando o token do aparelho, sem sessão. */
+function rpcAparelho(funcao, args, oQue) {
+  var corpo = { p_token: tokenAparelho() };
+  for (var k in args) if (args.hasOwnProperty(k)) corpo[k] = args[k];
+  return fetch(window.SUPA.url + '/rest/v1/rpc/' + funcao, {
+    method: 'POST',
+    headers: { 'apikey': window.SUPA.key, 'Content-Type': 'application/json' },
+    body: JSON.stringify(corpo)
+  }).then(function (r) {
+    if (r.ok) return r.status === 204 ? true : r.json()['catch'](function () { return true; });
+    return r.text().then(function (t) {
+      if (t.indexOf('nao autorizado') >= 0 || t.indexOf('revogado') >= 0) {
+        throw new Error('este tablet foi revogado. Peça um código novo no computador.');
+      }
+      throw new Error('não consegui ' + oQue + ': ' + r.status + ' ' + t);
+    });
+  });
+}
 
+/* Cria o aparelho e o código que o autoriza. Nenhuma conta de e-mail entra
+ * nisso: a linha nasce sem token, e o token só existe quando o tablet parear. */
+function supaCriarDispositivo(nome) {
+  var codigo = codigoSorteado();
   return supaUsuarioAtual().then(function (eu) {
-    if (!eu || eu.papel !== 'admin') {
-      throw new Error('só o administrador autoriza um aparelho novo.');
+    if (!podePublicar(eu)) {
+      throw new Error('só quem publica painel autoriza um aparelho novo.');
     }
-    email = apelidoDispositivo(eu.email || emailLogado());
-    return fetch(window.SUPA.url + '/auth/v1/signup', {
-      method: 'POST',
-      headers: { 'apikey': window.SUPA.key, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email: email, password: senha })
-    }).then(function (r) {
-      return r.json()['catch'](function () { return {}; }).then(function (d) {
+    return tokenValido().then(function (token) {
+      return fetch(window.SUPA.url + '/rest/v1/embalagem_dispositivos', {
+        method: 'POST',
+        headers: cabecalhos(token, {
+          'Content-Type': 'application/json',
+          'Prefer': 'return=representation'
+        }),
+        body: JSON.stringify({ nome: nome || 'Tablet', ativo: true, criado_por: eu.id })
+      }).then(function (r) {
         if (!r.ok) {
-          var texto = String(d.msg || d.error_description || d.message || '');
-          /* Os dois tropeços de configuração que param aqui, com o que fazer em
-             cada um — a mensagem crua do Supabase vem em inglês e não diz onde
-             mexer. */
-          if (texto.indexOf('rate limit') >= 0 || r.status === 429) {
-            throw new Error('o Supabase tentou mandar e-mail de confirmação para a conta ' +
-                            'do aparelho e bateu no limite de envios. Desligue a confirmação ' +
-                            'de e-mail em Authentication → Sign In / Providers → Email → ' +
-                            '"Confirm email": a conta do aparelho não tem caixa de e-mail ' +
-                            'de verdade, e não há para onde confirmar.');
-          }
-          if (r.status === 422 || texto.indexOf('disabled') >= 0 ||
-              texto.indexOf('not enabled') >= 0) {
-            throw new Error('o cadastro de contas está desligado no Supabase. ' +
-                            'Ligue em Authentication → Sign In / Providers → Email, ou crie a ' +
-                            'conta do aparelho pelo painel.');
-          }
-          throw new Error(texto || ('não consegui criar a conta (HTTP ' + r.status + ')'));
+          return r.text().then(function (t) {
+            throw new Error('não consegui criar o aparelho: ' + r.status + ' ' + t);
+          });
         }
-        return (d.user && d.user.id) || d.id;
-      });
-    }).then(function (idNovo) {
-      if (!idNovo) throw new Error('o Supabase não devolveu o id da conta nova');
-      /* O signup pode ter trocado a sessão do navegador; devolve a de quem criou. */
-      if (guardada) { try { localStorage.setItem(SESSAO_KEY, JSON.stringify(guardada)); } catch (e) {} }
-      return tokenValido().then(function (token) {
-        return fetch(window.SUPA.url + '/rest/v1/embalagem_dispositivos', {
+        return r.json();
+      }).then(function (rows) {
+        var disp = rows && rows[0];
+        if (!disp) throw new Error('o banco não devolveu o aparelho criado');
+        return fetch(window.SUPA.url + '/rest/v1/embalagem_pareamentos', {
           method: 'POST',
-          headers: cabecalhos(token, {
-            'Content-Type': 'application/json',
-            'Prefer': 'return=representation'
-          }),
-          body: JSON.stringify({ usuario_id: idNovo, nome: nome || 'Tablet',
-                                 ativo: true, criado_por: eu.id })
-        }).then(function (r) {
-          if (!r.ok) {
-            return r.text().then(function (t) {
-              throw new Error('conta criada, mas não consegui autorizar o aparelho: ' +
-                              r.status + ' ' + t);
+          headers: cabecalhos(token, { 'Content-Type': 'application/json' }),
+          body: JSON.stringify({
+            codigo: codigo, dispositivo_id: disp.id, criado_por: eu.id,
+            expira_em: new Date(Date.now() + 15 * 60000).toISOString()
+          })
+        }).then(function (r2) {
+          if (!r2.ok) {
+            return r2.text().then(function (t) {
+              throw new Error('aparelho criado, mas não consegui gerar o código: ' +
+                              r2.status + ' ' + t);
             });
           }
-          /* O código guarda a credencial por 15 minutos. Quem digita no tablet
-             a recebe uma vez só, e a linha some do banco na mesma hora. */
-          return fetch(window.SUPA.url + '/rest/v1/embalagem_pareamentos', {
-            method: 'POST',
-            headers: cabecalhos(token, { 'Content-Type': 'application/json' }),
-            body: JSON.stringify({
-              codigo: codigo, usuario_id: idNovo, email: email, senha: senha,
-              criado_por: eu.id,
-              expira_em: new Date(Date.now() + 15 * 60000).toISOString()
-            })
-          }).then(function (r2) {
-            if (!r2.ok) {
-              return r2.text().then(function (t) {
-                throw new Error('aparelho criado, mas não consegui gerar o código: ' +
-                                r2.status + ' ' + t);
-              });
-            }
-            return { id: idNovo, email: email, senha: senha, nome: nome,
-                     codigo: codigo, expiraEm: Date.now() + 15 * 60000 };
-          });
+          return { id: disp.id, nome: disp.nome, codigo: codigo,
+                   expiraEm: Date.now() + 15 * 60000 };
         });
       });
     });
+  });
+}
+
+/* O tablet digita o código e recebe o token. Chamada aberta a visitante de
+ * propósito: o tablet ainda não tem nada quando digita. */
+function supaEntrarComCodigo(codigo) {
+  var limpo = String(codigo || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+  if (limpo.length !== 8) {
+    return Promise.reject(new Error('o código tem 8 caracteres, como ABCD-EFGH.'));
+  }
+  return fetch(window.SUPA.url + '/rest/v1/rpc/embalagem_parear', {
+    method: 'POST',
+    headers: { 'apikey': window.SUPA.key, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ p_codigo: limpo })
+  }).then(function (r) {
+    return r.json()['catch'](function () { return null; }).then(function (d) {
+      if (!r.ok || !d || !d.length || !d[0].token) {
+        throw new Error('código inválido ou vencido. Gere outro no computador.');
+      }
+      salvarAparelho({ token: d[0].token, nome: d[0].nome });
+      return d[0];
+    });
+  });
+}
+
+/* Confere se este aparelho continua valendo, e diz o nome dele. */
+function supaEstadoAparelho() {
+  if (!ehAparelho()) return Promise.resolve(null);
+  return fetch(window.SUPA.url + '/rest/v1/rpc/embalagem_aparelho_estado', {
+    method: 'POST',
+    headers: { 'apikey': window.SUPA.key, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ p_token: tokenAparelho() })
+  }).then(function (r) {
+    if (!r.ok) return { papel: 'aparelho', nome: (aparelhoSalvo() || {}).nome, ativo: false };
+    return r.json().then(function (d) {
+      var a = d && d[0];
+      if (a && a.nome) salvarAparelho({ token: tokenAparelho(), nome: a.nome });
+      return { papel: 'aparelho', nome: a ? a.nome : null, ativo: !!(a && a.ativo) };
+    });
+  })['catch'](function () {
+    /* Sem rede não dá para confirmar: mantém o que o aparelho já sabia. */
+    return { papel: 'aparelho', nome: (aparelhoSalvo() || {}).nome, ativo: true };
   });
 }
 
@@ -278,23 +284,18 @@ function supaCriarDispositivo(nome) {
 function supaListarDispositivos() {
   return tokenValido().then(function (token) {
     return fetch(window.SUPA.url + '/rest/v1/embalagem_dispositivos' +
-                 '?select=usuario_id,nome,ativo,ultimo_acesso_em,criado_em&order=nome.asc', {
+                 '?select=id,nome,ativo,ultimo_acesso_em,pareado_em&order=nome.asc', {
       headers: cabecalhos(token, {})
     }).then(function (r) {
       if (!r.ok) throw new Error('não consegui listar os aparelhos: ' + r.status);
       return r.json();
-    }).then(function (rows) {
-      return (rows || []).map(function (d) {
-        return { id: d.usuario_id, nome: d.nome, ativo: d.ativo,
-                 ultimo_acesso_em: d.ultimo_acesso_em };
-      });
     });
   });
 }
 
 function supaSituacaoDispositivo(id, ativo) {
   return tokenValido().then(function (token) {
-    return fetch(window.SUPA.url + '/rest/v1/embalagem_dispositivos?usuario_id=eq.' +
+    return fetch(window.SUPA.url + '/rest/v1/embalagem_dispositivos?id=eq.' +
                  encodeURIComponent(id), {
       method: 'PATCH',
       headers: cabecalhos(token, { 'Content-Type': 'application/json' }),
@@ -310,30 +311,6 @@ function supaSituacaoDispositivo(id, ativo) {
   });
 }
 
-/* Troca o código pela credencial do aparelho e já entra com ela. É a única
- * chamada do sistema aberta a visitante: o tablet ainda não tem conta quando
- * digita o código. O código serve uma vez e vence em 15 minutos. */
-function supaEntrarComCodigo(codigo) {
-  var limpo = String(codigo || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
-  if (limpo.length !== 8) {
-    return Promise.reject(new Error('o código tem 8 caracteres, como ABCD-EFGH.'));
-  }
-  return fetch(window.SUPA.url + '/rest/v1/rpc/embalagem_parear', {
-    method: 'POST',
-    headers: { 'apikey': window.SUPA.key, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ p_codigo: limpo })
-  }).then(function (r) {
-    return r.json()['catch'](function () { return null; }).then(function (d) {
-      if (!r.ok || !d || !d.length) {
-        throw new Error('código inválido ou vencido. Gere outro no computador.');
-      }
-      return supaLogin(d[0].email, d[0].senha);
-    });
-  });
-}
-
-/* O QR leva o mesmo código, não a senha: se a imagem for parar noutro lugar,
- * o que vaza é um código que vence em 15 minutos e serve uma vez. */
 function montarLinkCodigo(codigo) {
   return window.location.origin + '/biblioteca.html#codigo=' + encodeURIComponent(codigo);
 }
@@ -460,6 +437,10 @@ function supaSalvarPainel(registro) {
    congelado na primeira camada, com a pausa esquecida do produto anterior. */
 function supaAtivarPainel(slug) {
   var valor = slug ? String(slug) : null;
+  if (ehAparelho()) {
+    return rpcAparelho('embalagem_op_ativar', { p_slug: valor },
+                       valor ? 'trocar o painel da TV' : 'tirar o painel da TV');
+  }
   return tokenValido().then(function (token) {
     return fetch(window.SUPA.url + '/rest/v1/embalagem_config?id=eq.1', {
       method: 'PATCH',
@@ -486,6 +467,10 @@ function supaAtivarPainel(slug) {
  * parada — TV pausada e esquecida e o risco real desta funcao. */
 function supaPausarTV(pausar) {
   var valor = pausar ? new Date().toISOString() : null;
+  if (ehAparelho()) {
+    return rpcAparelho('embalagem_op_pausa', { p_pausar: !!pausar },
+                       pausar ? 'pausar a TV' : 'retomar a TV');
+  }
   return tokenValido().then(function (token) {
     return fetch(window.SUPA.url + '/rest/v1/embalagem_config?id=eq.1', {
       method: 'PATCH',
@@ -510,6 +495,9 @@ function supaPausarTV(pausar) {
  * player para a TV sem ir ate la com o controle: a troca de produto substitui o
  * conteudo no lugar, sem reload, para nao derrubar a tela cheia. */
 function supaRecarregarTV() {
+  if (ehAparelho()) {
+    return rpcAparelho('embalagem_op_recarregar', {}, 'mandar a TV atualizar');
+  }
   return tokenValido().then(function (token) {
     return fetch(window.SUPA.url + '/rest/v1/embalagem_config?id=eq.1', {
       method: 'PATCH',
@@ -551,16 +539,23 @@ function supaRpc(funcao, args, oQue) {
 function supaDefinirTempo(slug, segundos) {
   var n = parseInt(segundos, 10);
   if (!(n > 0 && n <= 9999)) return Promise.reject(new Error('tempo inválido'));
+  if (ehAparelho()) {
+    return rpcAparelho('embalagem_op_tempo', { p_slug: slug, p_segundos: n },
+                       'salvar o tempo').then(function () { return n; });
+  }
   return supaRpc('embalagem_definir_tempo', { p_slug: slug, p_segundos: n },
                  'salvar o tempo').then(function () { return n; });
 }
 
 function supaDefinirOpcoes(slug, opcoes) {
-  var o = opcoes || {};
+  var o = opcoes || {}, comp = o.componentes !== false, so = o.soDesenho === true;
+  if (ehAparelho()) {
+    return rpcAparelho('embalagem_op_exibicao',
+                       { p_slug: slug, p_componentes: comp, p_so_desenho: so },
+                       'salvar a exibição');
+  }
   return supaRpc('embalagem_definir_exibicao',
-                 { p_slug: slug,
-                   p_componentes: o.componentes !== false,
-                   p_so_desenho: o.soDesenho === true },
+                 { p_slug: slug, p_componentes: comp, p_so_desenho: so },
                  'salvar a exibição');
 }
 
