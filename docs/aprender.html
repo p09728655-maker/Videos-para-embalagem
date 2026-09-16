@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Plano de estudo — entender e mexer nos próprios sistemas</title>
+<style>
+  :root{--ink:#111;--muted:#555;--line:#d4d4d8;--accent:#FF5C1F;--soft:#f4f4f5;--ok:#16A34A;--no:#DC2626;--warn:#B45309;}
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:Arial,Helvetica,sans-serif;color:var(--ink);background:#fff;font-size:13.5px;line-height:1.55;}
+  .pagina{max-width:900px;margin:0 auto;padding:36px 40px 60px;}
+  header{display:flex;align-items:center;justify-content:space-between;border-bottom:3px solid var(--accent);padding-bottom:14px;margin-bottom:26px;}
+  header img{height:44px;}
+  header .meta{text-align:right;font-size:11px;color:var(--muted);line-height:1.4;}
+  h1{font-size:24px;letter-spacing:-0.02em;margin-bottom:6px;}
+  .lead{color:var(--muted);font-size:14px;max-width:730px;margin-bottom:24px;}
+  h2{font-size:15px;text-transform:uppercase;letter-spacing:0.08em;color:var(--accent);margin:30px 0 12px;padding-top:8px;border-top:1px solid var(--line);}
+  h3{font-size:14px;margin:18px 0 6px;}
+  p{margin-bottom:10px;}
+  ul,ol{margin:6px 0 12px 22px;}
+  li{margin-bottom:5px;}
+  table{width:100%;border-collapse:collapse;margin:10px 0 16px;font-size:12.5px;}
+  th,td{border:1px solid var(--line);padding:7px 10px;text-align:left;vertical-align:top;}
+  th{background:var(--soft);font-weight:700;}
+  code{font-family:Consolas,Menlo,monospace;background:var(--soft);padding:1px 6px;border-radius:3px;font-size:12.5px;}
+  pre{font-family:Consolas,Menlo,monospace;background:var(--soft);border:1px solid var(--line);border-radius:6px;
+      padding:12px 14px;margin:10px 0 16px;font-size:12px;line-height:1.5;overflow-x:auto;}
+  .semana{border:1px solid var(--line);border-radius:6px;margin:16px 0;overflow:hidden;}
+  .semana .topo{background:var(--soft);padding:10px 14px;border-bottom:1px solid var(--line);}
+  .semana .topo b{font-size:14px;}
+  .semana .topo .tempo{float:right;font-size:11.5px;color:var(--muted);}
+  .semana .corpo{padding:12px 14px;}
+  .exerc{border-left:3px solid var(--ok);background:#f6fdf8;padding:10px 14px;margin:10px 0;font-size:12.5px;}
+  .exerc b{color:var(--ok);}
+  .nota{border-left:3px solid var(--accent);background:#fff7f3;padding:10px 14px;margin:14px 0;font-size:13px;}
+  .nota b{color:var(--accent);}
+  .perigo{border-left:3px solid var(--no);background:#fff5f5;padding:10px 14px;margin:14px 0;font-size:13px;}
+  .perigo b{color:var(--no);}
+  .regra{border:2px solid var(--ink);border-radius:6px;padding:14px 18px;margin:16px 0;font-size:15px;line-height:1.5;}
+  .regra b{font-size:16px;}
+  footer{margin-top:40px;padding-top:12px;border-top:1px solid var(--line);font-size:11px;color:var(--muted);}
+  @media print{ body{font-size:11.5px;} .pagina{padding:10mm 12mm;max-width:none;} h2{page-break-after:avoid;}
+                table,.semana,.regra,pre,.exerc{page-break-inside:avoid;} }
+  @media (max-width:640px){ .pagina{padding:20px 16px 40px;} .semana .topo .tempo{float:none;display:block;} }
+  /* Porta de saída. No app instalado não há barra de navegador: sem isto, o
+     documento vira uma sala sem porta e o X fecha o sistema inteiro. */
+  .voltar{display:inline-block;margin-bottom:14px;font-size:12.5px;color:#555;
+          text-decoration:none;border:1px solid #d4d4d8;border-radius:5px;
+          padding:7px 12px;background:#f4f4f5;}
+  .voltar:hover{border-color:#FF5C1F;color:#FF5C1F;}
+  .fechar{font-size:12px;color:#777;margin-left:10px;}
+  @media print{ .voltar,.fechar{display:none;} }
+</style>
+</head>
+<body>
+<div class="pagina">
+
+<header>
+  <img src="../Logotipo%20Patrimar.jpg" alt="Patrimar Móveis">
+  <div class="meta">RitmoPatrimar<br>Plano de estudo · 8 semanas<br>setembro/2026</div>
+</header>
+
+<a class="voltar" href="../configuracoes.html">&larr; Voltar ao sistema</a>
+<span class="fechar" id="dicaFechar"></span>
+
+<h1>Entender e mexer nos próprios sistemas</h1>
+<p class="lead">Plano para quem já domina dados — SQL, Power BI, modelagem — e quer entender o
+<b>código</b> e o <b>banco</b> dos sistemas que usa todo dia, a ponto de revisar o que uma IA
+entrega e alterar com segurança. Cada semana tem leitura curta e exercício no sistema de
+verdade: RitmoPatrimar e RitmoProd, com as tabelas que já existem.</p>
+
+<div class="regra">
+  <b>O objetivo honesto:</b> em oito semanas, a 3–5 horas por semana, você não vira
+  desenvolvedor. Você vira <b>quem entende o que recebe, sabe discordar com base e altera
+  sozinho o que é simples</b>. Para o seu papel, isso vale mais que saber escrever tudo do zero.
+</div>
+
+<h2>Como usar este plano</h2>
+<ul>
+  <li><b>Faça na ordem.</b> Começa no que você já sabe (banco) e usa isso de ponte para o que
+      não sabe (código de aplicação).</li>
+  <li><b>Todo exercício é no sistema real.</b> Nada de exemplo inventado — você aprende e de
+      quebra entende melhor o que já está rodando na fábrica.</li>
+  <li><b>Use a IA como professor, não como atalho.</b> Ao receber um trecho de código, peça:
+      "explique linha por linha, como se eu fosse revisar". Depois feche a explicação e tente
+      dizer em voz alta o que ele faz. Se não conseguir, você não entendeu — releia.</li>
+  <li><b>Não estude sozinho o que dá para estudar mexendo.</b> Abrir o F12 e olhar o que a tela
+      faz ensina mais que uma hora de vídeo.</li>
+</ul>
+
+<div class="perigo">
+  <b>Duas regras de segurança para todo o plano:</b> nunca teste escrita no banco de produção
+  fora de um produto de teste que você mesmo apaga depois; e nunca rode <code>update</code> ou
+  <code>delete</code> sem antes rodar o mesmo filtro em um <code>select</code> e ver quantas
+  linhas vêm.
+</div>
+
+<h2>Semanas 1 e 2 — o banco, que é seu território</h2>
+
+<div class="semana">
+  <div class="topo"><b>Semana 1 · As tabelas de verdade</b><span class="tempo">3 a 4 horas</span></div>
+  <div class="corpo">
+    <p>Abra o <b>SQL Editor</b> do Supabase (projeto <code>crono-analise</code>). Tudo aqui é
+    leitura: não muda nada.</p>
+    <p><b>Leia antes:</b> a seção "O banco de dados" em <i>Como funciona por dentro</i>.</p>
+
+    <div class="exerc">
+      <b>Exercício 1.1</b> — Liste as tabelas e diga, em uma frase sua, o que cada uma guarda:
+      <pre>select table_name from information_schema.tables
+where table_schema = 'public' order by table_name;</pre>
+      Escreva as frases num papel. Ao final da semana, confira se acertou.
+    </div>
+
+    <div class="exerc">
+      <b>Exercício 1.2</b> — Descubra os vídeos publicados e quantas camadas cada um tem. Repare
+      no <code>jsonb_array_length</code>: é assim que se conta dentro de um JSON.
+      <pre>select produto, tempo,
+       jsonb_array_length(camadas) as camadas,
+       atualizado_em
+from embalagem_paineis
+order by atualizado_em desc;</pre>
+    </div>
+
+    <div class="exerc">
+      <b>Exercício 1.3</b> — Agora entre <i>dentro</i> do JSON. Liste todos os componentes de
+      todas as camadas de um vídeo:
+      <pre>select c.valor ->> 'op' as camada,
+       comp.valor ->> 'qtd' as qtd,
+       comp.valor ->> 'nome' as componente
+from embalagem_paineis p,
+     lateral jsonb_array_elements(p.camadas) as c(valor),
+     lateral jsonb_array_elements(c.valor -> 'componentes') as comp(valor)
+where p.slug = 'embalagem-nicho-impacto-2-0';</pre>
+      <b>Pergunte-se:</b> por que isso é mais difícil do que seria com uma tabela
+      <code>componentes</code>? Essa é a troca que o jsonb faz — mais simples para gravar, mais
+      trabalhoso para cruzar.
+    </div>
+
+    <div class="exerc">
+      <b>Exercício 1.4</b> — Do lado do RitmoProd, junte duas tabelas:
+      <pre>select e.nome as estudo, e.produto, o.nome as operacao, o.fr_pct
+from estudos e
+join operacoes o on o.estudo_id = e.id
+order by e.criado_em desc, o.ordem;</pre>
+      Esse <code>join</code> por <code>estudo_id</code> é o mesmo conceito de relacionamento do
+      Power BI — só que escrito.
+    </div>
+  </div>
+</div>
+
+<div class="semana">
+  <div class="topo"><b>Semana 2 · Permissão: RLS</b><span class="tempo">3 a 4 horas</span></div>
+  <div class="corpo">
+    <p>Esta é a parte que mais importa e que quase ninguém estuda. Como as telas falam direto
+    com o banco, a segurança inteira mora aqui.</p>
+
+    <div class="exerc">
+      <b>Exercício 2.1</b> — Veja todas as regras que existem hoje:
+      <pre>select tablename, policyname, cmd, coalesce(qual, with_check) as regra
+from pg_policies where schemaname = 'public'
+order by tablename, cmd;</pre>
+      Leia a coluna <code>regra</code>. Cada linha responde: "quem pode fazer isso nesta tabela?".
+    </div>
+
+    <div class="exerc">
+      <b>Exercício 2.2</b> — Leia o código das funções de permissão:
+      <pre>select proname, pg_get_functiondef(oid)
+from pg_proc where proname like 'embalagem_pode%' or proname = 'papel_atual';</pre>
+      Responda sem rodar nada: <i>um coletor do RitmoProd consegue trocar o vídeo da TV?</i>
+      Depois confirme com a consulta do exercício seguinte.
+    </div>
+
+    <div class="exerc">
+      <b>Exercício 2.3</b> — Monte a tabela de quem pode o quê, com dados reais:
+      <pre>select u.nome, u.papel,
+       (u.papel in ('admin','analista') and u.ativo) as opera_a_tv,
+       (u.papel in ('admin','analista') and u.ativo) as publica
+from usuarios u order by u.papel, u.nome;</pre>
+    </div>
+
+    <p><b>Conceito para levar:</b> esconder botão não é segurança — é gentileza. Quem protege é
+    a policy. Se você entender só isso da semana, já valeu.</p>
+  </div>
+</div>
+
+<h2>Semanas 3 e 4 — do banco até a tela</h2>
+
+<div class="semana">
+  <div class="topo"><b>Semana 3 · A tela é só HTTP</b><span class="tempo">3 horas</span></div>
+  <div class="corpo">
+    <p>A descoberta desta semana: não existe mágica entre a tela e o banco. A tela manda um
+    pedido HTTP e recebe JSON — o mesmo que o Power Query faz.</p>
+
+    <div class="exerc">
+      <b>Exercício 3.1</b> — Abra a biblioteca no Chrome, aperte <b>F12</b>, vá em
+      <b>Network</b> e recarregue. Ache as linhas que começam com <code>embalagem_</code>.
+      Clique numa: veja a URL, os cabeçalhos e a resposta em JSON. <b>É isso que a tela faz.</b>
+    </div>
+
+    <div class="exerc">
+      <b>Exercício 3.2</b> — Agora faça você mesmo o pedido. Cole no navegador:
+      <pre>https://meqjsdrgwnupvreghxgm.supabase.co/rest/v1/embalagem_paineis
+   ?select=produto,tempo&amp;apikey=SUA_CHAVE_PUBLICAVEL</pre>
+      A chave está no <code>supabase-config.js</code>. Você acabou de consultar o banco sem
+      abrir o sistema — e de entender por que a segurança não pode estar na tela.
+    </div>
+
+    <div class="exerc">
+      <b>Exercício 3.3</b> — No <code>publicar.js</code>, ache a função
+      <code>supaAtivarPainel</code>. Compare o que está escrito ali com o que você viu no
+      Network quando clicou em "Colocar na TV". São a mesma coisa.
+    </div>
+  </div>
+</div>
+
+<div class="semana">
+  <div class="topo"><b>Semana 4 · JavaScript, só o necessário</b><span class="tempo">4 a 5 horas</span></div>
+  <div class="corpo">
+    <p>Não estude "JavaScript" como linguagem inteira. Estude os <b>seis padrões</b> que
+    aparecem no código destes sistemas. Com eles você lê 90% do que existe.</p>
+
+    <table>
+      <tr><th style="width:150px">Padrão</th><th>Como se parece</th><th>Onde ver no sistema</th></tr>
+      <tr><td>Função</td><td><code>function fazerAlgo(x) { ... }</code></td>
+          <td>o arquivo inteiro</td></tr>
+      <tr><td>Achar um elemento</td><td><code>document.getElementById('busca')</code></td>
+          <td><code>$('estado')</code> na biblioteca</td></tr>
+      <tr><td>Reagir a clique</td><td><code>onclick="colocarNaTV(...)"</code></td>
+          <td>botões da biblioteca</td></tr>
+      <tr><td>Pedir ao servidor</td><td><code>fetch(url).then(...)</code></td>
+          <td><code>publicar.js</code>, todas</td></tr>
+      <tr><td>Percorrer lista</td><td><code>itens.map(function (p) { ... })</code></td>
+          <td><code>render()</code> da biblioteca</td></tr>
+      <tr><td>Condição</td><td><code>if (podePublicar(eu)) { ... }</code></td>
+          <td>onde some o botão no tablet</td></tr>
+    </table>
+
+    <div class="exerc">
+      <b>Exercício 4.1</b> — Baixe o repositório, rode <code>npx http-server -p 8099 -c-1</code>
+      e abra <code>http://127.0.0.1:8099/biblioteca.html</code>. Mude um texto qualquer, salve,
+      recarregue. Pronto: você alterou um sistema.
+    </div>
+
+    <div class="exerc">
+      <b>Exercício 4.2</b> — Na função <code>render()</code>, ache onde a data da versão é
+      montada e faça aparecer também o slug do produto. Erre à vontade: é a sua máquina, e o
+      <code>git checkout .</code> desfaz tudo.
+    </div>
+
+    <div class="exerc">
+      <b>Exercício 4.3</b> — Force um erro de propósito: apague um parêntese e recarregue com o
+      F12 aberto. Leia a mensagem em vermelho. <b>Saber ler erro vale mais que saber escrever
+      código.</b>
+    </div>
+  </div>
+</div>
+
+<h2>Semanas 5 e 6 — publicar e voltar atrás</h2>
+
+<div class="semana">
+  <div class="topo"><b>Semana 5 · HTML e CSS o suficiente</b><span class="tempo">3 horas</span></div>
+  <div class="corpo">
+    <p>Você não precisa dominar CSS. Precisa saber achar o que muda cor, tamanho e posição — e
+    entender que o layout do sistema é quase todo <i>flexbox</i> e <i>grid</i>.</p>
+    <div class="exerc">
+      <b>Exercício 5.1</b> — No Chrome, clique com o botão direito num botão da biblioteca e
+      escolha <b>Inspecionar</b>. Mude a cor ali mesmo, no painel da direita, e veja acontecer.
+      Depois ache a mesma regra no arquivo.
+    </div>
+    <div class="exerc">
+      <b>Exercício 5.2</b> — Abra a biblioteca no celular (F12 → ícone de celular) e veja as
+      regras dentro de <code>@media (max-width:620px)</code> entrarem em ação. É assim que a
+      mesma tela serve PC e tablet.
+    </div>
+  </div>
+</div>
+
+<div class="semana">
+  <div class="topo"><b>Semana 6 · Git, GitHub e Vercel</b><span class="tempo">3 a 4 horas</span></div>
+  <div class="corpo">
+    <p>Esta semana é a que te dá coragem para mexer: quando você sabe voltar atrás, o medo
+    passa.</p>
+    <table>
+      <tr><th style="width:150px">Comando</th><th>O que faz</th></tr>
+      <tr><td><code>git status</code></td><td>o que mudou desde a última vez</td></tr>
+      <tr><td><code>git diff</code></td><td>exatamente o que mudou, linha a linha</td></tr>
+      <tr><td><code>git checkout .</code></td><td>desfaz tudo que não foi salvo</td></tr>
+      <tr><td><code>git log --oneline</code></td><td>a história do projeto</td></tr>
+      <tr><td><code>git revert &lt;commit&gt;</code></td><td>desfaz uma mudança já publicada,
+          criando outra que a anula</td></tr>
+    </table>
+    <div class="exerc">
+      <b>Exercício 6.1</b> — Rode <code>git log --oneline</code> no repositório da embalagem.
+      Escolha um commit e leia a mensagem inteira com <code>git show &lt;commit&gt;</code>.
+      Repare que a mensagem explica <b>por que</b>, não só o quê. É assim que se documenta
+      decisão.
+    </div>
+    <div class="exerc">
+      <b>Exercício 6.2</b> — Entenda o caminho de publicação: alterar → <code>git add</code> →
+      <code>git commit</code> → <code>git push</code> → a Vercel publica em segundos. Não há
+      homologação: <b>o que entra na main está no ar.</b>
+    </div>
+  </div>
+</div>
+
+<h2>Semanas 7 e 8 — revisar o que a IA entrega</h2>
+
+<div class="semana">
+  <div class="topo"><b>Semana 7 · Ler um diff com olho crítico</b><span class="tempo">3 horas</span></div>
+  <div class="corpo">
+    <p>Aqui tudo se junta. O objetivo não é escrever o código — é <b>saber se o que veio presta</b>.</p>
+    <p>O roteiro de revisão, em cinco perguntas:</p>
+    <ol>
+      <li>Mudou só o que eu pedi, ou veio coisa a mais junto?</li>
+      <li>Mexeu em permissão? Se sim, quem ganhou ou perdeu acesso?</li>
+      <li>O que acontece se der erro — tem mensagem que diz o que fazer?</li>
+      <li>Foi testado como? Se a resposta é "deve funcionar", não foi testado.</li>
+      <li>O que pode quebrar que já funcionava?</li>
+    </ol>
+    <div class="exerc">
+      <b>Exercício 7.1</b> — Pegue um commit real deste projeto, rode
+      <code>git show</code> e responda as cinco perguntas sobre ele. Depois compare com a
+      mensagem do commit: ela deveria responder quase todas.
+    </div>
+  </div>
+</div>
+
+<div class="semana">
+  <div class="topo"><b>Semana 8 · Mexer de verdade</b><span class="tempo">4 a 5 horas</span></div>
+  <div class="corpo">
+    <p>Escolha uma melhoria pequena que você queira no sistema e faça <b>sozinho</b>, do começo
+    ao fim — com a IA explicando, não entregando pronto. Sugestões de tamanho certo:</p>
+    <ul>
+      <li>mostrar, na biblioteca, há quantos dias cada vídeo não é exibido na TV;</li>
+      <li>um aviso quando o tempo por camada ficar abaixo de 3 segundos;</li>
+      <li>ordenar a lista por data de publicação, além da ordem atual.</li>
+    </ul>
+    <div class="nota">
+      <b>A regra desta semana:</b> se você colar código que não sabe explicar, não terminou o
+      exercício. Peça a explicação antes de aceitar.
+    </div>
+  </div>
+</div>
+
+<h2>Depois: IA conectada ao ERP</h2>
+
+<p>Este é o passo seguinte, e o de maior valor para o PPCP. Não entra nas oito semanas porque
+depende do que vem antes — sem entender banco, API e permissão, um projeto desses vira risco.
+Quando chegar lá, a ordem certa é esta:</p>
+
+<ol>
+  <li><b>Leitura antes de escrita, sempre.</b> O primeiro projeto tira dados do ERP e não devolve
+      nada. Escrever em ERP de produção é assunto para muito depois, com o fornecedor junto.</li>
+  <li><b>Cópia, não consulta direta.</b> Traga o dado para um lugar seu (uma tabela no Supabase,
+      por exemplo) e trabalhe lá. Consulta pesada em banco de ERP derruba o ERP.</li>
+  <li><b>A IA não conversa com o ERP.</b> Ela conversa com a sua cópia dos dados, já filtrada.
+      Isso resolve desempenho, custo e — principalmente — controle do que sai da empresa.</li>
+  <li><b>Comece por uma pergunta só.</b> "Por que o lote X atrasou" rende mais aprendizado que
+      um assistente que responde tudo e acerta pouco.</li>
+  <li><b>Cuidado com o que sai.</b> Dado de produção, custo e cliente saindo para um serviço
+      externo é decisão da empresa, não sua. Combine antes.</li>
+</ol>
+
+<div class="perigo">
+  <b>O erro clássico:</b> ligar a IA direto no banco do ERP com usuário de escrita "só para
+  testar". Um <code>update</code> errado numa ordem de produção custa mais que todo o ganho do
+  projeto. Se um dia parecer boa ideia, é sinal de que faltou a etapa 1.
+</div>
+
+<h2>O que ler quando travar</h2>
+<table>
+  <tr><th style="width:190px">Dúvida</th><th>Onde olhar</th></tr>
+  <tr><td>"o que é esta tela, este arquivo"</td><td><i>Como funciona por dentro</i></td></tr>
+  <tr><td>"como peço isso direito"</td><td><i>Como pedir alterações</i></td></tr>
+  <tr><td>SQL e Postgres</td><td>documentação do PostgreSQL em português; e o próprio SQL Editor,
+      que erra barato</td></tr>
+  <tr><td>Supabase (API, RLS, auth)</td><td>supabase.com/docs — a parte de <i>Row Level
+      Security</i> é a que mais rende</td></tr>
+  <tr><td>JavaScript e HTML</td><td>developer.mozilla.org (MDN), em português</td></tr>
+</table>
+
+<div class="regra">
+  <b>Como saber que funcionou:</b> quando você olhar um código que a IA entregou e conseguir
+  dizer "isso aqui está errado porque…" — e estiver certo. Esse é o marco. Não é escrever do
+  zero; é <b>julgar com fundamento</b>.
+</div>
+
+<footer>
+  RitmoPatrimar — plano de estudo. Os exercícios usam as tabelas reais dos sistemas da Patrimar;
+  se a estrutura mudar, atualize as consultas aqui.
+</footer>
+
+</div>
+<script>
+/* Aberto em aba própria (que é como Configurações abre), o caminho natural é
+   fechar a aba — e o botão de voltar levaria a uma aba em branco. Quando foi
+   aberto assim, a dica muda e o próprio link fecha. */
+(function(){
+  var abaPropria = !!window.opener || history.length <= 1;
+  var link = document.querySelector('.voltar');
+  var dica = document.getElementById('dicaFechar');
+  if (!link) return;
+  if (abaPropria){
+    link.textContent = '× Fechar este documento';
+    link.href = '#';
+    link.onclick = function(e){
+      e.preventDefault();
+      window.close();
+      /* Navegador que recusa fechar aba que ele não abriu: vai para o sistema. */
+      setTimeout(function(){ location.href = '../configuracoes.html'; }, 150);
+    };
+    if (dica) dica.textContent = 'o sistema continua aberto na outra aba';
+  }
+})();
+</script>
+</body>
+</html>

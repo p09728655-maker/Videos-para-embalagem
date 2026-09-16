@@ -36,6 +36,10 @@
     {
       "source": "/como-funciona",
       "destination": "/docs/como-funciona.html"
+    },
+    {
+      "source": "/aprender",
+      "destination": "/docs/aprender.html"
     }
   ],
   "headers": [
