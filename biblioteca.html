@@ -280,9 +280,11 @@
 
   <div class="aparelhos" id="caixaAparelhos" style="display:none">
     <h2>Aparelhos autorizados</h2>
-    <div class="exp">Um tablet autorizado abre a biblioteca já conectado, sem senha, e só
-      opera a TV: não publica nem exclui painel. Revogar é desligar aqui — nenhuma senha
-      de pessoa muda.</div>
+    <div class="exp">Tablets da embalagem. Abrem a biblioteca já conectados, sem senha, e
+      fazem tudo o que a linha precisa: colocar na TV, pausar, retomar, tempo e modo.
+      <b>Gerar painel novo é só no computador.</b> Revogar é desligar aqui — nenhuma senha
+      de pessoa muda. Esta lista é da embalagem: os coletores do RitmoProd não entram nela
+      nem operam a TV.</div>
     <div id="listaAparelhos"></div>
     <div style="margin-top:12px">
       <button class="btn" onclick="autorizarAparelho()" id="btnAutorizar">Autorizar um tablet</button>
@@ -377,7 +379,7 @@ function pintarSessao(){
      de qualquer forma, e link que leva a uma recusa é armadilha. */
   if (ehDispositivo(eu)){
     el.innerHTML = 'Tablet <b>' + esc(eu.nome || 'autorizado') + '</b> · ' +
-                   'este aparelho opera a TV, não publica painel';
+                   'opera a TV daqui; gerar painel novo é no computador';
     return;
   }
   el.innerHTML = 'Conectado como <b>' + (emailLogado() || '—') + '</b> · ' +

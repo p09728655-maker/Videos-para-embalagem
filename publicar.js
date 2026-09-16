@@ -76,18 +76,31 @@ function supaUsuarioAtual(forcar) {
   return tokenValido().then(function (token) {
     var id = idDoToken(token);
     if (!id) throw new Error('sessão sem identificação');
-    return fetch(window.SUPA.url + '/rest/v1/usuarios?id=eq.' + id +
-                 '&select=id,nome,email,papel,ativo,empresa_id', {
-      headers: cabecalhos(token, {})
-    }).then(function (r) {
-      if (!r.ok) throw new Error('não consegui ler o perfil: ' + r.status);
-      return r.json();
-    }).then(function (rows) {
-      var u = rows && rows[0];
-      /* Conta sem linha em usuarios não tem papel nenhum: entra, mas não faz
-         nada. É o caso de quem foi criado direto no painel do Supabase. */
-      usuarioCache = u || { id: id, papel: null, nome: null, email: null,
-                            ativo: false, empresa_id: null };
+    var cab = { headers: cabecalhos(token, {}) };
+    /* Duas naturezas de acesso, em registros separados de propósito:
+       pessoa (usuarios, papel do RitmoProd) e aparelho da embalagem
+       (embalagem_dispositivos). Um tablet de cronoanálise não vira operador
+       da TV só por existir. */
+    return Promise.all([
+      fetch(window.SUPA.url + '/rest/v1/usuarios?id=eq.' + id +
+            '&select=id,nome,email,papel,ativo,empresa_id', cab)
+        .then(function (r) { return r.ok ? r.json() : []; }),
+      fetch(window.SUPA.url + '/rest/v1/embalagem_dispositivos?usuario_id=eq.' + id +
+            '&select=usuario_id,nome,ativo', cab)
+        .then(function (r) { return r.ok ? r.json() : []; })
+    ]).then(function (res) {
+      var pessoa = res[0] && res[0][0];
+      var aparelho = res[1] && res[1][0];
+      if (aparelho) {
+        usuarioCache = { id: id, papel: 'aparelho', nome: aparelho.nome,
+                         email: null, ativo: !!aparelho.ativo, empresa_id: null };
+      } else if (pessoa) {
+        usuarioCache = pessoa;
+      } else {
+        /* Sem registro em lugar nenhum: entra, mas não faz nada. */
+        usuarioCache = { id: id, papel: null, nome: null, email: null,
+                         ativo: false, empresa_id: null };
+      }
       return usuarioCache;
     });
   });
@@ -98,20 +111,29 @@ function limparUsuarioCache() { usuarioCache = null; }
  * ainda está em uso ou foi esquecido numa gaveta. Uma vez por abertura da
  * página, e falha em silêncio: é informação de apoio, não pode travar a tela. */
 function supaMarcarAcesso() {
-  return tokenValido().then(function (token) {
-    var id = idDoToken(token);
-    if (!id) return false;
-    return fetch(window.SUPA.url + '/rest/v1/usuarios?id=eq.' + id, {
-      method: 'PATCH',
-      headers: cabecalhos(token, { 'Content-Type': 'application/json' }),
-      body: JSON.stringify({ ultimo_acesso_em: new Date().toISOString() })
-    }).then(function () { return true; });
+  return supaUsuarioAtual().then(function (u) {
+    return tokenValido().then(function (token) {
+      var id = idDoToken(token);
+      if (!id) return false;
+      var alvo = (u && u.papel === 'aparelho')
+        ? '/rest/v1/embalagem_dispositivos?usuario_id=eq.' + id
+        : '/rest/v1/usuarios?id=eq.' + id;
+      return fetch(window.SUPA.url + alvo, {
+        method: 'PATCH',
+        headers: cabecalhos(token, { 'Content-Type': 'application/json' }),
+        body: JSON.stringify({ ultimo_acesso_em: new Date().toISOString() })
+      }).then(function () { return true; });
+    });
   })['catch'](function () { return false; });
 }
 
-function podeOperar(u) { return !!u && u.ativo && ['admin','analista','coletor'].indexOf(u.papel) >= 0; }
+/* Espelham embalagem_pode_operar() e embalagem_pode_publicar() no banco.
+   Gerar painel é só no computador; o resto vale nos dois. */
+function podeOperar(u) {
+  return !!u && u.ativo && (['admin','analista'].indexOf(u.papel) >= 0 || u.papel === 'aparelho');
+}
 function podePublicar(u) { return !!u && u.ativo && ['admin','analista'].indexOf(u.papel) >= 0; }
-function ehDispositivo(u) { return !!u && u.papel === 'coletor'; }
+function ehDispositivo(u) { return !!u && u.papel === 'aparelho'; }
 
 /* ── Tablet autorizado ─────────────────────────────────────────────────────
  * Uma conta por aparelho, como o RitmoProd já faz com os coletores. A senha é
@@ -174,20 +196,19 @@ function supaCriarDispositivo(nome) {
       /* O signup pode ter trocado a sessão do navegador; devolve a de quem criou. */
       if (guardada) { try { localStorage.setItem(SESSAO_KEY, JSON.stringify(guardada)); } catch (e) {} }
       return tokenValido().then(function (token) {
-        return fetch(window.SUPA.url + '/rest/v1/usuarios', {
+        return fetch(window.SUPA.url + '/rest/v1/embalagem_dispositivos', {
           method: 'POST',
           headers: cabecalhos(token, {
             'Content-Type': 'application/json',
             'Prefer': 'return=representation'
           }),
-          body: JSON.stringify({
-            id: idNovo, empresa_id: eu.empresa_id || null, nome: nome || 'Tablet',
-            email: email, papel: 'coletor', ativo: true
-          })
+          body: JSON.stringify({ usuario_id: idNovo, nome: nome || 'Tablet',
+                                 ativo: true, criado_por: eu.id })
         }).then(function (r) {
           if (!r.ok) {
             return r.text().then(function (t) {
-              throw new Error('conta criada, mas não consegui dar o papel: ' + r.status + ' ' + t);
+              throw new Error('conta criada, mas não consegui autorizar o aparelho: ' +
+                              r.status + ' ' + t);
             });
           }
           return { id: idNovo, email: email, senha: senha, nome: nome };
@@ -200,19 +221,25 @@ function supaCriarDispositivo(nome) {
 /* A lista de aparelhos, para saber quem está autorizado e poder revogar. */
 function supaListarDispositivos() {
   return tokenValido().then(function (token) {
-    return fetch(window.SUPA.url + '/rest/v1/usuarios?papel=eq.coletor' +
-                 '&select=id,nome,email,ativo,ultimo_acesso_em&order=nome.asc', {
+    return fetch(window.SUPA.url + '/rest/v1/embalagem_dispositivos' +
+                 '?select=usuario_id,nome,ativo,ultimo_acesso_em,criado_em&order=nome.asc', {
       headers: cabecalhos(token, {})
     }).then(function (r) {
       if (!r.ok) throw new Error('não consegui listar os aparelhos: ' + r.status);
       return r.json();
+    }).then(function (rows) {
+      return (rows || []).map(function (d) {
+        return { id: d.usuario_id, nome: d.nome, ativo: d.ativo,
+                 ultimo_acesso_em: d.ultimo_acesso_em };
+      });
     });
   });
 }
 
 function supaSituacaoDispositivo(id, ativo) {
   return tokenValido().then(function (token) {
-    return fetch(window.SUPA.url + '/rest/v1/usuarios?id=eq.' + encodeURIComponent(id), {
+    return fetch(window.SUPA.url + '/rest/v1/embalagem_dispositivos?usuario_id=eq.' +
+                 encodeURIComponent(id), {
       method: 'PATCH',
       headers: cabecalhos(token, { 'Content-Type': 'application/json' }),
       body: JSON.stringify({ ativo: !!ativo })

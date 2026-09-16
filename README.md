@@ -113,14 +113,21 @@ do e-mail. A regra antiga (`e-mail terminando em @patrimarmoveis.com.br`) dava p
 publicar e excluir painel a qualquer conta criada com um e-mail daquele domínio, sem que
 ninguém provasse ter acesso a ele.
 
-| Papel | Opera a TV | Publica e exclui painel |
-|---|---|---|
-| `admin`, `analista` | sim | sim |
-| `coletor` (tablet de chão de fábrica) | sim | **não** |
-| sem linha em `usuarios`, ou `ativo = false` | não | não |
+A regra, em uma linha: **gerar painel é só no computador; o resto vale nos dois.**
 
-*Operar a TV* é trocar o produto no ar, pausar, mandar recarregar e ajustar tempo e modo
-de exibição. Essas duas últimas passam por função no banco
+| Quem | Opera a TV | Gera e exclui painel |
+|---|---|---|
+| `admin`, `analista` (pessoas, tabela `usuarios`) | sim | sim |
+| tablet da embalagem (tabela `embalagem_dispositivos`) | sim | **não** |
+| `coletor` do RitmoProd | **não** | não |
+| sem registro, ou desativado | não | não |
+
+Os aparelhos da embalagem têm **tabela própria**, separada da de pessoas. Coletor é
+aparelho de cronoanálise e não tem nada a ver com a TV da embalagem: são domínios
+diferentes, cada um com o seu registro.
+
+*Operar a TV* é colocar o produto no ar, tirar do ar, pausar, retomar, mandar recarregar
+e ajustar tempo e modo de exibição. Essas duas últimas passam por função no banco
 (`embalagem_definir_tempo`, `embalagem_definir_exibicao`) em vez de `UPDATE` na tabela:
 assim o tablet ajusta o ritmo sem ganhar permissão de alterar o painel inteiro. As
 imagens no bucket seguem a mesma regra de publicar.
@@ -131,7 +138,7 @@ por falha de rede confundiria mais do que ajuda.
 
 ### Tablet autorizado, sem senha no chão de fábrica
 
-Um aparelho por conta, do mesmo tipo que o RitmoProd usa nos coletores. O administrador
+Um aparelho por conta, registrado em `embalagem_dispositivos`. O administrador
 clica em **Autorizar um tablet** na biblioteca, dá um nome, e a tela mostra um link (com
 QR quando a biblioteca de QR carrega). O tablet abre esse link **uma vez**: entra com a
 credencial do aparelho, limpa a URL e não pede senha nunca mais — a sessão se renova
@@ -146,12 +153,8 @@ sozinha.
 - a lista mostra o último acesso de cada aparelho, para saber o que está em uso e o que
   ficou na gaveta.
 
-No tablet, a biblioteca esconde o caminho para publicar e o botão de excluir: o banco
+No tablet, a biblioteca esconde o caminho para gerar painel e o botão de excluir: o banco
 recusaria de qualquer forma, e link que leva a uma recusa é armadilha.
-
-> Os quatro coletores que já existem no RitmoProd também passam a operar a TV da
-> embalagem, porque o papel é o mesmo. São aparelhos da empresa no chão de fábrica; se um
-> dia isso precisar ser separado, é uma linha em `embalagem_pode_operar()`.
 
 ### Esqueci minha senha
 
