@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Como o RitmoPatrimar Embalagem funciona por dentro</title>
+<style>
+  :root{--ink:#111;--muted:#555;--line:#d4d4d8;--accent:#FF5C1F;--soft:#f4f4f5;--ok:#16A34A;--no:#DC2626;--warn:#B45309;}
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:Arial,Helvetica,sans-serif;color:var(--ink);background:#fff;font-size:13.5px;line-height:1.55;}
+  .pagina{max-width:900px;margin:0 auto;padding:36px 40px 60px;}
+  header{display:flex;align-items:center;justify-content:space-between;border-bottom:3px solid var(--accent);padding-bottom:14px;margin-bottom:26px;}
+  header img{height:44px;}
+  header .meta{text-align:right;font-size:11px;color:var(--muted);line-height:1.4;}
+  h1{font-size:24px;letter-spacing:-0.02em;margin-bottom:6px;}
+  .lead{color:var(--muted);font-size:14px;max-width:720px;margin-bottom:26px;}
+  h2{font-size:15px;text-transform:uppercase;letter-spacing:0.08em;color:var(--accent);margin:30px 0 12px;padding-top:8px;border-top:1px solid var(--line);}
+  h3{font-size:14px;margin:18px 0 6px;}
+  p{margin-bottom:10px;}
+  ul,ol{margin:6px 0 12px 22px;}
+  li{margin-bottom:5px;}
+  table{width:100%;border-collapse:collapse;margin:10px 0 16px;font-size:12.5px;}
+  th,td{border:1px solid var(--line);padding:7px 10px;text-align:left;vertical-align:top;}
+  th{background:var(--soft);font-weight:700;}
+  code{font-family:Consolas,Menlo,monospace;background:var(--soft);padding:1px 6px;border-radius:3px;font-size:12.5px;}
+  pre{font-family:Consolas,Menlo,monospace;background:var(--soft);border:1px solid var(--line);border-radius:6px;
+      padding:12px 14px;margin:10px 0 16px;font-size:12px;line-height:1.5;overflow-x:auto;}
+  .caixa{border:1px solid var(--line);border-radius:6px;padding:12px 14px;margin:12px 0;}
+  .nota{border-left:3px solid var(--accent);background:#fff7f3;padding:10px 14px;margin:14px 0;font-size:13px;}
+  .nota b{color:var(--accent);}
+  .perigo{border-left:3px solid var(--no);background:#fff5f5;padding:10px 14px;margin:14px 0;font-size:13px;}
+  .perigo b{color:var(--no);}
+  .regra{border:2px solid var(--ink);border-radius:6px;padding:14px 18px;margin:16px 0;font-size:15px;line-height:1.5;}
+  .regra b{font-size:16px;}
+  .fluxo{border:1px solid var(--line);border-radius:6px;padding:14px 16px;margin:12px 0;font-size:12.5px;}
+  .fluxo ol{margin-left:18px;}
+  .indice{columns:2;column-gap:28px;font-size:13px;margin-bottom:8px;}
+  .indice a{color:var(--ink);}
+  footer{margin-top:40px;padding-top:12px;border-top:1px solid var(--line);font-size:11px;color:var(--muted);}
+  @media print{ body{font-size:11.5px;} .pagina{padding:10mm 12mm;max-width:none;} h2{page-break-after:avoid;}
+                table,.caixa,.regra,pre,.fluxo{page-break-inside:avoid;} }
+  @media (max-width:640px){ .pagina{padding:20px 16px 40px;} .indice{columns:1;} }
+</style>
+</head>
+<body>
+<div class="pagina">
+
+<header>
+  <img src="../Logotipo%20Patrimar.jpg" alt="Patrimar Móveis">
+  <div class="meta">RitmoPatrimar · Vídeos Embalagem<br>Como funciona por dentro<br>setembro/2026</div>
+</header>
+
+<h1>Como o sistema funciona por dentro</h1>
+<p class="lead">Este documento é para quem vai <b>mexer</b> no RitmoPatrimar Embalagem — não para
+quem só usa. Ele explica os arquivos, o banco de dados, quem pode o quê, e como fazer uma
+alteração sem derrubar a TV da fábrica. Tudo com exemplos do sistema de verdade, não de
+manual.</p>
+
+<div class="indice">
+  1. <a href="#peças">As peças</a><br>
+  2. <a href="#arquivos">Os arquivos</a><br>
+  3. <a href="#banco">O banco de dados</a><br>
+  4. <a href="#permissao">Quem pode o quê</a><br>
+  5. <a href="#caminho">O caminho de uma ação</a><br>
+  6. <a href="#alterar">Como fazer uma alteração</a><br>
+  7. <a href="#armadilhas">Cinco armadilhas</a><br>
+  8. <a href="#glossario">Glossário</a>
+</div>
+
+<h2 id="peças">1. As peças</h2>
+
+<p>São três coisas, e só três. Se você entender a divisão entre elas, o resto é detalhe.</p>
+
+<table>
+  <tr><th style="width:130px">Peça</th><th>O que é</th><th>Onde vive</th></tr>
+  <tr>
+    <td><b>As telas</b></td>
+    <td>Arquivos HTML soltos. Cada tela é um arquivo único, com o HTML, o CSS e o JavaScript
+        dentro dele. Não há framework, não há build, não há <code>npm install</code>.</td>
+    <td>GitHub → Vercel</td>
+  </tr>
+  <tr>
+    <td><b>O banco</b></td>
+    <td>Supabase (que é um PostgreSQL com uma API REST na frente). Guarda os vídeos, o que
+        está na TV, os tablets autorizados e as pessoas.</td>
+    <td>projeto <code>crono-analise</code></td>
+  </tr>
+  <tr>
+    <td><b>As imagens</b></td>
+    <td>Os desenhos de cada camada, como arquivos JPEG. Ficam no <i>Storage</i> do Supabase,
+        no balde <code>embalagem</code>, não dentro do banco.</td>
+    <td>Supabase Storage</td>
+  </tr>
+</table>
+
+<div class="regra">
+  <b>A ideia central:</b> as telas não têm servidor próprio. Elas são arquivos estáticos que
+  rodam no navegador e falam <b>direto</b> com o Supabase. Não existe "back-end" nosso no
+  meio — o que protege os dados são as regras dentro do banco, não um programa nosso.
+</div>
+
+<p>Isso explica uma coisa que costuma assustar: a chave do Supabase está escrita no
+<code>supabase-config.js</code>, em texto puro, visível para qualquer um que abrir o site.
+<b>E está certo.</b> Ela é a chave <i>publicável</i>: sozinha, só permite o que as regras do
+banco liberam para visitante — no nosso caso, ler os vídeos. Publicar, excluir ou trocar a TV
+exige estar logado. A chave que pode tudo (<code>service_role</code>) nunca sai do painel do
+Supabase e nunca entra em arquivo nenhum do site.</p>
+
+<h2 id="arquivos">2. Os arquivos</h2>
+
+<table>
+  <tr><th style="width:190px">Arquivo</th><th>O que faz</th></tr>
+  <tr><td><code>inicio.html</code></td><td>Menu com os atalhos e as instruções de uso.</td></tr>
+  <tr><td><code>gerador.html</code></td><td>Lê o PDF de embalagem, corta as camadas, monta a lista de
+      componentes e publica o vídeo. É o arquivo mais complexo do projeto.</td></tr>
+  <tr><td><code>biblioteca.html</code></td><td>Lista os vídeos publicados. Coloca na TV, pausa,
+      ajusta tempo e modo, busca.</td></tr>
+  <tr><td><code>configuracoes.html</code></td><td>Autoriza e revoga os tablets.</td></tr>
+  <tr><td><code>nova-senha.html</code></td><td>Redefinição de senha, aberta pelo link do e-mail.</td></tr>
+  <tr><td><code>tv/index.html</code></td><td><b>O player da TV.</b> Arquivo fixo: não muda quando
+      você troca de vídeo. Ele é que pergunta ao banco o que exibir.</td></tr>
+  <tr><td><code>supabase-config.js</code></td><td>Endereço e chave do Supabase, e as funções de
+      leitura. <b>As quatro telas e a TV carregam este arquivo</b> — é o único compartilhado por
+      todos.</td></tr>
+  <tr><td><code>publicar.js</code></td><td>Tudo que <b>escreve</b> no banco: login, publicar, trocar a
+      TV, pausar, autorizar tablet. A TV nunca carrega este arquivo, porque a TV nunca escreve.</td></tr>
+  <tr><td><code>sw.js</code></td><td><i>Service worker</i>: faz o gerador abrir sem internet. Cuidado
+      com ele (ver armadilha nº 3).</td></tr>
+  <tr><td><code>vercel.json</code></td><td>Diz que <code>/biblioteca</code> serve o
+      <code>biblioteca.html</code>, e que a raiz do site é a TV.</td></tr>
+</table>
+
+<h3>Por que HTML solto, sem framework?</h3>
+<p>Porque o player roda no navegador embutido de uma Smart TV, que é um Chromium de 2019.
+Framework moderno não abre lá. E porque um arquivo único é legível daqui a dois anos por
+quem não acompanhou a construção — inclusive por você.</p>
+
+<h2 id="banco">3. O banco de dados</h2>
+
+<p>O projeto Supabase é o mesmo da cronoanálise (RitmoProd). As tabelas da embalagem têm
+prefixo <code>embalagem_</code> e não se misturam com as de lá. A única compartilhada é a de
+pessoas.</p>
+
+<table>
+  <tr><th style="width:190px">Tabela</th><th>O que guarda</th></tr>
+  <tr><td><code>embalagem_paineis</code></td><td>Um vídeo por linha. Colunas: <code>slug</code> (o
+      apelido na URL), <code>produto</code>, <code>tempo</code> (segundos por camada),
+      <code>camadas</code>, <code>fotos</code>, <code>opcoes</code>, <code>atualizado_em</code>.</td></tr>
+  <tr><td><code>embalagem_config</code></td><td><b>Uma linha só</b>, de id 1. É o "controle remoto"
+      da TV: <code>painel_ativo</code> (o que está no ar), <code>tv_pausa</code>,
+      <code>tv_recarregar</code>.</td></tr>
+  <tr><td><code>embalagem_dispositivos</code></td><td>Os tablets autorizados: <code>nome</code>,
+      <code>token_hash</code>, <code>ativo</code>, <code>ultimo_acesso_em</code>.</td></tr>
+  <tr><td><code>embalagem_pareamentos</code></td><td>Os códigos de autorização em aberto. A linha
+      some quando o código é usado.</td></tr>
+  <tr><td><code>usuarios</code></td><td><b>Compartilhada com o RitmoProd.</b> Quem é
+      <code>admin</code>, <code>analista</code>, <code>coletor</code>.</td></tr>
+</table>
+
+<h3>Três colunas jsonb, e por quê</h3>
+<p><code>camadas</code>, <code>fotos</code> e <code>opcoes</code> guardam JSON — uma estrutura
+inteira dentro de uma célula. Um vídeo com 8 camadas guarda as 8 numa coluna só, em vez de
+uma tabela <code>embalagem_camadas</code> com 8 linhas.</p>
+<p>Isso é uma escolha, com vantagem e preço. A vantagem: o vídeo é lido e gravado de uma vez,
+e a estrutura acompanha o que o gerador produz sem migração a cada ajuste. O preço: você não
+consegue perguntar ao banco "quais vídeos usam a peça LATERAL Nº 03" sem escrever SQL de
+JSON. Como ninguém nunca precisou dessa pergunta, o JSON ganhou.</p>
+
+<pre>-- uma camada, por dentro:
+{ "op": "CAMADA 02",
+  "obs": "FURACOES PARA CIMA",
+  "img": "embalagem-nicho/cam02.jpg",
+  "componentes": [ { "qtd": 2, "nome": "PORTA Nº 05" } ] }</pre>
+
+<h3>RLS: a parte que protege tudo</h3>
+<p><i>Row Level Security</i> é a regra que o Postgres aplica em <b>toda</b> consulta, venha de
+onde vier. Como as telas falam direto com o banco, é aqui — e só aqui — que a segurança mora.</p>
+
+<pre>-- ler os vídeos: qualquer um, até sem login
+create policy embalagem_paineis_leitura on embalagem_paineis
+  for select to anon, authenticated using (true);
+
+-- escrever: só quem passa nesta função
+create policy embalagem_paineis_escrita on embalagem_paineis
+  for all to authenticated
+  using (embalagem_pode_publicar());</pre>
+
+<div class="nota">
+  <b>A consequência prática:</b> não adianta esconder um botão na tela para "proteger" algo.
+  Quem souber usar o navegador chama a API direto. Esconder o botão é <b>gentileza com o
+  usuário</b> — quem protege é a policy.
+</div>
+
+<h3>As funções</h3>
+<table>
+  <tr><th style="width:230px">Função</th><th>Para quê</th></tr>
+  <tr><td><code>papel_atual()</code></td><td>Devolve o papel de quem está logado, lendo a tabela
+      <code>usuarios</code>. Vem do RitmoProd.</td></tr>
+  <tr><td><code>embalagem_pode_publicar()</code></td><td><code>admin</code> ou <code>analista</code>.
+      Governa criar, substituir e excluir vídeo.</td></tr>
+  <tr><td><code>embalagem_pode_operar()</code></td><td>Mesmo grupo, para as ações de TV feitas por
+      <b>pessoas</b> logadas.</td></tr>
+  <tr><td><code>embalagem_parear(codigo)</code></td><td>Troca o código pelo token do tablet. É a
+      única função aberta a visitante — o tablet ainda não tem nada quando digita o código.</td></tr>
+  <tr><td><code>embalagem_op_ativar</code>, <code>_pausa</code>, <code>_recarregar</code>,
+      <code>_tempo</code>, <code>_exibicao</code></td>
+      <td>As ações do tablet. Cada uma recebe o token, confere se o aparelho está ativo e faz
+      <b>uma</b> coisa.</td></tr>
+</table>
+
+<p>Repare no desenho: o tablet não recebeu "permissão de escrever na tabela". Ele recebeu
+cinco verbos. O que não tem verbo, ele não faz — não porque a tela esconde, mas porque a
+função não existe.</p>
+
+<h2 id="permissao">4. Quem pode o quê</h2>
+
+<table>
+  <tr><th>Quem</th><th>Opera a TV</th><th>Gera e exclui vídeo</th><th>Autoriza tablet</th></tr>
+  <tr><td>admin (PPCP)</td><td>sim</td><td>sim</td><td>sim</td></tr>
+  <tr><td>analista</td><td>sim</td><td>sim</td><td>sim</td></tr>
+  <tr><td>tablet autorizado</td><td>sim</td><td><b>não</b></td><td>não</td></tr>
+  <tr><td>coletor do RitmoProd</td><td><b>não</b></td><td>não</td><td>não</td></tr>
+  <tr><td>visitante (sem login)</td><td>não</td><td>não</td><td>não</td></tr>
+</table>
+
+<p>Duas naturezas de acesso, de propósito separadas:</p>
+<ul>
+  <li><b>Pessoa</b> — entra com e-mail e senha, o Supabase devolve um <i>JWT</i> (um crachá que
+      vence em 1 hora e se renova sozinho), e o papel vem da tabela <code>usuarios</code>.</li>
+  <li><b>Aparelho</b> — não tem e-mail nem senha. Guarda um <b>token</b> de 64 caracteres,
+      entregue uma única vez no pareamento. O banco guarda só o <code>sha256</code> dele, então
+      nem o banco sabe o token.</li>
+</ul>
+
+<h2 id="caminho">5. O caminho de uma ação</h2>
+
+<p>Acompanhe o clique em <b>Colocar na TV</b>, do dedo até a tela da fábrica. Quem entende este
+caminho entende o sistema inteiro.</p>
+
+<div class="fluxo">
+<ol>
+  <li>Na biblioteca, o botão chama <code>colocarNaTV(slug)</code>.</li>
+  <li>A função confere se há acesso; se não, abre o login e <b>guarda a ação pendente</b> para
+      refazê-la depois de entrar.</li>
+  <li>Chama <code>supaAtivarPainel(slug)</code>, no <code>publicar.js</code>. Ali há uma
+      bifurcação: <b>pessoa</b> manda um PATCH em <code>embalagem_config</code> com o crachá;
+      <b>tablet</b> chama a função <code>embalagem_op_ativar</code> com o token.</li>
+  <li>O banco aplica a RLS (ou a checagem do token) e grava <code>painel_ativo</code>. De
+      quebra, limpa <code>tv_pausa</code> — senão o vídeo novo entraria congelado.</li>
+  <li>Na fábrica, o player da TV pergunta ao banco <b>de 5 em 5 segundos</b> se há comando
+      (pausa, recarga) e <b>de 1 em 1 minuto</b> se o vídeo mudou.</li>
+  <li>Percebendo a troca, ele <b>não recarrega a página</b>: troca o conteúdo no lugar. Isso
+      preserva a tela cheia, que o navegador só devolve com alguém apertando um botão lá.</li>
+</ol>
+</div>
+
+<p>Esse último passo é a decisão mais consequente do projeto — e a origem da armadilha nº 3.</p>
+
+<h2 id="alterar">6. Como fazer uma alteração</h2>
+
+<h3>Rodando na sua máquina</h3>
+<p>Não precisa instalar nada além de um servidor estático. Abrir o arquivo com duplo clique
+<b>não</b> funciona (o navegador bloqueia partes do JavaScript em <code>file://</code>).</p>
+<pre>npx http-server -p 8099 -c-1
+# abre http://127.0.0.1:8099/biblioteca.html</pre>
+
+<p>Ele vai falar com o banco <b>de produção</b>. Para olhar sem risco, tudo bem. Para testar
+publicação, use um produto de teste e apague depois.</p>
+
+<h3>Publicando</h3>
+<p><code>git push</code> na <code>main</code> é o deploy. A Vercel publica em segundos, sem
+botão nenhum. Não existe homologação: <b>o que entra na main está no ar.</b></p>
+
+<h3>O passo a passo que evita susto</h3>
+<ol>
+  <li>Mude um arquivo só, e pouca coisa de cada vez.</li>
+  <li>Teste no servidor local, com o navegador aberto no console (F12) para ver erro em
+      vermelho.</li>
+  <li>Se mexeu em algo do banco, confira antes no <b>SQL Editor</b> do Supabase, com
+      <code>select</code>, o que a sua alteração vai afetar.</li>
+  <li>Publique e recarregue com <b>Ctrl + F5</b> — sem isso você pode estar vendo a versão
+      velha e achando que não funcionou.</li>
+  <li>Se mexeu no player, <b>mande a TV atualizar</b> pela biblioteca. Ela não pega sozinha.</li>
+</ol>
+
+<div class="perigo">
+  <b>Nunca faça:</b> alterar <code>auth.users</code> por SQL, colocar a chave
+  <code>service_role</code> em qualquer arquivo do site, ou apagar linha de
+  <code>embalagem_paineis</code> pelo painel sem antes tirar o vídeo da TV. E não mexa na
+  <i>Site URL</i> do Supabase: ela é global e o RitmoProd depende dela.
+</div>
+
+<h2 id="armadilhas">7. Cinco armadilhas (todas já nos pegaram)</h2>
+
+<h3>1. O e-mail que não existe</h3>
+<p>Criar conta com domínio que não resolve em DNS dá <i>"Email address is invalid"</i>. Foi o
+que aconteceu com <code>@dispositivo.ritmopatrimar.app</code>. O Supabase confere o domínio.</p>
+
+<h3>2. O limite de e-mails</h3>
+<p>Sem servidor SMTP próprio, o Supabase entrega poucos e-mails por hora. Redefinição de senha
+e confirmação de conta disputam a mesma cota. Foi daí o <i>"email rate limit exceeded"</i>.</p>
+
+<h3>3. A TV com o player velho</h3>
+<p>Como a troca de vídeo não recarrega a página, <b>código novo do player só entra com um
+reload</b>. Foi por isso que a pausa remota não funcionou na primeira tentativa: o código
+estava no ar, mas a TV ainda rodava o de antes. O botão <b>Atualizar a TV</b> existe por causa
+disso.</p>
+
+<h3>4. O cache do service worker</h3>
+<p>O <code>sw.js</code> guarda os arquivos para o gerador abrir sem internet. Ao publicar
+mudança, aumente o número da versão do cache (<code>ritmopatrimar-embalagem-v15</code>) —
+senão alguém pode continuar com a versão antiga por dias.</p>
+
+<h3>5. Botão escondido não é segurança</h3>
+<p>Já dito, e vale repetir porque é o erro mais comum de quem começa: esconder o botão não
+protege nada. A proteção é a policy no banco. Esconder é para a pessoa não clicar em algo que
+vai ser recusado.</p>
+
+<h2 id="glossario">8. Glossário</h2>
+
+<table>
+  <tr><th style="width:170px">Termo</th><th>O que quer dizer aqui</th></tr>
+  <tr><td>painel / vídeo</td><td>A mesma coisa. Na tela chamamos de vídeo; no código e no banco
+      ficou <code>painel</code>, da primeira versão.</td></tr>
+  <tr><td>slug</td><td>O apelido do produto na URL, sem acento nem espaço:
+      <code>embalagem-nicho-impacto-2-0</code>.</td></tr>
+  <tr><td>RLS / policy</td><td>A regra que o banco aplica em toda consulta, dizendo quem pode ler
+      e escrever cada linha.</td></tr>
+  <tr><td>JWT</td><td>O crachá de quem fez login. Vence em 1 hora e se renova sozinho pelo
+      <i>refresh token</i>.</td></tr>
+  <tr><td>token do aparelho</td><td>Os 64 caracteres que o tablet guarda no lugar de senha.</td></tr>
+  <tr><td>RPC</td><td>Chamar uma função do banco pela API, em vez de mexer na tabela direto.</td></tr>
+  <tr><td>upsert</td><td>Gravar que vira atualização se a linha já existe. É como republicar um
+      vídeo substitui o anterior.</td></tr>
+  <tr><td>service worker</td><td>Programinha que o navegador guarda para servir o site sem
+      internet.</td></tr>
+  <tr><td>anon / authenticated</td><td>Os dois papéis do Postgres que a API usa: visitante e
+      logado.</td></tr>
+</table>
+
+<h2>Por onde começar a mexer</h2>
+<p>Em ordem de risco, do mais seguro para o mais arriscado:</p>
+<ol>
+  <li><b>Textos e cores</b> de qualquer tela. Errou, corrige e publica de novo.</li>
+  <li><b>A página inicial</b> (<code>inicio.html</code>): não fala com o banco, é só conteúdo.</li>
+  <li><b>A biblioteca</b>: mexer no cartão do vídeo, na ordem, no que aparece.</li>
+  <li><b>O player da TV</b>: lembre que roda em navegador antigo — nada de recurso moderno de
+      CSS ou JavaScript, e sempre mande a TV atualizar depois.</li>
+  <li><b>O gerador</b>: a leitura do PDF é a parte mais delicada do projeto.</li>
+  <li><b>Policies e funções do banco</b>: aqui um erro libera ou bloqueia gente de verdade.
+      Escreva o SQL, leia duas vezes, e teste consultando antes de aplicar.</li>
+</ol>
+
+<footer>
+  RitmoPatrimar · Vídeos Embalagem — documento técnico do próprio sistema.
+  Atualize-o quando mudar o que está descrito aqui: documentação errada é pior que documentação
+  nenhuma.
+</footer>
+
+</div>
+</body>
+</html>

@@ -28,6 +28,14 @@
     {
       "source": "/configuracoes",
       "destination": "/configuracoes.html"
+    },
+    {
+      "source": "/como-pedir",
+      "destination": "/docs/como-pedir.html"
+    },
+    {
+      "source": "/como-funciona",
+      "destination": "/docs/como-funciona.html"
     }
   ],
   "headers": [

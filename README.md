@@ -19,6 +19,8 @@ as observações críticas (furação, pintura) e o desenho técnico da camada.
 | `tv/ativo.json` | Reserva manual, usada só se o Supabase não responder |
 | `paineis/<slug>/` | Biblioteca: um produto por pasta, publicado uma vez só |
 | `docs/padrao-desenho-tv.html` | **Padrão de folha para o desenhista** (publicado em `/padrao`) |
+| `docs/como-pedir.html` | Guia de como pedir alterações, com exemplos reais (`/como-pedir`) |
+| `docs/como-funciona.html` | O sistema por dentro: arquivos, banco, permissões (`/como-funciona`) |
 | `docs/modelo-folha-tv.dxf` | Modelo da folha TV 16:9 para abrir no CAD |
 | `configuracoes.html` | Aparelhos autorizados — o que se ajusta de vez em quando |
 | `nova-senha.html` | Redefinição de senha, aberta pelo link do e-mail |

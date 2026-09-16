@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Como pedir alterações no RitmoPatrimar</title>
+<style>
+  :root{--ink:#111;--muted:#555;--line:#d4d4d8;--accent:#FF5C1F;--soft:#f4f4f5;--ok:#16A34A;--no:#DC2626;--warn:#B45309;}
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:Arial,Helvetica,sans-serif;color:var(--ink);background:#fff;font-size:13.5px;line-height:1.55;}
+  .pagina{max-width:900px;margin:0 auto;padding:36px 40px 60px;}
+  header{display:flex;align-items:center;justify-content:space-between;border-bottom:3px solid var(--accent);padding-bottom:14px;margin-bottom:26px;}
+  header img{height:44px;}
+  header .meta{text-align:right;font-size:11px;color:var(--muted);line-height:1.4;}
+  h1{font-size:24px;letter-spacing:-0.02em;margin-bottom:6px;}
+  .lead{color:var(--muted);font-size:14px;max-width:720px;margin-bottom:26px;}
+  h2{font-size:15px;text-transform:uppercase;letter-spacing:0.08em;color:var(--accent);margin:30px 0 12px;padding-top:8px;border-top:1px solid var(--line);}
+  h3{font-size:14px;margin:18px 0 6px;}
+  p{margin-bottom:10px;}
+  ul,ol{margin:6px 0 12px 22px;}
+  li{margin-bottom:5px;}
+  table{width:100%;border-collapse:collapse;margin:10px 0 16px;font-size:12.5px;}
+  th,td{border:1px solid var(--line);padding:7px 10px;text-align:left;vertical-align:top;}
+  th{background:var(--soft);font-weight:700;}
+  code{font-family:Consolas,Menlo,monospace;background:var(--soft);padding:1px 6px;border-radius:3px;font-size:12.5px;}
+  .regra{border:2px solid var(--ink);border-radius:6px;padding:14px 18px;margin:16px 0;font-size:15px;line-height:1.5;}
+  .regra b{font-size:16px;}
+  .nota{border-left:3px solid var(--accent);background:#fff7f3;padding:10px 14px;margin:14px 0;font-size:13px;}
+  .nota b{color:var(--accent);}
+  .caso{border:1px solid var(--line);border-radius:6px;margin:14px 0;overflow:hidden;}
+  .caso .pedido{background:var(--soft);padding:10px 14px;font-family:Consolas,Menlo,monospace;font-size:12.5px;border-bottom:1px solid var(--line);}
+  .caso .corpo{padding:10px 14px;}
+  .caso .corpo p{margin-bottom:6px;}
+  .caso .veredito{font-weight:700;font-size:12px;text-transform:uppercase;letter-spacing:0.06em;}
+  .caso.bom .veredito{color:var(--ok);} .caso.meio .veredito{color:var(--warn);} .caso.ruim .veredito{color:var(--no);}
+  .duas{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:12px 0;}
+  .cx{border:1px solid var(--line);border-radius:6px;padding:12px 14px;font-size:12.5px;}
+  .cx h4{font-size:12px;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:6px;}
+  .cx.sim{border-color:var(--ok);} .cx.sim h4{color:var(--ok);}
+  .cx.nao{border-color:var(--no);} .cx.nao h4{color:var(--no);}
+  .indice{columns:2;column-gap:28px;font-size:13px;margin-bottom:8px;}
+  .indice a{color:var(--ink);}
+  footer{margin-top:40px;padding-top:12px;border-top:1px solid var(--line);font-size:11px;color:var(--muted);}
+  @media print{ body{font-size:11.5px;} .pagina{padding:10mm 12mm;max-width:none;} h2{page-break-after:avoid;}
+                table,.caso,.regra,.duas{page-break-inside:avoid;} }
+  @media (max-width:640px){ .pagina{padding:20px 16px 40px;} .indice,.duas{columns:1;grid-template-columns:1fr;} }
+</style>
+</head>
+<body>
+<div class="pagina">
+
+<header>
+  <img src="../Logotipo%20Patrimar.jpg" alt="Patrimar Móveis">
+  <div class="meta">RitmoPatrimar · Vídeos Embalagem<br>Como pedir alterações<br>setembro/2026</div>
+</header>
+
+<h1>Como pedir alterações no sistema</h1>
+<p class="lead">Este documento não ensina a programar. Ensina a <b>pedir</b> — para uma IA ou
+para qualquer desenvolvedor — de um jeito que você receba o que quer na primeira tentativa.
+Os exemplos são pedidos reais feitos neste projeto, com o que cada um provocou.</p>
+
+<div class="indice">
+  1. <a href="#tres">As três coisas de todo pedido</a><br>
+  2. <a href="#problema">Peça o problema, não a solução</a><br>
+  3. <a href="#mapa">O mapa: onde as coisas ficam</a><br>
+  4. <a href="#casos">Pedidos reais, dissecados</a><br>
+  5. <a href="#perguntas">Quando eu te pergunto algo</a><br>
+  6. <a href="#conferir">Como conferir o que recebeu</a><br>
+  7. <a href="#desconfiar">Quando desconfiar</a><br>
+  8. <a href="#palavras">As palavras certas</a>
+</div>
+
+<h2 id="tres">1. As três coisas de todo pedido</h2>
+
+<div class="regra">
+  <b>O quê</b> · <b>Onde</b> · <b>Por quê</b><br>
+  Um pedido com esses três está pronto para virar trabalho. Faltando o "por quê", você recebe
+  exatamente o que pediu — que nem sempre é o que resolvia.
+</div>
+
+<table>
+  <tr><th style="width:90px">Parte</th><th>O que responder</th><th>Exemplo</th></tr>
+  <tr><td><b>O quê</b></td><td>A mudança que você imagina.</td>
+      <td>"um campo para mudar o tempo"</td></tr>
+  <tr><td><b>Onde</b></td><td>Em qual tela, e usada em qual aparelho.</td>
+      <td>"na biblioteca, que o operador abre no tablet"</td></tr>
+  <tr><td><b>Por quê</b></td><td>O que acontece hoje que te incomoda.</td>
+      <td>"hoje, para mudar de 5 para 8 segundos, tenho que gerar o PDF de novo"</td></tr>
+</table>
+
+<p>O "por quê" é o mais importante e o mais esquecido. Ele é o que permite dizer <i>"tem um
+jeito melhor"</i> — ou avisar que o que você pediu não vai resolver.</p>
+
+<h2 id="problema">2. Peça o problema, não a solução</h2>
+
+<p>Você conhece a fábrica; quem desenvolve conhece o sistema. Se você já traz a solução
+pronta, joga fora metade do valor da conversa.</p>
+
+<div class="duas">
+  <div class="cx nao">
+    <h4>Solução pronta</h4>
+    "Põe um botão de atualizar na tela da TV."
+    <p style="margin-top:6px;color:var(--muted)">Ninguém encosta na TV; o botão seria inútil
+    lá. E o problema real continuaria.</p>
+  </div>
+  <div class="cx sim">
+    <h4>Problema</h4>
+    "Mexi no player e a TV continua com a versão velha. Não quero ir até lá com o controle."
+    <p style="margin-top:6px;color:var(--muted)">Daí sai o botão <b>na biblioteca</b>, que é
+    onde você está.</p>
+  </div>
+</div>
+
+<p>Isso não quer dizer nunca sugerir solução. Sugira — mas diga que é sugestão, e conte o
+problema junto. "<i>Pensei num botão na TV, mas o que me incomoda é ter que ir até lá</i>"
+é um pedido excelente.</p>
+
+<h2 id="mapa">3. O mapa: onde as coisas ficam</h2>
+
+<p>Metade dos mal-entendidos é sobre <b>qual tela</b>. São cinco, e cada uma tem um dono e um
+momento de uso.</p>
+
+<table>
+  <tr><th style="width:130px">Tela</th><th>Quem usa</th><th>Para quê</th></tr>
+  <tr><td><b>Gerador</b></td><td>PPCP, no computador</td>
+      <td>Ler o PDF, conferir as camadas, publicar o vídeo. É onde nasce o vídeo.</td></tr>
+  <tr><td><b>Biblioteca</b></td><td>PPCP e o tablet da linha</td>
+      <td>O dia a dia: colocar na TV, pausar, tempo, modo, buscar.</td></tr>
+  <tr><td><b>Configurações</b></td><td>PPCP, no computador</td>
+      <td>Autorizar e revogar tablet. Coisa de meses em meses.</td></tr>
+  <tr><td><b>TV</b></td><td>ninguém — só assiste</td>
+      <td>Exibe o vídeo. <b>Não tem teclado nem mouse.</b> Tudo que muda nela é comandado de
+      longe.</td></tr>
+  <tr><td><b>Início</b></td><td>quem chega ao sistema</td>
+      <td>Menu e instruções.</td></tr>
+</table>
+
+<div class="nota">
+  <b>A regra que mais economiza conversa:</b> a TV não recebe cliques. Se você pedir "um botão
+  na TV", quase sempre o que resolve é um comando na biblioteca que a TV obedece. Diga onde
+  <b>você</b> vai estar quando precisar da função.
+</div>
+
+<h3>E o que cada um pode fazer</h3>
+<table>
+  <tr><th>Quem</th><th>Opera a TV</th><th>Gera e exclui vídeo</th></tr>
+  <tr><td>Você (admin) e analista, logados</td><td>sim</td><td>sim</td></tr>
+  <tr><td>Tablet autorizado</td><td>sim</td><td>não</td></tr>
+  <tr><td>Quem não entrou</td><td>não</td><td>não</td></tr>
+</table>
+
+<p>Ao pedir função nova, diga <b>quem</b> vai usar. "Só eu", "o operador também", "qualquer um
+que abrir" — cada resposta leva a um sistema diferente.</p>
+
+<h2 id="casos">4. Pedidos reais, dissecados</h2>
+
+<div class="caso bom">
+  <div class="pedido">"TER OPÇÃO DE SUBIR E DESCER A DESCRIÇÃO COM SETA PARA DEIXAR EM ORDEM"</div>
+  <div class="corpo">
+    <p class="veredito">Funcionou de primeira</p>
+    <p>Diz o quê (setas para reordenar), onde (a descrição, que só existe no gerador) e o
+    porquê está implícito e óbvio (a ordem sai errada do PDF). Curto e completo.</p>
+  </div>
+</div>
+
+<div class="caso meio">
+  <div class="pedido">"NA TELA DA TV TER OPÇÃO DE DEIXAR SÓ O DESENHO"</div>
+  <div class="corpo">
+    <p class="veredito">Gerou dúvida</p>
+    <p>Já existia uma opção parecida — esconder a lista de componentes. Não dava para saber
+    se você não conhecia a que existia, se ela não bastava, ou se queria a tela inteira só com
+    o desenho.</p>
+    <p><b>Como ficaria melhor:</b> "a opção de esconder a lista não basta: o desenho continua
+    pequeno porque sobra cabeçalho e cronômetro. Quero a folha ocupando a tela toda."</p>
+  </div>
+</div>
+
+<div class="caso meio">
+  <div class="pedido">"para tablete pode ser sem senha"</div>
+  <div class="corpo">
+    <p class="veredito">Ambíguo em algo sério</p>
+    <p>"Sem senha" pode ser duas coisas muito diferentes: <i>ninguém digita senha no dia a
+    dia</i> (o aparelho fica autorizado) ou <i>qualquer um entra sem autenticação</i> — que
+    liberaria o sistema para qualquer pessoa na internet.</p>
+    <p><b>Como ficaria melhor:</b> "o operador não pode ficar digitando senha no chão de
+    fábrica; o tablet tem que abrir já pronto."</p>
+  </div>
+</div>
+
+<div class="caso bom">
+  <div class="pedido">"está misturando as coisas, os quatro coletores não têm nada com a TV"</div>
+  <div class="corpo">
+    <p class="veredito">Correção de alto valor</p>
+    <p>Apontou uma <b>premissa errada</b>, não um detalhe de tela. Eu tinha reaproveitado o
+    papel de coletor do RitmoProd, o que dava aos tablets de cronoanálise poder sobre a TV.
+    Você viu o que eu não vi: são domínios diferentes.</p>
+    <p>Correções assim valem mais que dez pedidos de ajuste. Quando algo soar estranho no
+    <i>desenho</i> da solução, fale — é você quem conhece a operação.</p>
+  </div>
+</div>
+
+<div class="caso bom">
+  <div class="pedido">"a regra é gerar no pc o restante nos dois"</div>
+  <div class="corpo">
+    <p class="veredito">Uma frase que resolveu tudo</p>
+    <p>Virou regra de permissão no banco, botão escondido no tablet e três funções separadas.
+    Uma linha sua fechou uma discussão que já ia longe.</p>
+    <p>Quando conseguir enunciar o que você quer como <b>regra</b> — "sempre X, nunca Y" —,
+    faça isso. Regra é melhor que lista de casos.</p>
+  </div>
+</div>
+
+<div class="caso ruim">
+  <div class="pedido">"não funcionou"</div>
+  <div class="corpo">
+    <p class="veredito">Custa uma ida e volta</p>
+    <p>Falta saber: o que você fez, o que apareceu na tela, em qual aparelho.</p>
+    <p><b>Como ficaria melhor:</b> um <b>print</b> — foi o que você fez depois, e resolveu na
+    hora. O print traz a mensagem de erro, a tela e o horário de uma vez. É o melhor relato de
+    defeito que existe.</p>
+  </div>
+</div>
+
+<h2 id="perguntas">5. Quando eu te pergunto algo</h2>
+
+<p>Às vezes a resposta muda o trabalho inteiro, e perguntar custa menos que refazer. As
+perguntas costumam ser destes tipos:</p>
+
+<table>
+  <tr><th style="width:170px">Tipo</th><th>Por que importa</th></tr>
+  <tr><td><b>Quem usa</b></td><td>Define permissão. "Só você" e "o operador também" são sistemas
+      diferentes.</td></tr>
+  <tr><td><b>Onde acontece</b></td><td>Tela errada = trabalho jogado fora.</td></tr>
+  <tr><td><b>O que não pode quebrar</b></td><td>Às vezes o caminho fácil quebraria algo que já
+      funciona.</td></tr>
+  <tr><td><b>Até onde vai</b></td><td>"O tablet também exclui vídeo?" — um sim ou não aqui muda o
+      risco de um tablet perdido.</td></tr>
+</table>
+
+<p>Se a pergunta não fizer sentido para você, diga isso em vez de escolher uma opção qualquer.
+"Não entendi a diferença" é uma resposta legítima e melhor que um chute.</p>
+
+<h2 id="conferir">6. Como conferir o que recebeu</h2>
+
+<p>Você não precisa ler código para saber se ficou bom. Precisa fazer quatro perguntas:</p>
+
+<ol>
+  <li><b>Funciona no aparelho certo?</b> Se é para o tablet, teste no tablet — não no
+      computador.</li>
+  <li><b>O que já existia continua funcionando?</b> Publique um vídeo, coloque na TV, pause.
+      Cinco minutos de uso normal pegam quase todo estrago.</li>
+  <li><b>O que acontece quando dá errado?</b> Digite um código inválido, um tempo zerado, um
+      nome vazio. Boa mensagem de erro diz o que fazer em seguida.</li>
+  <li><b>Alguém explicou o que mudou no banco?</b> Se a resposta mexeu em permissão, isso tem
+      que estar dito em português, não escondido.</li>
+</ol>
+
+<div class="nota">
+  <b>Um teste que vale por muitos:</b> peça para alguém que não acompanhou usar a função sem
+  você explicar. Se precisar de explicação, a tela está mal resolvida — e isso é conserto de
+  interface, não de código.
+</div>
+
+<h2 id="desconfiar">7. Quando desconfiar</h2>
+
+<ul>
+  <li><b>"Está pronto" sem dizer o que foi testado.</b> Pergunte: "testou como?".</li>
+  <li><b>Mudança grande sem aviso de risco.</b> Toda escolha tem preço; quem não menciona
+      nenhum provavelmente não pensou nele.</li>
+  <li><b>Resposta que só concorda.</b> Se você propôs algo ruim e ninguém apontou, o problema
+      vai aparecer depois, em produção.</li>
+  <li><b>"Não dá" sem alternativa.</b> Quase sempre dá de outro jeito, com outro custo. Peça o
+      outro jeito e o custo.</li>
+  <li><b>Explicação que você não entendeu.</b> Não é você: é a explicação. Peça de novo em
+      português de fábrica.</li>
+</ul>
+
+<h2 id="palavras">8. As palavras certas</h2>
+
+<p>Não precisa decorar. Usar estes termos economiza uma ida e volta em cada pedido.</p>
+
+<table>
+  <tr><th style="width:150px">Em vez de</th><th>Diga</th><th>Porque</th></tr>
+  <tr><td>"o sistema"</td><td>o gerador, a biblioteca, a TV, as configurações</td>
+      <td>Aponta a tela e evita mexer no lugar errado.</td></tr>
+  <tr><td>"o desenho"</td><td>a camada (uma página do PDF) ou o vídeo (o produto inteiro)</td>
+      <td>Um vídeo tem várias camadas.</td></tr>
+  <tr><td>"o painel"</td><td>o vídeo</td>
+      <td>É como o setor fala. No código ficou "painel", mas na conversa use vídeo.</td></tr>
+  <tr><td>"não abre"</td><td>fica em branco / dá erro X / pede senha</td>
+      <td>Cada um é um defeito diferente.</td></tr>
+  <tr><td>"para o pessoal"</td><td>para quem está no tablet / para quem está no PC</td>
+      <td>Define permissão e tamanho de botão.</td></tr>
+  <tr><td>"quando quiser"</td><td>na hora / em até 1 minuto / no dia seguinte</td>
+      <td>"Na hora" custa mais que "em 1 minuto" — vale saber se compensa.</td></tr>
+</table>
+
+<h3>Um modelo de pedido que sempre funciona</h3>
+<div class="regra" style="font-size:13.5px;font-weight:normal">
+  <b>Hoje</b>, quando eu [situação], acontece [problema].<br>
+  <b>Queria</b> que [o que deveria acontecer].<br>
+  <b>Quem usa</b> é [você / o operador no tablet / a TV].<br>
+  <b>Não pode</b> [o que não pode quebrar].
+</div>
+
+<p>Exemplo real, escrito nesse formato:</p>
+<div class="caso bom">
+  <div class="corpo">
+    <p><b>Hoje</b>, para mudar o tempo de 5 para 8 segundos, tenho que gerar o vídeo de novo
+    a partir do PDF.<br>
+    <b>Queria</b> mudar o tempo direto na lista.<br>
+    <b>Quem usa</b> sou eu no PC, e o operador no tablet.<br>
+    <b>Não pode</b> deixar o operador excluir vídeo sem querer.</p>
+  </div>
+</div>
+
+<footer>
+  RitmoPatrimar · Vídeos Embalagem — guia de pedidos. Para entender o sistema por dentro
+  (arquivos, banco, permissões), veja <b>Como funciona por dentro</b>.
+</footer>
+
+</div>
+</body>
+</html>
