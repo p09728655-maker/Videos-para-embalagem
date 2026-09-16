@@ -101,11 +101,11 @@
          padding:14px 18px;margin-bottom:12px;}
   .tvbar .txt{flex:1 1 260px;min-width:0;font-size:13.5px;color:var(--text-muted);line-height:1.5;}
   .tvbar .txt b{color:var(--text);}
-  .tvbar.pausada{border-color:var(--warn);background:rgba(234,179,8,0.08);}
-  .tvbar.pausada .txt b{color:var(--warn);}
+  .tvbar.pausada,.tvbar.espera{border-color:var(--warn);background:rgba(234,179,8,0.08);}
+  .tvbar.pausada .txt b,.tvbar.espera .txt b{color:var(--warn);}
   .tvbar .ponto{width:8px;height:8px;border-radius:50%;background:var(--accent);
                 display:inline-block;margin-right:7px;vertical-align:middle;}
-  .tvbar.pausada .ponto{background:var(--warn);}
+  .tvbar.pausada .ponto,.tvbar.espera .ponto{background:var(--warn);}
   .tvbar-acoes{display:flex;gap:8px;flex-wrap:wrap;}
   /* Recado de estado do acesso. Vive fora do #estado, que é reescrito a cada
      carregamento da lista e engolia o aviso logo depois de mostrá-lo. */
@@ -292,11 +292,6 @@
             aria-label="Limpar busca">&times;</button>
   </div>
   <div class="busca-cont" id="buscaCont" style="display:none"></div>
-
-  <div class="aviso" id="avisoSemTV" style="display:none">
-    <b>Nenhum vídeo na TV.</b> A tela da embalagem está em espera até alguém
-    colocar um vídeo. Nada fica fixo lá sozinho.
-  </div>
 
   <div id="lista"></div>
 
@@ -504,7 +499,6 @@ function casaBusca(p){
 
 function render(itens){
   $('estado').style.display = 'none';
-  $('avisoSemTV').style.display = ativoAtual ? 'none' : 'block';
   var lista = $('lista');
   if (!itens.length){
     $('caixaBusca').style.display = 'none';
@@ -770,11 +764,14 @@ function pintarPausaTV(){
   if (!bar) return;
   bar.style.display = 'flex';
   if (!ativoAtual){
-    /* Em espera nao ha o que pausar, mas atualizar o player continua valendo. */
-    bar.className = 'tvbar';
+    /* Em espera não há o que pausar, mas atualizar o player continua valendo.
+       A faixa assume o aviso inteiro: antes a mesma informação aparecia aqui e
+       de novo logo abaixo, uma embaixo da outra. */
+    bar.className = 'tvbar espera';
     bt.style.display = 'none';
-    txt.innerHTML = '<span class="ponto"></span><b>TV em espera.</b> ' +
-                    'Sem produto na tela até alguém colocar um.';
+    txt.innerHTML = '<span class="ponto"></span><b>Nenhum vídeo na TV.</b> ' +
+                    'A tela da embalagem fica em espera até alguém colocar um — ' +
+                    'nada fica fixo lá sozinho.';
     return;
   }
   bt.style.display = '';
