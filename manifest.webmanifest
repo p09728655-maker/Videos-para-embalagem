@@ -2,7 +2,7 @@
   "id": "/embalagem",
   "name": "RitmoPatrimar Embalagem",
   "short_name": "Embalagem",
-  "description": "Controle do painel de embalagem: escolhe o produto da TV, pausa, ajusta o ritmo e publica padrão novo.",
+  "description": "Escolhe o vídeo de embalagem que vai para a TV, pausa, ajusta o ritmo e publica padrão novo.",
   "start_url": "./biblioteca.html",
   "scope": "./",
   "display": "standalone",
@@ -11,14 +11,37 @@
   "theme_color": "#1A1A1A",
   "lang": "pt-BR",
   "icons": [
-    { "src": "icones/icone-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
-    { "src": "icones/icone-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
-    { "src": "icones/icone-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+    {
+      "src": "icones/icone-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icones/icone-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icones/icone-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
   ],
   "shortcuts": [
-    { "name": "Biblioteca", "short_name": "Biblioteca", "url": "./biblioteca.html",
-      "description": "Escolher o produto da TV, pausar e ajustar o tempo" },
-    { "name": "Publicar produto novo", "short_name": "Gerador", "url": "./gerador.html",
-      "description": "Ler o PDF de embalagem e publicar o painel" }
+    {
+      "name": "Biblioteca",
+      "short_name": "Biblioteca",
+      "url": "./biblioteca.html",
+      "description": "Escolher o produto da TV, pausar e ajustar o tempo"
+    },
+    {
+      "name": "Publicar produto novo",
+      "short_name": "Gerador",
+      "url": "./gerador.html",
+      "description": "Ler o PDF de embalagem e publicar o painel"
+    }
   ]
 }

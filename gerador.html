@@ -308,8 +308,8 @@
   <span class="rp-tag">RitmoPatrimar · Embalagem</span>
 </div>
 
-<h1>Gerador de Painel de Embalagem</h1>
-<p class="sub">Arraste o PDF de embalagem, revise os componentes e publique direto para a TV.</p>
+<h1>Gerador de Vídeo de Embalagem</h1>
+<p class="sub">Arraste o PDF de embalagem, revise os componentes e publique o vídeo direto para a TV.</p>
 
 <h2 class="etapa"><span class="n">1</span>PDF de embalagem</h2>
 
@@ -909,7 +909,7 @@ function adicionarCard(idx, opName, imgBase64, comps, obs = '') {
 
   const faixa = document.createElement('div');
   faixa.className = 'rem-faixa';
-  faixa.innerHTML = `<span>Fora do painel &middot; página ${idx + 1} do PDF</span>` +
+  faixa.innerHTML = `<span>Fora do vídeo &middot; página ${idx + 1} do PDF</span>` +
     `<button type="button" class="btn-restaurar" onclick="restaurarCamada(${idx})">Restaurar</button>`;
   card.appendChild(faixa);
 
@@ -924,7 +924,7 @@ function adicionarCard(idx, opName, imgBase64, comps, obs = '') {
   body.innerHTML = `
     <div class="page-op"><span id="op${idx}">${opName}</span>` +
     `<button type="button" class="btn-remcam" onclick="removerCamada(${idx})" ` +
-    `title="Tirar esta camada do painel">× remover camada</button></div>
+    `title="Tirar esta camada do vídeo">× remover camada</button></div>
     <div class="comp-list" id="compList${idx}"></div>
     <button class="btn-add" onclick="addComp(${idx})">+ Adicionar componente</button>
     <div class="obs-row">
@@ -1073,7 +1073,7 @@ function pintarVersao(estado, iso) {
   if (estado === 'novo') {
     el.className = 'visivel novo';
     el.innerHTML = '<span class="rot">Produto novo</span>' +
-      'Ainda não está na biblioteca. Publicar cria a primeira versão deste painel.';
+      'Ainda não está na biblioteca. Publicar cria a primeira versão deste vídeo.';
   } else if (estado === 'existe') {
     var rel = window.haQuantoTempo ? window.haQuantoTempo(iso) : '';
     el.className = 'visivel substitui';
@@ -1141,7 +1141,7 @@ function coletarDados() {
 /* Todas as camadas removidas: publicar deixaria a TV com um painel vazio,
    que o player trata como erro na tela. Melhor barrar aqui. */
 function avisarSemCamada() {
-  mostrarResultado('<b style="color:var(--error)">Nenhuma camada no painel.</b> ' +
+  mostrarResultado('<b style="color:var(--error)">Nenhuma camada no vídeo.</b> ' +
                    'Todas foram removidas — restaure ao menos uma para publicar.');
 }
 
@@ -1303,7 +1303,7 @@ async function publicarPainel() {
     var quem = await supaUsuarioAtual();
     if (!podePublicar(quem)) {
       mostrarResultado(
-        '<b style="color:var(--error)">Esta conta não publica painel.</b> ' +
+        '<b style="color:var(--error)">Esta conta não publica vídeo.</b> ' +
         (quem && quem.papel === 'coletor'
           ? 'Este é um aparelho autorizado só para operar a TV. Publique pelo computador, ' +
             'com a conta do PPCP.'
@@ -1345,7 +1345,7 @@ async function publicarPainel() {
       fotos.push(nomeF);
     }
 
-    mostrarStatus('Salvando o painel...', 85);
+    mostrarStatus('Salvando o vídeo...', 85);
     var salvo = await supaSalvarPainel({ slug: slug, produto: produto, tempo: tempo,
                                          camadas: camadas, fotos: fotos, opcoes: opcoes });
 
@@ -1373,7 +1373,7 @@ async function publicarPainel() {
 }
 
 function enviarParaTV(slug) {
-  mostrarResultado('Trocando o painel da TV...');
+  mostrarResultado('Trocando o vídeo da TV...');
   supaAtivarPainel(slug).then(function () {
     mostrarResultado('<b>Na TV.</b> Ela troca sozinha em até 1 minuto — ninguém precisa ir lá.' +
                      ' <a href="biblioteca.html">ver biblioteca</a>');

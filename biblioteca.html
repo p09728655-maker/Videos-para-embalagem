@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Embalagem · Biblioteca</title>
+<title>Embalagem · Vídeos</title>
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="theme-color" content="#1A1A1A">
 <meta name="application-name" content="RitmoPatrimar Embalagem">
@@ -287,8 +287,8 @@
     <span class="rp-tag">RitmoPatrimar · Embalagem</span>
   </div>
 
-  <h1>Biblioteca de painéis</h1>
-  <p class="sub">Produtos já publicados. Um clique coloca qualquer um deles na TV da embalagem.</p>
+  <h1>Biblioteca de vídeos</h1>
+  <p class="sub">Vídeos de embalagem já publicados. Um clique coloca qualquer um deles na TV.</p>
   <div class="sessao" id="sessao"></div>
 
   <div id="estado">Carregando...</div>
@@ -308,7 +308,7 @@
     <h2>Aparelhos autorizados</h2>
     <div class="exp">Tablets da embalagem. Abrem a biblioteca já conectados, sem senha, e
       fazem tudo o que a linha precisa: colocar na TV, pausar, retomar, tempo e modo.
-      <b>Gerar painel novo é só no computador.</b> Revogar é desligar aqui — nenhuma senha
+      <b>Gerar vídeo novo é só no computador.</b> Revogar é desligar aqui — nenhuma senha
       de pessoa muda. Esta lista é da embalagem: os coletores do RitmoProd não entram nela
       nem operam a TV.</div>
     <div id="listaAparelhos"></div>
@@ -353,14 +353,14 @@
   <div class="busca-cont" id="buscaCont" style="display:none"></div>
 
   <div class="aviso" id="avisoSemTV" style="display:none">
-    <b>Nenhum produto na TV.</b> A tela da embalagem está em espera até alguém
-    colocar um produto. Nada fica fixo lá sozinho.
+    <b>Nenhum vídeo na TV.</b> A tela da embalagem está em espera até alguém
+    colocar um vídeo. Nada fica fixo lá sozinho.
   </div>
 
   <div id="lista"></div>
 
   <div class="aviso neutro" id="avisoRodape" style="display:none">
-    <b>A TV troca sozinha.</b> Depois de colocar um produto na TV, ela percebe em até
+    <b>A TV troca sozinha.</b> Depois de colocar um vídeo na TV, ela percebe em até
     1 minuto e recarrega. Ninguém precisa ir até lá nem mexer no controle remoto.
   </div>
 
@@ -370,7 +370,7 @@
   <div class="caixa-login">
     <h3>Entrar</h3>
     <p>Use o mesmo e-mail e senha do RitmoProd. Ver a biblioteca é livre;
-       trocar o painel da TV exige login.</p>
+       trocar o vídeo da TV exige login.</p>
     <input type="email" id="loginEmail" placeholder="e-mail" autocomplete="username">
     <input type="password" id="loginSenha" placeholder="senha" autocomplete="current-password">
     <div class="linha">
@@ -417,7 +417,7 @@ function pintarSessao(){
        qualquer forma, e link que leva a uma recusa é armadilha. */
     var nome = (eu && eu.nome) || (aparelhoSalvo() || {}).nome || 'autorizado';
     el.innerHTML = 'Tablet <b>' + esc(nome) + '</b> · ' +
-                   'opera a TV daqui; gerar painel novo é no computador';
+                   'opera a TV daqui; gerar vídeo novo é no computador';
     return;
   }
   if (!estaLogado()){
@@ -427,7 +427,7 @@ function pintarSessao(){
   }
   el.innerHTML = 'Conectado como <b>' + (emailLogado() || '—') + '</b> · ' +
                  '<a onclick="sairDaConta()">sair</a> · ' +
-                 '<a href="gerador.html">publicar um produto novo</a>';
+                 '<a href="gerador.html">publicar um vídeo novo</a>';
 }
 
 /* Lê o papel de quem entrou e repinta a tela com o que essa pessoa pode fazer. */
@@ -567,7 +567,7 @@ function render(itens){
   if (!itens.length){
     $('caixaBusca').style.display = 'none';
     $('buscaCont').style.display = 'none';
-    lista.innerHTML = '<div class="vazio">Nenhum produto publicado ainda.<br>' +
+    lista.innerHTML = '<div class="vazio">Nenhum vídeo publicado ainda.<br>' +
                       '<a href="gerador.html">Abrir o gerador</a> e publicar o primeiro.</div>';
     return;
   }
@@ -615,7 +615,7 @@ function render(itens){
                '<div class="acao">' +
                  (naTV
                    ? '<button class="btn" onclick="tirarDaTV()" ' +
-                       'title="Deixar a TV sem nenhum produto">Tirar da TV</button>'
+                       'title="Deixar a TV sem nenhum vídeo">Tirar da TV</button>'
                    : '<button class="btn primario" onclick="colocarNaTV(' + arg + ')">' +
                        'Colocar na TV</button>') +
                '</div>' +
@@ -633,7 +633,7 @@ function render(itens){
 
              '<div class="apoio">' +
                '<button class="btn apoio-btn" onclick="verPainel(' + arg + ')" ' +
-                 'title="Abrir o painel numa aba, sem mexer na TV">Ver</button>' +
+                 'title="Abrir o vídeo numa aba, sem mexer na TV">Ver</button>' +
                '<div class="exib campo-tempo">' +
                  '<label>Tempo:</label>' +
                  '<input class="tempo" type="number" min="1" max="9999" value="' + p.tempo + '" ' +
@@ -1036,7 +1036,7 @@ function atualizarTV(){
   if (!temAcesso()){ acaoPendente = atualizarTV; abrirLogin(); return; }
   dialogo({ titulo:'Atualizar a TV?',
             texto:'A TV recarrega a página e volta pela primeira camada, em até 5 segundos. ' +
-                  'Use depois de uma versão nova do painel.<br><br>' +
+                  'Use depois de uma versão nova do vídeo.<br><br>' +
                   'Se a TV estiver em <b>tela cheia</b>, ela sai desse modo ao recarregar ' +
                   '— aí alguém precisa apertar tela cheia no controle.',
             ok:'Atualizar a TV', cancelar:'Cancelar' })
@@ -1058,7 +1058,7 @@ function verPainel(slug){ window.open('tv/?p=' + encodeURIComponent(slug), '_bla
 function colocarNaTV(slug){
   if (!temAcesso()){ acaoPendente = function(){ colocarNaTV(slug); }; abrirLogin(); return; }
   $('estado').style.display = 'block';
-  $('estado').textContent = 'Trocando o painel da TV...';
+  $('estado').textContent = 'Trocando o vídeo da TV...';
   supaAtivarPainel(slug).then(function(){ carregar(); })
     ['catch'](function(e){
       $('estado').innerHTML = '<b style="color:var(--error)">Não consegui trocar:</b> ' +
@@ -1070,14 +1070,14 @@ function colocarNaTV(slug){
    exibir assim que alguem escolher outro. */
 function tirarDaTV(){
   if (!temAcesso()){ acaoPendente = tirarDaTV; abrirLogin(); return; }
-  dialogo({ titulo:'Tirar o produto da TV?',
-            texto:'A TV da embalagem fica <b>sem nenhum produto na tela</b> até você ' +
+  dialogo({ titulo:'Tirar o vídeo da TV?',
+            texto:'A TV da embalagem fica <b>sem nenhum vídeo na tela</b> até você ' +
                   'colocar outro. Ela percebe em até 1 minuto.',
             ok:'Tirar da TV', cancelar:'Cancelar' })
   .then(function(sim){
     if (!sim) return;
     $('estado').style.display = 'block';
-    $('estado').textContent = 'Tirando o painel da TV...';
+    $('estado').textContent = 'Tirando o vídeo da TV...';
     supaAtivarPainel(null).then(function(){ carregar(); })
       ['catch'](function(e){
         $('estado').innerHTML = '<b style="color:var(--error)">Não consegui tirar:</b> ' +
@@ -1105,7 +1105,7 @@ function excluir(slug, nome){
   if (!estaLogado()){ acaoPendente = function(){ excluir(slug, nome); }; abrirLogin(); return; }
   var naTV = (slug === ativoAtual);
   dialogo({ titulo:'Excluir da biblioteca?',
-            texto:'<b>'+esc(nome)+'</b> sai do banco. Para usar de novo, seria preciso gerar outra vez a partir do PDF.' +
+            texto:'<b>'+esc(nome)+'</b> sai da biblioteca. Para usar de novo, seria preciso gerar outra vez a partir do PDF.' +
                   (naTV ? '<br><br>Ele está na TV agora: a tela da embalagem fica em espera ' +
                           'até você colocar outro produto.' : ''),
             ok: naTV ? 'Tirar da TV e excluir' : 'Excluir', cancelar:'Cancelar', perigo:true })

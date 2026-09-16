@@ -308,7 +308,7 @@ function mostrarEspera(){
   $('telaSub').textContent = 'Nenhum produto na TV';
   $('telaErro').style.display = 'none';
   $('telaDica').style.display = 'block';
-  $('telaDica').textContent = 'Escolha o produto na biblioteca do RitmoPatrimar. ' +
+  $('telaDica').textContent = 'Escolha o vídeo na biblioteca do RitmoPatrimar. ' +
                               'A TV liga sozinha em até 1 minuto.';
   document.title = 'RitmoPatrimar · Embalagem';
   splashFeita = false;
@@ -408,7 +408,7 @@ function carregar(){
       redeOk = true; montar();
     })['catch'](function(e2){
       redeOk = false;
-      mostrarErro('Não consegui carregar o painel.',
+      mostrarErro('Não consegui carregar o vídeo.',
                   'Supabase: ' + (e1 && e1.message ? e1.message : e1) +
                   '  ·  Arquivos: ' + (e2 && e2.message ? e2.message : e2));
     });
@@ -420,7 +420,7 @@ function montar(){
   emEspera = false;
   var p = painel;
   if (!p || !p.camadas || !p.camadas.length){
-    mostrarErro('O painel publicado está sem camadas.', 'Gere o produto novamente e publique a pasta.');
+    mostrarErro('O vídeo publicado está sem camadas.', 'Gere o produto novamente e publique a pasta.');
     return;
   }
   /* Como o produto foi publicado:

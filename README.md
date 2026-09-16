@@ -1,8 +1,13 @@
 # RitmoPatrimar · Vídeos Embalagem
 
-Painel de gestão à vista do padrão de embalagem, exibido na TV do setor de embalagem
+Gestão à vista do padrão de embalagem, exibido na TV do setor de embalagem
 da Patrimar Móveis. Mostra, camada por camada, quais componentes entram na caixa,
 as observações críticas (furação, pintura) e o desenho técnico da camada.
+
+> **Vocabulário.** Na tela, o que vai para a TV chama-se **vídeo** — é como o setor se
+> refere a ele. No código e no banco o mesmo objeto é **painel** (`embalagem_paineis`,
+> `painel_ativo`), nome que veio da primeira versão e que renomear hoje custaria uma
+> migração sem ganho nenhum. São a mesma coisa.
 
 ## Estrutura
 
