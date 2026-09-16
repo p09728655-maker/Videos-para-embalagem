@@ -88,14 +88,44 @@ chegar rápido, por isso não espera o ciclo de 1 minuto da troca de produto.
   real desta função;
 - se o banco não tiver a coluna, o player desliga a checagem sozinho e continua tocando.
 
-A coluna:
+### Atualizar o player da TV de longe
+
+Trocar de produto **não** recarrega a página — é de propósito, senão a TV perderia a tela
+cheia a cada troca. O efeito colateral é que **versão nova do player só entra com um
+reload**, e o único automático é o de segurança, a cada 6 h: depois de um deploy, a TV
+continua rodando o código antigo.
+
+O botão **Atualizar a TV**, na biblioteca, grava `embalagem_config.tv_recarregar`. O
+player guarda o carimbo que viu ao subir e, quando ele muda, dá `location.reload()`. A
+primeira leitura só registra o valor que já estava lá — sem isso a TV recarregaria em
+loop a cada partida. Ao recarregar, ela sai da tela cheia: só alguém com o controle
+devolve esse modo, então o botão avisa antes.
+
+Pausa e recarga viajam na **mesma consulta de 5 em 5 segundos** (`checarComandos`). Erro
+de schema — coluna que ainda não existe — suspende a checagem por 10 minutos em vez de
+desligá-la de vez: um deploy fora de ordem não deixa a TV surda até o próximo reload.
+
+### Busca na biblioteca
+
+A lista cresce um produto por publicação, e a biblioteca é usada no celular, ao lado da
+TV. O campo de busca casa **todas as palavras digitadas, em qualquer ordem, sem acento e
+sem maiúscula** — "nicho 2.0" acha `EMBALAGEM NICHO IMPACTO 2.0`, "comoda" acha
+`CÔMODA ATLÂNTICA`. Ele só aparece a partir de 5 produtos: com três, seria um campo a
+mais para ler sem nada para achar.
+
+No celular, o cartão tem o alvo de toque em 44 px, a ação principal ocupa a linha inteira
+e as ações de apoio ficam em duas linhas fixas (tempo e modo em cima; ver e excluir
+embaixo), em `grid` — flex-wrap quebrava em lugar diferente conforme a largura da tela.
+
+As colunas:
 
 ```sql
 alter table public.embalagem_config add column if not exists tv_pausa timestamptz;
+alter table public.embalagem_config add column if not exists tv_recarregar timestamptz;
 ```
 
 As policies de `embalagem_config` são por tabela — leitura anônima e escrita autenticada
-já valem para ela, sem policy nova.
+já valem para elas, sem policy nova.
 
 ### Tempo por camada na biblioteca
 

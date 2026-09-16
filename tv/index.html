@@ -268,10 +268,12 @@ var intervalo = null, etapaAtual = 0, tRestante = 0, tCiclo = 0;
    quem manda no que fica na TV continua sendo a biblioteca. */
 var compPainel = true, soDesenhoPainel = false, soDesenhoLocal = null;
 var imgCache = {}, splashFeita = false, redeOk = false;
-/* Pausa remota: a biblioteca grava embalagem_config.tv_pausa e o player
-   obedece. Guarda-se o ultimo valor visto para agir so na virada — assim o
-   comando de longe nao desfaz a pausa feita aqui na tela, no toque. */
-var pausaRemota = null, pausaRemotaOk = true;
+/* Comandos vindos da biblioteca (embalagem_config): pausa e recarga do player.
+   Guarda-se o ultimo valor visto para agir so na virada — assim o comando de
+   longe nao desfaz a pausa feita aqui na tela, no toque.
+   recargaVista comeca indefinido: a primeira leitura so registra o carimbo que
+   ja estava la, senao a TV recarregaria em loop a cada partida. */
+var pausaRemota = null, recargaVista, comandosSuspensosAte = 0;
 var emEspera = false;     /* TV sem produto escolhido — e um estado valido, nao erro */
 
 function $(id){ return document.getElementById(id); }
@@ -800,17 +802,22 @@ function checarSaidaDaEspera(){
     })['catch'](function(){ redeOk = false; });
 }
 
-/* ---------- pausa remota ----------
-   Consulta propria, de 5 em 5 segundos, separada da troca de produto: e um
-   comando, tem que chegar rapido. Se o banco ainda nao tiver a coluna, a
-   funcao se desliga sozinha em vez de ficar batendo em erro — e o player
-   continua tocando normalmente. */
-function checarPausaRemota(){
-  if (!pausaRemotaOk || !window.supaGet) return;
-  if (!painel || emEspera) return;
-  window.supaGet('embalagem_config?id=eq.1&select=tv_pausa')
+/* ---------- comandos da biblioteca ----------
+   Consulta propria, de 5 em 5 segundos, separada da troca de produto: comando
+   tem que chegar rapido. Sao dois: pausar/retomar e recarregar o player. */
+function checarComandos(){
+  if (!window.supaGet) return;
+  if (Date.now() < comandosSuspensosAte) return;
+  window.supaGet('embalagem_config?id=eq.1&select=tv_pausa,tv_recarregar')
     .then(function(rows){
       var c = rows && rows[0]; if (!c) return;
+
+      /* Recarga: vale ate em espera — e o que traz player novo para a TV. */
+      var recarga = c.tv_recarregar || null;
+      if (recargaVista === undefined) recargaVista = recarga;   /* primeira leitura: so registra */
+      else if (recarga !== recargaVista){ location.reload(); return; }
+
+      if (!painel || emEspera) return;       /* sem produto no ar nao ha o que pausar */
       var novo = c.tv_pausa || null;
       if (novo === pausaRemota) return;      /* nada mudou desde a ultima olhada */
       pausaRemota = novo;
@@ -818,8 +825,10 @@ function checarPausaRemota(){
       else if (!novo && estaPausado()) alternarPausa();  /* retomaram de longe */
       pintarRodape();
     })['catch'](function(e){
-      /* 400 = coluna inexistente. Qualquer outro erro e queda de rede: tenta de novo. */
-      if (e && String(e.message || e).indexOf('400') >= 0) pausaRemotaOk = false;
+      /* Erro de schema (coluna que ainda nao existe) volta rapido e sempre igual:
+         suspende por 10 minutos em vez de desistir de vez, senao um deploy fora
+         de ordem deixaria a TV surda ate o proximo reload. */
+      if (e && String(e.message || e).indexOf('400') >= 0) comandosSuspensosAte = Date.now() + 600000;
     });
 }
 
@@ -863,7 +872,7 @@ window.addEventListener('load', function(){
   armarCursor();
   carregar();
   setInterval(checarTroca, 60000);
-  setInterval(checarPausaRemota, 5000);
+  setInterval(checarComandos, 5000);
   setInterval(reloadSeguranca, 21600000);
 });
 </script>

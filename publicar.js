@@ -175,6 +175,26 @@ function supaPausarTV(pausar) {
   });
 }
 
+/* Manda o player recarregar a pagina. E o unico jeito de levar codigo novo do
+ * player para a TV sem ir ate la com o controle: a troca de produto substitui o
+ * conteudo no lugar, sem reload, para nao derrubar a tela cheia. */
+function supaRecarregarTV() {
+  return tokenValido().then(function (token) {
+    return fetch(window.SUPA.url + '/rest/v1/embalagem_config?id=eq.1', {
+      method: 'PATCH',
+      headers: cabecalhos(token, { 'Content-Type': 'application/json' }),
+      body: JSON.stringify({ tv_recarregar: new Date().toISOString() })
+    }).then(function (r) {
+      if (!r.ok) {
+        return r.text().then(function (t) {
+          throw new Error('não consegui mandar a TV atualizar: ' + r.status + ' ' + t);
+        });
+      }
+      return true;
+    });
+  });
+}
+
 /* Troca o tempo por camada de um painel ja publicado. O trigger de UPDATE
  * carimba atualizado_em, e e esse carimbo que faz a TV recarregar sozinha. */
 function supaDefinirTempo(slug, segundos) {

@@ -58,6 +58,7 @@
   .apoio{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:14px;padding-top:14px;
          border-top:1px solid rgba(63,63,70,0.55);}
   .apoio .espaco{flex:1;}
+  .apoio .quebra{display:none;}
 
   .btn{padding:9px 16px;border-radius:6px;border:1px solid var(--border);background:transparent;
        color:var(--text);font-weight:700;font-size:13px;cursor:pointer;white-space:nowrap;
@@ -99,6 +100,7 @@
   .tvbar .ponto{width:8px;height:8px;border-radius:50%;background:var(--accent);
                 display:inline-block;margin-right:7px;vertical-align:middle;}
   .tvbar.pausada .ponto{background:var(--warn);}
+  .tvbar-acoes{display:flex;gap:8px;flex-wrap:wrap;}
   /* TV parada e o estado que pede acao: o botao de retomar puxa a cor do aviso. */
   .tvbar.pausada .btn{border-color:var(--warn);color:var(--warn);}
   .tvbar.pausada .btn:hover{background:rgba(234,179,8,0.12);}
@@ -113,6 +115,67 @@
   .vazio{text-align:center;padding:50px 20px;color:var(--text-muted);font-size:15px;line-height:1.7;}
   .vazio a{color:var(--accent);text-decoration:none;font-weight:700;}
   #estado{font-size:14px;color:var(--text-muted);padding:14px 0;}
+
+  /* Busca: com a biblioteca crescendo, achar o produto na rolagem vira o
+     trabalho. No celular ela gruda no topo — quem procura está com a lista
+     rolada, e o campo tem que continuar à mão. */
+  .busca{display:flex;align-items:center;gap:10px;background:var(--panel);
+         border:1px solid var(--border);border-radius:10px;padding:0 14px;margin-bottom:10px;}
+  .busca:focus-within{border-color:var(--accent);}
+  .busca .lupa{color:var(--gray);font-size:16px;flex-shrink:0;transform:rotate(-45deg);}
+  .busca input{flex:1;min-width:0;border:none;background:none;color:var(--text);
+               font-family:inherit;font-size:16px;font-weight:600;padding:14px 0;}
+  .busca input:focus{outline:none;}
+  .busca input::-webkit-search-cancel-button{display:none;}
+  .busca .limpar{background:none;border:none;color:var(--text-muted);font-size:22px;
+                 cursor:pointer;padding:6px 8px;line-height:1;flex-shrink:0;}
+  .busca .limpar:hover{color:var(--accent);}
+  .busca-cont{font-size:12.5px;color:var(--gray);margin:0 0 14px 4px;}
+
+  /* Celular e tablet: a biblioteca é usada de pé, com uma mão, ao lado da TV.
+     Alvo de toque de 44px, botão de ação ocupando a linha e nada escondido
+     atrás de hover — num toque não existe hover. */
+  @media (hover:none){
+    .btn.apoio-btn,.btn.perigo{border-color:var(--border);}
+  }
+  @media (max-width:620px){
+    body{padding:22px 14px;}
+    h1{font-size:24px;}
+    .sub{font-size:14px;margin-bottom:18px;}
+    .rp-logo{margin-bottom:20px;}
+    .item{padding:16px;}
+    .nome{flex:1 1 100%;font-size:18px;}
+    .acao{width:100%;}
+    .acao .btn{width:100%;min-height:46px;}
+    .tvbar{padding:14px;}
+    .tvbar .txt{flex:1 1 100%;}
+    .tvbar-acoes{width:100%;}
+    .tvbar-acoes .btn{flex:1;min-height:46px;}
+    .busca{position:sticky;top:0;z-index:50;}
+    /* Duas linhas de ação, em grade: o que se ajusta toda hora (tempo e modo)
+       em cima, o que quase não se usa (ver, excluir) embaixo. Grade e não
+       flex-wrap — a quebra tem que ser a mesma em qualquer largura de tela. */
+    .apoio{display:grid;grid-template-columns:auto 1fr;gap:8px;
+           margin-top:12px;padding-top:12px;}
+    .apoio .espaco,.apoio .quebra{display:none;}
+    .apoio .btn{min-height:44px;}
+    .campo-tempo{grid-column:1;grid-row:1;}
+    .campo-modo{grid-column:2;grid-row:1;min-width:0;}
+    .campo-modo select{flex:1;min-width:0;}
+    .apoio .btn.apoio-btn{grid-column:1;grid-row:2;justify-self:start;}
+    .btn.perigo{grid-column:2;grid-row:2;justify-self:end;}
+    /* O campo do tempo cede largura para o modo caber escrito por inteiro.
+       16px no input de propósito: abaixo disso o iPhone dá zoom ao tocar. */
+    .exib select{min-height:44px;font-size:14px;padding:8px;}
+    .exib input.tempo{min-height:44px;font-size:16px;width:58px;padding:8px 4px;}
+    .exib label{font-size:11.5px;}
+    /* Cartão mais baixo: com a biblioteca cheia, cada linha a menos é uma
+       rolagem a menos no celular. */
+    .item{margin-bottom:10px;}
+    .versao{margin-top:8px;font-size:12px;}
+    .meta{font-size:12px;}
+    .estado{margin-bottom:10px;}
+  }
 
   #modalLogin{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.8);
               display:none;align-items:center;justify-content:center;z-index:9000;}
@@ -151,8 +214,21 @@
 
   <div class="tvbar" id="tvBar" style="display:none">
     <div class="txt" id="tvBarTxt"></div>
-    <button class="btn" id="btnPausaTV" onclick="alternarPausaTV()"></button>
+    <div class="tvbar-acoes">
+      <button class="btn" id="btnPausaTV" onclick="alternarPausaTV()"></button>
+      <button class="btn" id="btnAtualizarTV" onclick="atualizarTV()"
+              title="Faz a TV recarregar a página, para pegar uma versão nova do player">Atualizar a TV</button>
+    </div>
   </div>
+
+  <div class="busca" id="caixaBusca" style="display:none">
+    <span class="lupa" aria-hidden="true">&#9906;</span>
+    <input type="search" id="busca" placeholder="Procurar produto" autocomplete="off"
+           oninput="filtrar(this.value)" aria-label="Procurar produto">
+    <button class="limpar" id="btnLimpar" onclick="limparBusca()" style="display:none"
+            aria-label="Limpar busca">&times;</button>
+  </div>
+  <div class="busca-cont" id="buscaCont" style="display:none"></div>
 
   <div class="aviso" id="avisoSemTV" style="display:none">
     <b>Nenhum produto na TV.</b> A tela da embalagem está em espera até alguém
@@ -199,6 +275,8 @@
 <script>
 var ativoAtual = null;
 var pausaAtual = null;     /* carimbo de embalagem_config.tv_pausa — null = TV rodando */
+var todosPaineis = [];     /* lista inteira do banco; a tela mostra o filtro dela */
+var termoBusca = '';
 var acaoPendente = null;   /* refeita depois do login */
 
 function $(id){ return document.getElementById(id); }
@@ -251,11 +329,40 @@ function carregar(){
     ativoAtual = cfg.painel_ativo || null;
     pausaAtual = cfg.tv_pausa || null;
     pintarPausaTV();
-    render(r[1] || []);
+    todosPaineis = r[1] || [];
+    render(todosPaineis);
   })['catch'](function(e){
     $('estado').innerHTML = '<b style="color:var(--error)">Não consegui carregar:</b> ' +
                             (e.message || e);
   });
+}
+
+/* Sem acento e sem maiuscula dos dois lados: quem procura "toucador" acha
+   "TOUCADOR MAGIC NEW", e quem digita "impacto" acha "IMPACTO 2.0". */
+function achatar(t){
+  var v = String(t || '').toLowerCase();
+  return v.normalize ? v.normalize('NFD').replace(/[\u0300-\u036f]/g, '') : v;
+}
+function filtrar(termo){
+  termoBusca = termo || '';
+  $('btnLimpar').style.display = termoBusca ? 'block' : 'none';
+  render(todosPaineis);
+}
+function limparBusca(){
+  $('busca').value = '';
+  filtrar('');
+  $('busca').focus();
+}
+/* Todas as palavras digitadas precisam aparecer, em qualquer ordem: "nicho 2.0"
+   acha "EMBALAGEM NICHO IMPACTO 2.0". */
+function casaBusca(p){
+  if (!termoBusca.trim()) return true;
+  var alvo = achatar(p.produto) + ' ' + achatar(p.slug);
+  var palavras = achatar(termoBusca).split(/\s+/).filter(Boolean);
+  for (var i = 0; i < palavras.length; i++){
+    if (alvo.indexOf(palavras[i]) < 0) return false;
+  }
+  return true;
 }
 
 function render(itens){
@@ -263,11 +370,30 @@ function render(itens){
   $('avisoSemTV').style.display = ativoAtual ? 'none' : 'block';
   var lista = $('lista');
   if (!itens.length){
+    $('caixaBusca').style.display = 'none';
+    $('buscaCont').style.display = 'none';
     lista.innerHTML = '<div class="vazio">Nenhum produto publicado ainda.<br>' +
                       '<a href="gerador.html">Abrir o gerador</a> e publicar o primeiro.</div>';
     return;
   }
   $('avisoRodape').style.display = 'block';
+
+  /* A busca só aparece quando a lista já dá rolagem: com três produtos ela é
+     um campo a mais para ler, sem nada para achar. */
+  var total = itens.length;
+  $('caixaBusca').style.display = (total >= 5 || termoBusca) ? 'flex' : 'none';
+
+  itens = itens.filter(casaBusca);
+  $('buscaCont').style.display = termoBusca ? 'block' : 'none';
+  if (termoBusca){
+    $('buscaCont').textContent = itens.length + ' de ' + total +
+      (total === 1 ? ' produto' : ' produtos');
+  }
+  if (!itens.length){
+    lista.innerHTML = '<div class="vazio">Nenhum produto com <b>' + esc(termoBusca) + '</b>.<br>' +
+                      '<a onclick="limparBusca()">Ver todos os ' + total + '</a></div>';
+    return;
+  }
 
   /* O que esta no ar vem primeiro: e a informacao que muda decisao. */
   itens = itens.slice().sort(function(a, b){
@@ -308,25 +434,26 @@ function render(itens){
 
              /* 4 numeros do painel e acoes de apoio */
              '<div class="meta">' + n + ' camada' + (n===1?'':'s') +
-               ' · ' + p.tempo + 's por camada · ' + MODOS[modo].meta + '</div>' +
+               ' · ' + MODOS[modo].meta + '</div>' +
 
              '<div class="apoio">' +
                '<button class="btn apoio-btn" onclick="verPainel(' + arg + ')" ' +
                  'title="Abrir o painel numa aba, sem mexer na TV">Ver</button>' +
-               '<div class="exib">' +
+               '<div class="exib campo-tempo">' +
                  '<label>Tempo:</label>' +
                  '<input class="tempo" type="number" min="1" max="9999" value="' + p.tempo + '" ' +
                    'onchange="definirTempo(' + arg + ', this)" ' +
                    'title="Segundos que cada camada fica na tela">' +
                  '<label>s</label>' +
                '</div>' +
-               '<div class="exib">' +
+               '<div class="exib campo-modo">' +
                  '<label>Na TV:</label>' +
                  '<select onchange="definirExibicao(' + arg + ', this.value)" ' +
                    'title="O que a TV mostra deste produto">' +
                    opcoesModo(modo) +
                  '</select>' +
                '</div>' +
+               '<span class="quebra"></span>' +
                '<span class="espaco"></span>' +
                '<button class="btn perigo" onclick="excluir(' + arg + ',\'' +
                   String(p.produto).replace(/'/g,"\\'") + '\')">Excluir</button>' +
@@ -427,8 +554,16 @@ function paradaHa(iso){
 function pintarPausaTV(){
   var bar = $('tvBar'), txt = $('tvBarTxt'), bt = $('btnPausaTV');
   if (!bar) return;
-  if (!ativoAtual){ bar.style.display = 'none'; return; }   /* TV em espera: nada a pausar */
   bar.style.display = 'flex';
+  if (!ativoAtual){
+    /* Em espera nao ha o que pausar, mas atualizar o player continua valendo. */
+    bar.className = 'tvbar';
+    bt.style.display = 'none';
+    txt.innerHTML = '<span class="ponto"></span><b>TV em espera.</b> ' +
+                    'Sem produto na tela até alguém colocar um.';
+    return;
+  }
+  bt.style.display = '';
   if (pausaAtual){
     bar.className = 'tvbar pausada';
     txt.innerHTML = '<span class="ponto"></span><b>TV pausada</b> desde as ' +
@@ -454,6 +589,31 @@ function alternarPausaTV(){
       $('estado').innerHTML = '<b style="color:var(--error)">Não consegui:</b> ' + (e.message || e);
     })
     .then(function(){ bt.disabled = false; });
+}
+
+/* Atualizar o player de longe. Trocar de produto nao recarrega a pagina — e de
+   proposito, senao a TV perderia a tela cheia a cada troca —, entao versao nova
+   do player so entra com um reload. Sem isto, alguem teria que ir ate a TV com
+   o controle a cada ajuste. */
+function atualizarTV(){
+  if (!estaLogado()){ acaoPendente = atualizarTV; abrirLogin(); return; }
+  dialogo({ titulo:'Atualizar a TV?',
+            texto:'A TV recarrega a página e volta pela primeira camada, em até 5 segundos. ' +
+                  'Use depois de uma versão nova do painel.<br><br>' +
+                  'Se a TV estiver em <b>tela cheia</b>, ela sai desse modo ao recarregar ' +
+                  '— aí alguém precisa apertar tela cheia no controle.',
+            ok:'Atualizar a TV', cancelar:'Cancelar' })
+  .then(function(sim){
+    if (!sim) return;
+    $('estado').style.display = 'block';
+    $('estado').textContent = 'Mandando a TV atualizar...';
+    supaRecarregarTV().then(function(){
+      $('estado').innerHTML = '<b style="color:var(--success)">Pedido enviado.</b> ' +
+                              'A TV recarrega em até 5 segundos.';
+    })['catch'](function(e){
+      $('estado').innerHTML = '<b style="color:var(--error)">Não consegui:</b> ' + (e.message || e);
+    });
+  });
 }
 
 function verPainel(slug){ window.open('tv/?p=' + encodeURIComponent(slug), '_blank'); }

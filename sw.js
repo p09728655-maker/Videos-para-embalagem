@@ -5,7 +5,7 @@
  * a TV ficaria presa num produto antigo sem ninguém perceber. O guard em fetch()
  * abaixo é o que garante isso — não remova.
  */
-var CACHE = 'ritmopatrimar-embalagem-v6';
+var CACHE = 'ritmopatrimar-embalagem-v7';
 
 /* Só o que o gerador precisa para abrir sem internet. */
 var ESSENCIAL = [
