@@ -56,6 +56,55 @@ function supaLogin(email, senha) {
 
 function supaLogout() { limparSessao(); }
 
+/* ── Esqueci minha senha ───────────────────────────────────────────────────
+ * Pede ao Supabase o e-mail de redefinição. A resposta é 200 mesmo para
+ * e-mail que não existe — de propósito: senão a tela viraria um jeito de
+ * descobrir quem tem conta. Por isso a mensagem na tela é sempre a mesma.
+ *
+ * O link do e-mail volta para nova-senha.html com o token no fragmento da
+ * URL. Esse endereço precisa estar na lista de Redirect URLs do projeto,
+ * senão o Supabase manda para a Site URL e a página não recebe token nenhum.
+ */
+function supaRecuperarSenha(email) {
+  var volta = window.location.origin + '/nova-senha.html';
+  return fetch(window.SUPA.url + '/auth/v1/recover?redirect_to=' + encodeURIComponent(volta), {
+    method: 'POST',
+    headers: { 'apikey': window.SUPA.key, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email: email })
+  }).then(function (r) {
+    if (r.ok) return true;
+    return r.json()['catch'](function () { return {}; }).then(function (d) {
+      if (r.status === 429) {
+        throw new Error('Muitos pedidos seguidos. Espere alguns minutos e tente de novo.');
+      }
+      throw new Error(d.msg || d.error_description || d.message ||
+                      ('não consegui enviar o e-mail (HTTP ' + r.status + ')'));
+    });
+  });
+}
+
+/* Grava a senha nova usando o token que veio no link do e-mail. O token vale
+ * uma vez só e por pouco tempo — expirado, a pessoa pede outro. */
+function supaTrocarSenha(token, senha) {
+  return fetch(window.SUPA.url + '/auth/v1/user', {
+    method: 'PUT',
+    headers: {
+      'apikey': window.SUPA.key,
+      'Authorization': 'Bearer ' + token,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ password: senha })
+  }).then(function (r) {
+    return r.json()['catch'](function () { return {}; }).then(function (d) {
+      if (!r.ok) {
+        throw new Error(d.msg || d.error_description || d.message ||
+                        ('não consegui trocar a senha (HTTP ' + r.status + ')'));
+      }
+      return d;
+    });
+  });
+}
+
 /* Devolve um access_token válido, renovando se estiver perto de vencer. */
 function tokenValido() {
   var s = sessaoSalva();

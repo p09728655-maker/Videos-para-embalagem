@@ -20,6 +20,10 @@
     {
       "source": "/padrao",
       "destination": "/docs/padrao-desenho-tv.html"
+    },
+    {
+      "source": "/nova-senha",
+      "destination": "/nova-senha.html"
     }
   ],
   "headers": [

@@ -15,6 +15,7 @@ as observações críticas (furação, pintura) e o desenho técnico da camada.
 | `paineis/<slug>/` | Biblioteca: um produto por pasta, publicado uma vez só |
 | `docs/padrao-desenho-tv.html` | **Padrão de folha para o desenhista** (publicado em `/padrao`) |
 | `docs/modelo-folha-tv.dxf` | Modelo da folha TV 16:9 para abrir no CAD |
+| `nova-senha.html` | Redefinição de senha, aberta pelo link do e-mail |
 | `manifest.webmanifest`, `sw.js` | App instalável (PWA) do gerador |
 | `logo/`, `icones/` | Marca Patrimar preparada para fundo escuro |
 
@@ -104,6 +105,33 @@ devolve esse modo, então o botão avisa antes.
 Pausa e recarga viajam na **mesma consulta de 5 em 5 segundos** (`checarComandos`). Erro
 de schema — coluna que ainda não existe — suspende a checagem por 10 minutos em vez de
 desligá-la de vez: um deploy fora de ordem não deixa a TV surda até o próximo reload.
+
+### Esqueci minha senha
+
+O login é o do Supabase Auth, o mesmo usuário do RitmoProd. A tela de login tem
+**Esqueci minha senha**: manda `POST /auth/v1/recover` e o Supabase envia o link de
+redefinição, que volta para `nova-senha.html` com o token no **fragmento** da URL — que
+não é enviado ao servidor, por isso a leitura é feita no navegador e o token some da
+barra de endereços assim que a página abre.
+
+A mensagem na tela é sempre a mesma, tenha a conta ou não ("se esse e-mail tiver conta,
+o link já saiu"): o endpoint responde 200 para e-mail inexistente de propósito, e repetir
+isso na interface evita que a tela sirva para descobrir quem tem acesso.
+
+Duas coisas precisam estar configuradas no projeto do Supabase, senão o fluxo falha em
+silêncio:
+
+| Onde | O quê | Se faltar |
+|---|---|---|
+| Authentication → URL Configuration → Redirect URLs | `https://<domínio>/**` | o link cai na Site URL e `nova-senha.html` abre sem token |
+| Authentication → Emails → SMTP | servidor de e-mail próprio | ~2 e-mails por hora e entrega ruim: o link não chega |
+
+Sem SMTP próprio o botão existe mas não é confiável no dia a dia. **Com poucas pessoas
+usando, redefinir a senha pelo painel do Supabase continua sendo o caminho mais rápido** —
+Authentication → Users → o usuário → definir a senha.
+
+`nova-senha.html` fica fora do cache do service worker: ela depende do token do link e
+tem que vir sempre da rede.
 
 ### Busca na biblioteca
 

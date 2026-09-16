@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Senha nova</title>
+<meta name="theme-color" content="#1A1A1A">
+<meta name="robots" content="noindex">
+<meta name="apple-mobile-web-app-title" content="Embalagem">
+<link rel="apple-touch-icon" href="icones/apple-touch-icon.png">
+<link rel="icon" href="icones/icone-192.png">
+<style>
+  :root{--bg:#0A0A0B;--panel:#18181B;--border:#3F3F46;--gray:#71717A;
+        --accent:#FF5C1F;--warn:#EAB308;--error:#DC2626;--success:#16A34A;
+        --text:#E4E4E7;--text-muted:#A1A1AA;}
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:'Inter',system-ui,-apple-system,Segoe UI,Arial,sans-serif;background:var(--bg);
+       color:var(--text);min-height:100vh;display:flex;align-items:center;justify-content:center;
+       padding:28px 16px;}
+  .caixa{background:var(--panel);border:1px solid var(--border);border-radius:12px;
+         padding:28px;width:420px;max-width:100%;}
+  .rp-logo{display:flex;align-items:center;gap:10px;margin-bottom:22px;}
+  .rp-marca{height:26px;width:auto;display:block;}
+  .rp-sep{color:var(--border);font-size:18px;font-weight:300;}
+  .rp-tag{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:11px;font-weight:500;
+          color:var(--gray);letter-spacing:0.05em;text-transform:uppercase;}
+  h1{font-size:21px;font-weight:800;letter-spacing:-0.02em;margin-bottom:6px;}
+  p.sub{font-size:13.5px;color:var(--text-muted);line-height:1.55;margin-bottom:20px;}
+  label{display:block;font-size:11px;color:var(--gray);letter-spacing:0.05em;
+        text-transform:uppercase;font-weight:600;margin-bottom:6px;}
+  input{width:100%;padding:13px 14px;border-radius:7px;border:1px solid var(--border);
+        background:var(--bg);color:var(--text);font-size:16px;font-family:inherit;
+        margin-bottom:14px;}
+  input:focus{outline:none;border-color:var(--accent);}
+  button{width:100%;padding:14px;border-radius:7px;border:none;background:var(--accent);
+         color:#fff;font-weight:700;font-size:15px;cursor:pointer;font-family:inherit;
+         min-height:48px;}
+  button:disabled{opacity:.5;cursor:default;}
+  .aviso{font-size:13.5px;line-height:1.6;border-left:3px solid var(--border);
+         background:rgba(63,63,70,0.18);padding:12px 14px;border-radius:0 6px 6px 0;
+         color:var(--text-muted);margin-bottom:18px;}
+  .aviso.erro{border-left-color:var(--error);background:rgba(220,38,38,0.08);}
+  .aviso.ok{border-left-color:var(--success);background:rgba(22,163,74,0.08);}
+  .aviso b{color:var(--text);}
+  .aviso.erro b{color:var(--error);}
+  .aviso.ok b{color:var(--success);}
+  .dica{font-size:12px;color:var(--gray);line-height:1.5;margin-top:-6px;margin-bottom:16px;}
+  a{color:var(--accent);text-decoration:none;font-weight:600;}
+  a:hover{text-decoration:underline;}
+  .rodape{margin-top:18px;font-size:13px;text-align:center;}
+</style>
+</head>
+<body>
+
+<div class="caixa">
+  <div class="rp-logo">
+    <img class="rp-marca" src="logo/patrimar.png" alt="Patrimar Móveis">
+    <span class="rp-sep">/</span>
+    <span class="rp-tag">RitmoPatrimar · Embalagem</span>
+  </div>
+
+  <h1>Criar uma senha nova</h1>
+  <p class="sub" id="sub">Conferindo o link do e-mail...</p>
+
+  <div id="aviso" class="aviso" style="display:none"></div>
+
+  <form id="form" style="display:none" onsubmit="salvar(event)">
+    <label for="senha1">Senha nova</label>
+    <input type="password" id="senha1" autocomplete="new-password" minlength="6" required>
+    <label for="senha2">Repita a senha</label>
+    <input type="password" id="senha2" autocomplete="new-password" minlength="6" required>
+    <div class="dica">Mínimo de 6 caracteres. Vale para o RitmoProd também — é a mesma conta.</div>
+    <button type="submit" id="btn">Salvar a senha</button>
+  </form>
+
+  <div class="rodape" id="rodape" style="display:none">
+    <a href="biblioteca.html">Ir para a biblioteca</a>
+  </div>
+</div>
+
+<script src="supabase-config.js"></script>
+<script src="publicar.js"></script>
+<script>
+/* O Supabase devolve o token no fragmento da URL (#access_token=...&type=recovery).
+   Fragmento não é enviado ao servidor, então o token não aparece em log nenhum —
+   e é por isso que a leitura tem que ser feita aqui, no navegador. */
+function $(id){ return document.getElementById(id); }
+
+function lerFragmento(){
+  var h = (location.hash || '').replace(/^#/, '');
+  var fora = {};
+  h.split('&').forEach(function(par){
+    var i = par.indexOf('=');
+    if (i < 1) return;
+    /* O fragmento vem em codificacao de formulario: '+' e espaco, e
+       decodeURIComponent sozinho deixaria "link+expirado" na tela. */
+    var val = par.slice(i + 1).replace(/\+/g, ' ');
+    try { fora[decodeURIComponent(par.slice(0, i))] = decodeURIComponent(val); }
+    catch (e) { fora[par.slice(0, i)] = val; }
+  });
+  return fora;
+}
+
+function avisar(texto, tipo){
+  var el = $('aviso');
+  el.className = 'aviso' + (tipo ? ' ' + tipo : '');
+  el.innerHTML = texto;
+  el.style.display = 'block';
+}
+
+var token = null;
+
+(function comecar(){
+  var f = lerFragmento();
+
+  if (f.error_description || f.error){
+    /* A mensagem do Supabase vem em ingles e sempre quer dizer a mesma coisa:
+       o link venceu ou ja foi usado. Fica como detalhe, em letra miuda. */
+    $('sub').textContent = 'O link do e-mail não vale mais.';
+    avisar('<b>Link expirado ou já usado.</b> Cada link serve uma vez só e por ' +
+           'pouco tempo.<br><br>Peça outro na tela de login, em ' +
+           '<b>Esqueci minha senha</b>.' +
+           (f.error_description ? '<br><span style="font-size:11.5px;color:var(--gray)">' +
+                                  f.error_description + '</span>' : ''), 'erro');
+    $('rodape').style.display = 'block';
+    return;
+  }
+
+  token = f.access_token || null;
+  if (!token){
+    $('sub').textContent = 'Esta página só funciona pelo link do e-mail.';
+    avisar('<b>Não achei o token na URL.</b> Abra o link que chegou no e-mail de ' +
+           'redefinição — ele traz um código de uso único que autoriza a troca.<br><br>' +
+           'Se você chegou aqui pelo link e mesmo assim deu isto, o endereço desta página ' +
+           'provavelmente não está na lista de <i>Redirect URLs</i> do projeto no Supabase.', 'erro');
+    $('rodape').style.display = 'block';
+    return;
+  }
+
+  /* O token fica na memória; sai da barra de endereços para não ser copiado
+     junto com a URL nem ficar no histórico do navegador. */
+  try { history.replaceState(null, '', location.pathname); } catch (e) {}
+
+  $('sub').textContent = 'Escolha a senha que você vai usar para entrar no RitmoPatrimar.';
+  $('form').style.display = 'block';
+  $('senha1').focus();
+})();
+
+function salvar(ev){
+  ev.preventDefault();
+  var s1 = $('senha1').value, s2 = $('senha2').value;
+  if (s1.length < 6){ avisar('<b>Senha curta.</b> Use ao menos 6 caracteres.', 'erro'); return; }
+  if (s1 !== s2){ avisar('<b>As duas senhas estão diferentes.</b> Confira a digitação.', 'erro'); return; }
+
+  $('btn').disabled = true;
+  $('btn').textContent = 'Salvando...';
+  supaTrocarSenha(token, s1).then(function(){
+    $('form').style.display = 'none';
+    $('sub').textContent = 'Pronto.';
+    avisar('<b>Senha trocada.</b> Entre com ela na biblioteca ou no gerador — ' +
+           'e no RitmoProd, que usa a mesma conta.', 'ok');
+    $('rodape').style.display = 'block';
+  })['catch'](function(e){
+    $('btn').disabled = false;
+    $('btn').textContent = 'Salvar a senha';
+    avisar('<b>Não consegui trocar:</b> ' + (e.message || e) +
+           '<br><br>Se disser que o token venceu, peça outro e-mail na tela de login.', 'erro');
+  });
+}
+</script>
+</body>
+</html>
