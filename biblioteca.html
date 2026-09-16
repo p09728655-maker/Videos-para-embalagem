@@ -72,6 +72,36 @@
   .btn.apoio-btn:hover{border-color:var(--border);color:var(--text);}
   .btn.perigo{color:var(--gray);border-color:transparent;padding:9px 12px;}
   .btn.perigo:hover{color:var(--error);border-color:var(--error);}
+  /* Exibicao na TV: escolha, nao acao — por isso caixa de selecao e nao botao.
+     Muda o painel ja publicado, sem gerar nada de novo. */
+  .exib{display:flex;align-items:center;gap:8px;}
+  .exib label{font-size:12px;color:var(--gray);white-space:nowrap;}
+  .exib select{padding:8px 10px;border-radius:6px;border:1px solid var(--border);
+               background:var(--bg);color:var(--text);font-family:inherit;font-size:13px;
+               font-weight:600;cursor:pointer;}
+  .exib select:hover{border-color:var(--accent);}
+  .exib select:focus{outline:none;border-color:var(--accent);}
+  .exib input.tempo{width:64px;padding:8px 10px;border-radius:6px;border:1px solid var(--border);
+                    background:var(--bg);color:var(--accent);font-family:ui-monospace,Menlo,Consolas,monospace;
+                    font-size:13px;font-weight:700;text-align:center;}
+  .exib input.tempo:hover{border-color:var(--accent);}
+  .exib input.tempo:focus{outline:none;border-color:var(--accent);}
+
+  /* Controle da TV ao vivo: pausar de longe, sem ir ate a embalagem.
+     Fica acima da lista porque age sobre a TV inteira, nao sobre um produto. */
+  .tvbar{display:flex;align-items:center;gap:14px;flex-wrap:wrap;
+         background:var(--panel);border:1px solid var(--border);border-radius:10px;
+         padding:14px 18px;margin-bottom:12px;}
+  .tvbar .txt{flex:1 1 260px;min-width:0;font-size:13.5px;color:var(--text-muted);line-height:1.5;}
+  .tvbar .txt b{color:var(--text);}
+  .tvbar.pausada{border-color:var(--warn);background:rgba(234,179,8,0.08);}
+  .tvbar.pausada .txt b{color:var(--warn);}
+  .tvbar .ponto{width:8px;height:8px;border-radius:50%;background:var(--accent);
+                display:inline-block;margin-right:7px;vertical-align:middle;}
+  .tvbar.pausada .ponto{background:var(--warn);}
+  /* TV parada e o estado que pede acao: o botao de retomar puxa a cor do aviso. */
+  .tvbar.pausada .btn{border-color:var(--warn);color:var(--warn);}
+  .tvbar.pausada .btn:hover{background:rgba(234,179,8,0.12);}
 
   /* Amarelo so para o que pede atencao agora. A explicacao permanente
      do rodape e neutra — duas caixas amarelas na mesma tela anulam as duas. */
@@ -119,6 +149,11 @@
 
   <div id="estado">Carregando...</div>
 
+  <div class="tvbar" id="tvBar" style="display:none">
+    <div class="txt" id="tvBarTxt"></div>
+    <button class="btn" id="btnPausaTV" onclick="alternarPausaTV()"></button>
+  </div>
+
   <div class="aviso" id="avisoSemTV" style="display:none">
     <b>Nenhum produto na TV.</b> A tela da embalagem está em espera até alguém
     colocar um produto. Nada fica fixo lá sozinho.
@@ -163,6 +198,7 @@
 <script src="publicar.js"></script>
 <script>
 var ativoAtual = null;
+var pausaAtual = null;     /* carimbo de embalagem_config.tv_pausa — null = TV rodando */
 var acaoPendente = null;   /* refeita depois do login */
 
 function $(id){ return document.getElementById(id); }
@@ -208,10 +244,13 @@ function fazerLogin(){
 function carregar(){
   $('estado').textContent = 'Carregando...';
   Promise.all([
-    supaGet('embalagem_config?id=eq.1&select=painel_ativo'),
+    supaGet('embalagem_config?id=eq.1&select=painel_ativo,tv_pausa'),
     supaGet('embalagem_paineis?select=slug,produto,tempo,camadas,opcoes,atualizado_em&order=produto.asc')
   ]).then(function(r){
-    ativoAtual = (r[0] && r[0][0]) ? r[0][0].painel_ativo : null;
+    var cfg = (r[0] && r[0][0]) ? r[0][0] : {};
+    ativoAtual = cfg.painel_ativo || null;
+    pausaAtual = cfg.tv_pausa || null;
+    pintarPausaTV();
     render(r[1] || []);
   })['catch'](function(e){
     $('estado').innerHTML = '<b style="color:var(--error)">Não consegui carregar:</b> ' +
@@ -240,7 +279,7 @@ function render(itens){
   lista.innerHTML = itens.map(function(p){
     var naTV = (p.slug === ativoAtual);
     var n = (p.camadas || []).length;
-    var semComp = !!(p.opcoes && p.opcoes.componentes === false);
+    var modo = modoDoPainel(p.opcoes);
     var arg = "'" + String(p.slug).replace(/'/g, "\\'") + "'";
     var rel = haQuantoTempo(p.atualizado_em);
 
@@ -269,16 +308,25 @@ function render(itens){
 
              /* 4 numeros do painel e acoes de apoio */
              '<div class="meta">' + n + ' camada' + (n===1?'':'s') +
-               ' · ' + p.tempo + 's por camada · ' +
-               (semComp ? 'só desenho na TV' : 'com lista de componentes') + '</div>' +
+               ' · ' + p.tempo + 's por camada · ' + MODOS[modo].meta + '</div>' +
 
              '<div class="apoio">' +
                '<button class="btn apoio-btn" onclick="verPainel(' + arg + ')" ' +
                  'title="Abrir o painel numa aba, sem mexer na TV">Ver</button>' +
-               '<button class="btn apoio-btn" onclick="alternarComponentes(' + arg + ',' +
-                 (semComp ? 'true' : 'false') + ')" ' +
-                 'title="Mostrar ou esconder a lista de componentes na TV">' +
-                 (semComp ? 'Mostrar lista' : 'Esconder lista') + '</button>' +
+               '<div class="exib">' +
+                 '<label>Tempo:</label>' +
+                 '<input class="tempo" type="number" min="1" max="9999" value="' + p.tempo + '" ' +
+                   'onchange="definirTempo(' + arg + ', this)" ' +
+                   'title="Segundos que cada camada fica na tela">' +
+                 '<label>s</label>' +
+               '</div>' +
+               '<div class="exib">' +
+                 '<label>Na TV:</label>' +
+                 '<select onchange="definirExibicao(' + arg + ', this.value)" ' +
+                   'title="O que a TV mostra deste produto">' +
+                   opcoesModo(modo) +
+                 '</select>' +
+               '</div>' +
                '<span class="espaco"></span>' +
                '<button class="btn perigo" onclick="excluir(' + arg + ',\'' +
                   String(p.produto).replace(/'/g,"\\'") + '\')">Excluir</button>' +
@@ -287,14 +335,125 @@ function render(itens){
   }).join('');
 }
 
-function alternarComponentes(slug, estaSemComp){
-  if (!estaLogado()){ acaoPendente = function(){ alternarComponentes(slug, estaSemComp); }; abrirLogin(); return; }
+/* Os tres modos de exibicao, num lugar so: o gerador grava, a biblioteca troca
+   e a TV le exatamente estas mesmas chaves. */
+var MODOS = {
+  'lista':      { rotulo:'Desenho + lista',     meta:'com lista de componentes',
+                  opcoes:{ componentes:true,  soDesenho:false } },
+  'sem-lista':  { rotulo:'Desenho sem a lista', meta:'desenho maior, sem a lista',
+                  opcoes:{ componentes:false, soDesenho:false } },
+  'so-desenho': { rotulo:'Só o desenho',        meta:'só o desenho, em tela cheia',
+                  opcoes:{ componentes:false, soDesenho:true } }
+};
+function modoDoPainel(opcoes){
+  var o = opcoes || {};
+  if (o.soDesenho === true) return 'so-desenho';
+  if (o.componentes === false) return 'sem-lista';
+  return 'lista';
+}
+function opcoesModo(atual){
+  var h = '';
+  for (var k in MODOS){
+    if (!MODOS.hasOwnProperty(k)) continue;
+    h += '<option value="' + k + '"' + (k === atual ? ' selected' : '') + '>' +
+         MODOS[k].rotulo + '</option>';
+  }
+  return h;
+}
+
+/* Tempo por camada direto na lista: o ritmo certo so aparece com a linha
+   rodando, e ate agora mudar de 5 para 8 segundos exigia gerar o PDF de novo.
+   A TV recarrega sozinha em ate 1 minuto — o UPDATE carimba atualizado_em, que
+   e o que o player compara. */
+function definirTempo(slug, campo){
+  var n = parseInt(campo.value, 10);
+  var antes = campo.defaultValue;
+  if (!(n > 0 && n <= 9999)){
+    campo.value = antes;
+    $('estado').style.display='block';
+    $('estado').innerHTML='<b style="color:var(--error)">Tempo inválido:</b> use de 1 a 9999 segundos.';
+    return;
+  }
+  if (String(n) === String(antes)) return;
+  if (!estaLogado()){
+    campo.value = antes;
+    acaoPendente = function(){ definirTempoDireto(slug, n); };
+    abrirLogin(); return;
+  }
+  definirTempoDireto(slug, n);
+}
+function definirTempoDireto(slug, n){
+  $('estado').style.display='block'; $('estado').textContent='Salvando o tempo...';
+  supaDefinirTempo(slug, n)
+    .then(function(){ carregar(); })
+    ['catch'](function(e){
+      $('estado').innerHTML='<b style="color:var(--error)">Não consegui salvar o tempo:</b> '+(e.message||e);
+    });
+}
+
+/* Troca o que a TV mostra deste produto sem regerar nada. O PATCH substitui o
+   objeto inteiro, entao as duas chaves vao sempre juntas. */
+function definirExibicao(slug, modo){
+  var m = MODOS[modo]; if (!m) return;
+  if (!estaLogado()){ acaoPendente = function(){ definirExibicao(slug, modo); }; abrirLogin(); return; }
   $('estado').style.display='block'; $('estado').textContent='Salvando...';
-  supaDefinirOpcoes(slug, { componentes: estaSemComp })
+  supaDefinirOpcoes(slug, m.opcoes)
     .then(function(){ carregar(); })
     ['catch'](function(e){
       $('estado').innerHTML='<b style="color:var(--error)">Não consegui salvar:</b> '+(e.message||e);
     });
+}
+
+/* ── Pausar a TV de longe ──────────────────────────────────────────────────
+   A TV nao tem controle remoto nem teclado: pausar exigia ir ate a embalagem.
+   A biblioteca grava o pedido em embalagem_config.tv_pausa e o player obedece
+   em ate 5 segundos. O risco desta funcao e a TV ficar parada e esquecida, por
+   isso o estado fica escrito no topo da tela, com ha quanto tempo. */
+function hhmm(iso){
+  try{ var d = new Date(iso);
+       if (isNaN(d.getTime())) return '';
+       var p = function(n){ return n < 10 ? '0'+n : String(n); };
+       return p(d.getHours()) + ':' + p(d.getMinutes()); }catch(e){ return ''; }
+}
+function paradaHa(iso){
+  try{
+    var min = Math.floor((Date.now() - new Date(iso).getTime()) / 60000);
+    if (isNaN(min) || min < 1) return 'agora há pouco';
+    if (min < 60) return 'há ' + min + ' min';
+    var h = Math.floor(min / 60), r = min % 60;
+    return 'há ' + h + 'h' + (r ? ' ' + r + 'min' : '');
+  }catch(e){ return ''; }
+}
+function pintarPausaTV(){
+  var bar = $('tvBar'), txt = $('tvBarTxt'), bt = $('btnPausaTV');
+  if (!bar) return;
+  if (!ativoAtual){ bar.style.display = 'none'; return; }   /* TV em espera: nada a pausar */
+  bar.style.display = 'flex';
+  if (pausaAtual){
+    bar.className = 'tvbar pausada';
+    txt.innerHTML = '<span class="ponto"></span><b>TV pausada</b> desde as ' +
+                    hhmm(pausaAtual) + ' · ' + paradaHa(pausaAtual) +
+                    '. A tela está congelada na camada em que estava.';
+    bt.textContent = 'Retomar a TV';
+  } else {
+    bar.className = 'tvbar';
+    txt.innerHTML = '<span class="ponto"></span><b>TV rodando.</b> ' +
+                    'Pausar congela a camada que está no ar até alguém retomar — ' +
+                    'a TV obedece em até 5 segundos.';
+    bt.textContent = 'Pausar a TV';
+  }
+}
+function alternarPausaTV(){
+  if (!estaLogado()){ acaoPendente = alternarPausaTV; abrirLogin(); return; }
+  var pausar = !pausaAtual;
+  var bt = $('btnPausaTV');
+  bt.disabled = true;
+  supaPausarTV(pausar).then(function(){ carregar(); })
+    ['catch'](function(e){
+      $('estado').style.display = 'block';
+      $('estado').innerHTML = '<b style="color:var(--error)">Não consegui:</b> ' + (e.message || e);
+    })
+    .then(function(){ bt.disabled = false; });
 }
 
 function verPainel(slug){ window.open('tv/?p=' + encodeURIComponent(slug), '_blank'); }

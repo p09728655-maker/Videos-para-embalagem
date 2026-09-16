@@ -124,7 +124,9 @@ function supaSalvarPainel(registro) {
 }
 
 /* Troca o painel exibido na TV. slug nulo ou vazio deixa a TV em espera, sem
-   produto nenhum — e assim que se tira um painel do ar. */
+   produto nenhum — e assim que se tira um painel do ar.
+   Trocar de produto tambem limpa a pausa: senao o produto novo entraria
+   congelado na primeira camada, com a pausa esquecida do produto anterior. */
 function supaAtivarPainel(slug) {
   var valor = slug ? String(slug) : null;
   return tokenValido().then(function (token) {
@@ -134,7 +136,7 @@ function supaAtivarPainel(slug) {
         'Content-Type': 'application/json',
         'Prefer': 'return=representation'
       }),
-      body: JSON.stringify({ painel_ativo: valor })
+      body: JSON.stringify({ painel_ativo: valor, tv_pausa: null })
     }).then(function (r) {
       if (!r.ok) {
         return r.text().then(function (t) {
@@ -143,6 +145,54 @@ function supaAtivarPainel(slug) {
         });
       }
       return r.json();
+    });
+  });
+}
+
+/* Pausa ou retoma a TV a distancia. Grava o carimbo em embalagem_config;
+ * o player le esse campo de 5 em 5 segundos e obedece.
+ * null = rodando. O carimbo tambem serve para mostrar ha quanto tempo esta
+ * parada — TV pausada e esquecida e o risco real desta funcao. */
+function supaPausarTV(pausar) {
+  var valor = pausar ? new Date().toISOString() : null;
+  return tokenValido().then(function (token) {
+    return fetch(window.SUPA.url + '/rest/v1/embalagem_config?id=eq.1', {
+      method: 'PATCH',
+      headers: cabecalhos(token, {
+        'Content-Type': 'application/json',
+        'Prefer': 'return=representation'
+      }),
+      body: JSON.stringify({ tv_pausa: valor })
+    }).then(function (r) {
+      if (!r.ok) {
+        return r.text().then(function (t) {
+          throw new Error((pausar ? 'não consegui pausar a TV: '
+                                  : 'não consegui retomar a TV: ') + r.status + ' ' + t);
+        });
+      }
+      return r.json();
+    });
+  });
+}
+
+/* Troca o tempo por camada de um painel ja publicado. O trigger de UPDATE
+ * carimba atualizado_em, e e esse carimbo que faz a TV recarregar sozinha. */
+function supaDefinirTempo(slug, segundos) {
+  var n = parseInt(segundos, 10);
+  if (!(n > 0 && n <= 9999)) return Promise.reject(new Error('tempo inválido'));
+  return tokenValido().then(function (token) {
+    return fetch(window.SUPA.url + '/rest/v1/embalagem_paineis?slug=eq.' +
+                 encodeURIComponent(slug), {
+      method: 'PATCH',
+      headers: cabecalhos(token, { 'Content-Type': 'application/json' }),
+      body: JSON.stringify({ tempo: n })
+    }).then(function (r) {
+      if (!r.ok) {
+        return r.text().then(function (t) {
+          throw new Error('não consegui salvar o tempo: ' + r.status + ' ' + t);
+        });
+      }
+      return n;
     });
   });
 }

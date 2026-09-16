@@ -69,6 +69,19 @@
   }
   .field input:focus { outline:none; border-color:var(--accent); }
 
+  /* O campo de exibicao e uma escolha entre tres modos, nao um texto digitado:
+     mesma caixa do input para nao criar um segundo visual de formulario. */
+  .field select {
+    padding:10px 14px; border-radius:6px; border:1px solid var(--border);
+    background:var(--bg); color:var(--text); font-family:'Inter',sans-serif;
+    font-size:15px; font-weight:500; width:100%; min-width:0; cursor:pointer;
+  }
+  .field select:focus { outline:none; border-color:var(--accent); }
+  .field .dica {
+    font-size:11.5px; color:var(--gray); line-height:1.45;
+    text-transform:none; letter-spacing:0; font-weight:500;
+  }
+
   /* Status */
   #status { background:var(--panel); border:1px solid var(--border); border-radius:8px; padding:14px 18px; margin-bottom:20px; font-size:14px; color:var(--text-muted); display:none; }
   #status.visible { display:block; }
@@ -83,6 +96,30 @@
     overflow:hidden; display:none;
   }
   .page-card.visible { display:block; }
+  /* Camada fora do painel: continua na tela, apagada, com o desenho visivel.
+     E reversivel de proposito — a pagina de capa do PDF costuma ser removida,
+     mas tirar a camada errada sem poder voltar custaria reprocessar o PDF. */
+  .page-card.removida { opacity:.5; border-style:dashed; }
+  .page-card.removida .page-body { display:none; }
+  .page-card.removida .rem-faixa { display:flex; }
+  .rem-faixa {
+    display:none; align-items:center; justify-content:space-between; gap:10px;
+    padding:11px 16px; font-size:12.5px; color:var(--text-muted); font-weight:600;
+    background:rgba(63,63,70,0.25); border-bottom:1px solid var(--border);
+  }
+  .rem-faixa .btn-restaurar {
+    background:none; border:1px solid var(--border); color:var(--text-muted);
+    font-size:12px; font-weight:700; cursor:pointer; padding:6px 12px;
+    border-radius:5px; font-family:'Inter',sans-serif; white-space:nowrap;
+  }
+  .rem-faixa .btn-restaurar:hover { border-color:var(--accent); color:var(--accent); }
+  .page-op { display:flex; align-items:center; justify-content:space-between; gap:8px; }
+  .btn-remcam {
+    background:none; border:none; color:var(--gray); font-size:11px; font-weight:600;
+    cursor:pointer; padding:3px 6px; border-radius:4px; font-family:'Inter',sans-serif;
+    letter-spacing:0; text-transform:none; flex-shrink:0;
+  }
+  .btn-remcam:hover { color:var(--error); background:#DC262618; }
   .page-thumb { width:100%; aspect-ratio:4/3; object-fit:contain; background:var(--bg); display:block; }
   .page-body { padding:14px 16px; }
   .page-op { font-size:13px; font-weight:700; color:var(--accent); letter-spacing:0.05em; text-transform:uppercase; margin-bottom:10px; }
@@ -108,6 +145,17 @@
     flex-shrink:0; opacity:.7;
   }
   .btn-del:hover { opacity:1; background:#DC262622; }
+  /* Subir/descer a descricao. A ordem das linhas aqui e a ordem que vai para a
+     TV, entao a seta e a unica forma de corrigir a sequencia sem apagar e digitar
+     de novo o componente. */
+  .comp-ord { display:flex; flex-direction:column; gap:2px; flex-shrink:0; }
+  .btn-ord {
+    background:none; border:1px solid var(--border); color:var(--text-muted);
+    font-size:10px; line-height:1; cursor:pointer; padding:4px 7px;
+    border-radius:4px; font-family:'Inter',sans-serif;
+  }
+  .btn-ord:hover:not([disabled]) { border-color:var(--accent); color:var(--accent); }
+  .btn-ord[disabled] { opacity:.2; cursor:default; border-color:transparent; }
   .btn-add {
     background:none; border:1px dashed var(--slate); color:var(--text-muted);
     font-size:13px; font-weight:600; cursor:pointer; padding:6px;
@@ -274,11 +322,12 @@
   </div>
   <div class="field">
     <label>Exibição na TV</label>
-    <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text);
-                  text-transform:none;letter-spacing:0;font-weight:500;cursor:pointer;padding:9px 0">
-      <input type="checkbox" id="mostrarComponentes" checked style="width:16px;height:16px;accent-color:var(--accent)">
-      Mostrar a lista de componentes ao lado
-    </label>
+    <select id="modoExibicao">
+      <option value="lista">Desenho + lista</option>
+      <option value="sem-lista">Desenho sem a lista</option>
+      <option value="so-desenho">Só o desenho (tela cheia)</option>
+    </select>
+    <span class="dica">Dá para trocar depois na biblioteca, sem republicar o produto.</span>
   </div>
   <div class="field">
     <label>Fotos do Produto (opcional)</label>
@@ -541,6 +590,7 @@ async function extrairComponentes(page) {
 }
 
 let pagesData = [];
+let sufixoFolha = '';      /* ' · folha TV 16:9' — o contador e reescrito ao remover camada */
 
 const dropZone = document.getElementById('dropZone');
 const fileInput = document.getElementById('fileInput');
@@ -736,6 +786,7 @@ function recortarMargemBranca(canvas) {
 
 async function processar(file) {
   pagesData = [];
+  sufixoFolha = '';
   document.getElementById('pagesGrid').innerHTML = '';
   document.getElementById('acoes').classList.remove('visible');
   mostrarEtapas(2);
@@ -821,16 +872,15 @@ async function processar(file) {
   }
 
   for (let i = 0; i < total; i++) {
-    const opName = 'CAMADA ' + String(i + 1).padStart(2, '0');
-    pagesData.push({ img: imagens[i], op: opName,
+    const opName = nomeCamada(i + 1);
+    pagesData.push({ img: imagens[i], op: opName, removida: false,
                      components: paginas[i].components, obs: paginas[i].obs });
     adicionarCard(i, opName, imagens[i], paginas[i].components, paginas[i].obs);
   }
 
-  mostrarStatus(`${total} páginas processadas. Revise os componentes de cada camada.`, 100);
-  document.getElementById('contCamadas').textContent =
-    total + (total === 1 ? ' camada' : ' camadas') +
-    (folhaTV ? ' · folha TV 16:9' : ' · folha antiga, com recorte automático');
+  mostrarStatus(`${total} páginas processadas. Revise os componentes e remova o que não for camada.`, 100);
+  sufixoFolha = folhaTV ? ' · folha TV 16:9' : ' · folha antiga, com recorte automático';
+  renumerarCamadas();
   mostrarEtapas(4);
   document.getElementById('acoes').classList.add('visible');
   conferirVersao();
@@ -842,6 +892,12 @@ function adicionarCard(idx, opName, imgBase64, comps, obs = '') {
   card.className = 'page-card visible';
   card.id = 'card' + idx;
 
+  const faixa = document.createElement('div');
+  faixa.className = 'rem-faixa';
+  faixa.innerHTML = `<span>Fora do painel &middot; página ${idx + 1} do PDF</span>` +
+    `<button type="button" class="btn-restaurar" onclick="restaurarCamada(${idx})">Restaurar</button>`;
+  card.appendChild(faixa);
+
   const img = document.createElement('img');
   img.className = 'page-thumb';
   img.src = imgBase64;
@@ -851,7 +907,9 @@ function adicionarCard(idx, opName, imgBase64, comps, obs = '') {
   const body = document.createElement('div');
   body.className = 'page-body';
   body.innerHTML = `
-    <div class="page-op">${opName}</div>
+    <div class="page-op"><span id="op${idx}">${opName}</span>` +
+    `<button type="button" class="btn-remcam" onclick="removerCamada(${idx})" ` +
+    `title="Tirar esta camada do painel">× remover camada</button></div>
     <div class="comp-list" id="compList${idx}"></div>
     <button class="btn-add" onclick="addComp(${idx})">+ Adicionar componente</button>
     <div class="obs-row">
@@ -866,6 +924,45 @@ function adicionarCard(idx, opName, imgBase64, comps, obs = '') {
   if (obs) document.getElementById('obs' + idx).value = obs;
 }
 
+/* Nem toda pagina do PDF e camada: a capa e as folhas de conjunto entram na
+   leitura e nao devem ir para a TV. Remover marca a pagina e renumera as que
+   ficam — nada e apagado, entao restaurar devolve a camada como estava. */
+function removerCamada(idx) {
+  if (!pagesData[idx]) return;
+  pagesData[idx].removida = true;
+  document.getElementById('card' + idx).className = 'page-card visible removida';
+  renumerarCamadas();
+}
+function restaurarCamada(idx) {
+  if (!pagesData[idx]) return;
+  pagesData[idx].removida = false;
+  document.getElementById('card' + idx).className = 'page-card visible';
+  renumerarCamadas();
+}
+
+function nomeCamada(n) { return 'CAMADA ' + String(n).padStart(2, '0'); }
+
+/* A numeracao segue as camadas que ficaram: removida a 01, a antiga 02 vira 01.
+   O que a tela mostra e o que vai publicado — coletarDados usa a mesma regra. */
+function renumerarCamadas() {
+  let n = 0;
+  pagesData.forEach((p, idx) => {
+    if (p.removida) { p.op = ''; return; }
+    n++;
+    p.op = nomeCamada(n);
+    const rot = document.getElementById('op' + idx);
+    if (rot) rot.textContent = p.op;
+  });
+  const fora = pagesData.length - n;
+  const cont = document.getElementById('contCamadas');
+  if (cont) {
+    cont.textContent = n + (n === 1 ? ' camada' : ' camadas') +
+      (fora ? ' · ' + fora + (fora === 1 ? ' página fora' : ' páginas fora') : '') +
+      sufixoFolha;
+  }
+  return n;
+}
+
 function addComp(idx) { addCompRow(idx, 1, ''); }
 
 function addCompRow(idx, qty, nome) {
@@ -878,9 +975,45 @@ function addCompRow(idx, qty, nome) {
       <input class="qty" type="number" value="${qty}" min="1" max="99">
     </div>
     <input class="nome" type="text" value="${nome}" placeholder="Nome do componente">
-    <button class="btn-del" onclick="this.parentElement.remove()">×</button>
+    <div class="comp-ord">
+      <button type="button" class="btn-ord" onclick="moverComp(this,-1)" title="Subir esta descrição">&#9650;</button>
+      <button type="button" class="btn-ord" onclick="moverComp(this,1)" title="Descer esta descrição">&#9660;</button>
+    </div>
+    <button type="button" class="btn-del" onclick="removerComp(this)" title="Remover esta descrição">×</button>
   `;
   list.appendChild(row);
+  atualizarSetas(list);
+}
+
+/* A ordem das linhas na tela e a ordem publicada: coletarDados le a lista de
+   cima para baixo. Por isso mover a linha basta — nao ha indice guardado em
+   lugar nenhum para acertar depois. */
+function moverComp(btn, passo) {
+  const row = btn.parentElement.parentElement;
+  const list = row.parentElement;
+  const vizinho = passo < 0 ? row.previousElementSibling : row.nextElementSibling;
+  if (!vizinho) return;
+  if (passo < 0) list.insertBefore(row, vizinho);
+  else list.insertBefore(vizinho, row);
+  atualizarSetas(list);
+  try { btn.focus(); } catch (e) {}
+}
+
+function removerComp(btn) {
+  const row = btn.parentElement;
+  const list = row.parentElement;
+  row.remove();
+  atualizarSetas(list);
+}
+
+/* Seta apagada na ponta da lista: a primeira linha nao sobe, a ultima nao desce. */
+function atualizarSetas(list) {
+  const rows = list.querySelectorAll('.comp-row');
+  rows.forEach((r, i) => {
+    const b = r.querySelectorAll('.btn-ord');
+    if (b[0]) b[0].disabled = (i === 0);
+    if (b[1]) b[1].disabled = (i === rows.length - 1);
+  });
 }
 
 /* Revela os rotulos de etapa ate o nivel pedido. Os blocos em si continuam
@@ -966,7 +1099,12 @@ function mostrarStatus(txt, pct) {
 
 function coletarDados() {
   const produto = document.getElementById('produtoNome').value.trim() || 'PRODUTO';
-  const ops = pagesData.map((p, idx) => {
+  /* A imagem vem junto no mesmo objeto: com camadas removidas, o indice do
+     array nao bate mais com o de pagesData, e casar os dois por posicao
+     publicaria o desenho de outra camada. */
+  const ops = [];
+  pagesData.forEach((p, idx) => {
+    if (p.removida) return;
     const rows = document.querySelectorAll('#compList' + idx + ' .comp-row');
     const components = [];
     rows.forEach(row => {
@@ -975,12 +1113,21 @@ function coletarDados() {
       if (name) components.push({ qty, name });
     });
     const obs = document.getElementById('obs' + idx)?.value.trim() || '';
-    return { op: p.op, obs, components };
+    ops.push({ op: nomeCamada(ops.length + 1), obs, components, img: p.img });
   });
   const tempo = parseInt(document.getElementById('tempoPadrao').value, 10) || 5;
-  const cb = document.getElementById('mostrarComponentes');
-  const opcoes = { componentes: cb ? cb.checked : true };
+  const sel = document.getElementById('modoExibicao');
+  const modo = sel ? sel.value : 'lista';
+  /* soDesenho implica sem lista: a TV nao mostra a coluna em tela cheia. */
+  const opcoes = { componentes: modo === 'lista', soDesenho: modo === 'so-desenho' };
   return { produto, ops, tempo, opcoes };
+}
+
+/* Todas as camadas removidas: publicar deixaria a TV com um painel vazio,
+   que o player trata como erro na tela. Melhor barrar aqui. */
+function avisarSemCamada() {
+  mostrarResultado('<b style="color:var(--error)">Nenhuma camada no painel.</b> ' +
+                   'Todas foram removidas — restaure ao menos uma para publicar.');
 }
 
 function slugify(t) {
@@ -996,6 +1143,7 @@ function slugify(t) {
    permite a TV carregar uma de cada vez, em vez de tudo na memoria. */
 async function gerarPacote() {
   const { produto, ops, tempo, opcoes } = coletarDados();
+  if (!ops.length) { avisarSemCamada(); return; }
   const slug = slugify(produto);
 
   if (typeof JSZip === 'undefined') {
@@ -1009,14 +1157,14 @@ async function gerarPacote() {
   const zip = new JSZip();
   const pasta = zip.folder(slug);
 
-  const camadas = pagesData.map((p, i) => {
+  const camadas = ops.map((o, i) => {
     const arq = 'cam' + String(i + 1).padStart(2, '0') + '.jpg';
-    pasta.file(arq, p.img.split(',')[1], { base64: true });
+    pasta.file(arq, o.img.split(',')[1], { base64: true });
     return {
-      op: ops[i].op,
-      obs: ops[i].obs,
+      op: o.op,
+      obs: o.obs,
       img: arq,
-      componentes: ops[i].components.map(c => ({ qtd: c.qty, nome: c.name }))
+      componentes: o.components.map(c => ({ qtd: c.qty, nome: c.name }))
     };
   });
 
@@ -1102,6 +1250,7 @@ async function publicarPainel() {
 
   var btn = document.getElementById('btnPublicar');
   var { produto, ops, tempo, opcoes } = coletarDados();
+  if (!ops.length) { avisarSemCamada(); return; }
   var slug = slugify(produto);
 
   btn.disabled = true;
@@ -1109,9 +1258,9 @@ async function publicarPainel() {
     mostrarStatus('Enviando as imagens das camadas...', 5);
 
     var camadas = [];
-    for (var i = 0; i < pagesData.length; i++) {
+    for (var i = 0; i < ops.length; i++) {
       var arq = slug + '/cam' + String(i + 1).padStart(2, '0') + '.jpg';
-      var img = dataUrlParaBlob(pagesData[i].img);
+      var img = dataUrlParaBlob(ops[i].img);
       await supaUpload(arq, img.blob, img.tipo);
       camadas.push({
         op: ops[i].op,
@@ -1119,8 +1268,8 @@ async function publicarPainel() {
         img: arq,
         componentes: ops[i].components.map(function (c) { return { qtd: c.qty, nome: c.name }; })
       });
-      mostrarStatus('Enviando camada ' + (i + 1) + ' de ' + pagesData.length + '...',
-                    5 + ((i + 1) / pagesData.length) * 70);
+      mostrarStatus('Enviando camada ' + (i + 1) + ' de ' + ops.length + '...',
+                    5 + ((i + 1) / ops.length) * 70);
     }
 
     var fotos = [];

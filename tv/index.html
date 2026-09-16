@@ -89,9 +89,31 @@
   #componentesGrade.d3 .comp-card-qty{font-size:2.2vh;margin-right:0.6vh;}
   #componentesGrade.d3 .comp-card-nome{font-size:1.35vh;}
   #componentesGrade.d3>*+*{margin-top:0.25vh;}
-  /* Produto publicado sem a coluna: o desenho toma a tela inteira. */
+  /* Produto publicado sem a coluna: o desenho toma a largura inteira. */
   body.sem-componentes .right{display:none;}
   body.sem-componentes .left{width:100%;}
+
+  /* SO O DESENHO
+     A folha do desenhista ja e 16:9 e ja traz camada e componentes escritos
+     nela. Neste modo a tela nao repete nada disso: sai cabecalho, coluna,
+     faixa da camada, cronometro e rodape, e a folha ocupa a tela toda.
+     Ficam de pe so duas coisas que a folha nao garante: a OBS, digitada pelo
+     PPCP, e um fio de progresso que mostra o ritmo da troca de camada. */
+  body.so-desenho .header{display:none;}
+  body.so-desenho .right{display:none;}
+  body.so-desenho .footer{display:none;}
+  body.so-desenho .left{width:100%;padding:0;position:relative;}
+  body.so-desenho .left>*+*{margin-top:0;}
+  body.so-desenho #etapaPrincipal{display:none;}
+  body.so-desenho #desenhoCamada{border:none;border-radius:0;background:#0A0A0B;background:var(--bg);}
+  /* A OBS flutua sobre o desenho em vez de empurra-lo: o aviso de furacao nao
+     pode sumir, mas tambem nao pode roubar altura da folha. */
+  body.so-desenho #obsDisplay{position:absolute;top:0;left:0;right:0;z-index:7;
+       border-width:0 0 2px 0;border-radius:0;background:rgba(26,26,16,0.92);}
+  body.so-desenho .timer-row{position:absolute;left:0;right:0;bottom:0;z-index:7;}
+  body.so-desenho #timerDisplay,body.so-desenho #btnPausa{display:none;}
+  body.so-desenho .progress-bar-wrap{height:0.7vh;border-radius:0;background:rgba(255,255,255,0.12);}
+  body.so-desenho .progress-bar{border-radius:0;}
   #componentesGrade .vazio{color:var(--text-muted);font-size:2.2vh;padding:1vh;}
   .comp-card{background:var(--panel);border:1px solid var(--border);border-radius:8px;
              padding:0.8vh 1.2vh;display:flex;align-items:center;flex-shrink:0;}
@@ -181,6 +203,7 @@
     <input type="number" id="tempoInput" min="1" max="9999" value="5">
     <button class="btn" onclick="iniciarTempoManual()">&#9654; Iniciar</button>
     <button class="btn stop" onclick="pararTimer()">&#9632; Parar</button>
+    <button class="btn fs" id="btnSoDesenho" onclick="alternarSoDesenho()">&#9635; Só o desenho</button>
     <button class="btn fs" onclick="toggleFullscreen()">&#9974; Tela Cheia</button>
   </div>
 </div>
@@ -240,7 +263,15 @@ var slugAtual = null;
 var carimboAtual = null;
 
 var intervalo = null, etapaAtual = 0, tRestante = 0, tCiclo = 0;
+/* Exibicao: o que vem publicado no painel (biblioteca) e o que foi trocado
+   aqui na tela. O override e so desta sessao e cai na troca de produto —
+   quem manda no que fica na TV continua sendo a biblioteca. */
+var compPainel = true, soDesenhoPainel = false, soDesenhoLocal = null;
 var imgCache = {}, splashFeita = false, redeOk = false;
+/* Pausa remota: a biblioteca grava embalagem_config.tv_pausa e o player
+   obedece. Guarda-se o ultimo valor visto para agir so na virada — assim o
+   comando de longe nao desfaz a pausa feita aqui na tela, no toque. */
+var pausaRemota = null, pausaRemotaOk = true;
 var emEspera = false;     /* TV sem produto escolhido — e um estado valido, nao erro */
 
 function $(id){ return document.getElementById(id); }
@@ -388,22 +419,24 @@ function montar(){
     mostrarErro('O painel publicado está sem camadas.', 'Gere o produto novamente e publique a pasta.');
     return;
   }
-  /* opcoes.componentes === false: o produto foi publicado para exibir so o desenho */
-  var mostrarComp = !(p.opcoes && p.opcoes.componentes === false);
-  if (qs('comp') === '0') mostrarComp = false;
-  if (qs('comp') === '1') mostrarComp = true;
-  document.body.className = mostrarComp ? '' : 'sem-componentes';
+  /* Como o produto foi publicado:
+     opcoes.componentes === false -> desenho maior, sem a coluna
+     opcoes.soDesenho  === true   -> so o desenho, em tela cheia */
+  var opc = p.opcoes || {};
+  compPainel = !(opc.componentes === false);
+  soDesenhoPainel = (opc.soDesenho === true);
+  if (qs('comp') === '0') compPainel = false;
+  if (qs('comp') === '1') compPainel = true;
+  if (qs('so') === '0') soDesenhoPainel = false;
+  if (qs('so') === '1') soDesenhoPainel = true;
+  soDesenhoLocal = null;          /* produto novo volta a obedecer a biblioteca */
+  aplicarExibicao();
   document.title = 'RitmoPatrimar · ' + (p.produto || 'Embalagem');
   $('produtoNome').textContent = p.produto || '—';
   $('telaSub').className = 'ol-sub';
   $('telaSub').style.display = 'block';
   $('telaSub').textContent = p.produto || '';
-  /* Rodape: quem olha de perto precisa saber se o padrao na tela e o vigente.
-     A data e a mesma versao que a biblioteca mostra — nao ha outro numero. */
-  var versao = (p.atualizado && window.dataCurtaBR) ? window.dataCurtaBR(p.atualizado) : '';
-  $('rodape').textContent = 'PADRÃO DE EMBALAGEM · ' + (p.produto || '') +
-                            (versao ? ' · VERSÃO ' + versao : '') +
-                            ' · RITMOPATRIMAR' + (fonte === 'arquivos' ? ' · MODO RESERVA' : '');
+  pintarRodape();
   var tUrl = parseInt(qs('t'), 10);
   $('tempoInput').value = (tUrl > 0) ? tUrl : (p.tempo > 0 ? p.tempo : 5);
 
@@ -433,6 +466,39 @@ function montar(){
   }
 
   setTimeout(function(){ pularSplash(); iniciarTempoManual(); }, 2200);
+}
+
+/* Rodape: quem olha de perto precisa saber se o padrao na tela e o vigente.
+   A data e a mesma versao que a biblioteca mostra — nao ha outro numero. */
+function pintarRodape(){
+  var p = painel; if (!p) return;
+  var versao = (p.atualizado && window.dataCurtaBR) ? window.dataCurtaBR(p.atualizado) : '';
+  $('rodape').textContent = 'PADRÃO DE EMBALAGEM · ' + (p.produto || '') +
+                            (versao ? ' · VERSÃO ' + versao : '') +
+                            ' · RITMOPATRIMAR' +
+                            (fonte === 'arquivos' ? ' · MODO RESERVA' : '') +
+                            (pausaRemota ? ' · PAUSADA PELA BIBLIOTECA' : '');
+}
+
+/* Uma funcao so decide as tres telas possiveis, para nao haver dois lugares
+   mexendo em body.className e brigando entre si. */
+function modoSoDesenho(){
+  return (soDesenhoLocal === null) ? soDesenhoPainel : soDesenhoLocal;
+}
+function colunaVisivel(){ return !document.body.className; }
+function aplicarExibicao(){
+  var so = modoSoDesenho();
+  document.body.className = so ? 'so-desenho' : (compPainel ? '' : 'sem-componentes');
+  var b = $('btnSoDesenho');
+  if (b) b.innerHTML = so ? '&#9636; Tela completa' : '&#9635; Só o desenho';
+  if (colunaVisivel()) ajustarComponentes();
+}
+/* Botao e tecla D valem so nesta sessao e so nesta tela: quem decide o que a
+   TV exibe continua sendo a biblioteca, senao um clique aqui prenderia um modo
+   na TV sem ninguem saber onde desfazer. */
+function alternarSoDesenho(){
+  soDesenhoLocal = !modoSoDesenho();
+  aplicarExibicao();
 }
 
 var fotoAtual = 0, fotoTimer = null;
@@ -572,7 +638,7 @@ function mostrarDesenho(idx){
    embalado. */
 function ajustarComponentes(){
   var g = $('componentesGrade');
-  if (!g || document.body.className === 'sem-componentes') return;
+  if (!g || !colunaVisivel()) return;
   var graus = ['', 'd1', 'd2', 'd3'];
   for (var i = 0; i < graus.length; i++){
     g.className = graus[i];
@@ -734,6 +800,29 @@ function checarSaidaDaEspera(){
     })['catch'](function(){ redeOk = false; });
 }
 
+/* ---------- pausa remota ----------
+   Consulta propria, de 5 em 5 segundos, separada da troca de produto: e um
+   comando, tem que chegar rapido. Se o banco ainda nao tiver a coluna, a
+   funcao se desliga sozinha em vez de ficar batendo em erro — e o player
+   continua tocando normalmente. */
+function checarPausaRemota(){
+  if (!pausaRemotaOk || !window.supaGet) return;
+  if (!painel || emEspera) return;
+  window.supaGet('embalagem_config?id=eq.1&select=tv_pausa')
+    .then(function(rows){
+      var c = rows && rows[0]; if (!c) return;
+      var novo = c.tv_pausa || null;
+      if (novo === pausaRemota) return;      /* nada mudou desde a ultima olhada */
+      pausaRemota = novo;
+      if (novo && !estaPausado()) alternarPausa();       /* pausaram de longe */
+      else if (!novo && estaPausado()) alternarPausa();  /* retomaram de longe */
+      pintarRodape();
+    })['catch'](function(e){
+      /* 400 = coluna inexistente. Qualquer outro erro e queda de rede: tenta de novo. */
+      if (e && String(e.message || e).indexOf('400') >= 0) pausaRemotaOk = false;
+    });
+}
+
 /* Rede de seguranca contra travamento de memoria depois de muitas horas ligada.
    Este reload derruba a tela cheia, entao e raro de proposito: a troca de
    produto, que e o evento frequente, ja acontece sem recarregar. */
@@ -765,6 +854,8 @@ document.addEventListener('keydown', function(e){
     e.preventDefault(); irCamada(1);
   } else if (e.code === 'ArrowLeft' || e.keyCode === 37){
     e.preventDefault(); irCamada(-1);
+  } else if (e.code === 'KeyD' || e.keyCode === 68){
+    e.preventDefault(); alternarSoDesenho();
   }
 });
 
@@ -772,6 +863,7 @@ window.addEventListener('load', function(){
   armarCursor();
   carregar();
   setInterval(checarTroca, 60000);
+  setInterval(checarPausaRemota, 5000);
   setInterval(reloadSeguranca, 21600000);
 });
 </script>

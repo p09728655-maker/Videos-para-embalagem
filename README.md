@@ -51,6 +51,70 @@ Antes, cada troca de produto gravava um HTML de ~8 MB no histórico do Git, para
 sempre. Com as imagens fora do HTML, um produto fica em algumas centenas de KB
 e é publicado uma vez, não a cada troca.
 
+### O que a TV mostra de cada produto
+
+Três modos, gravados em `embalagem_paineis.opcoes`. Escolhidos no gerador ao publicar e
+trocáveis na biblioteca **sem republicar** — o UPDATE carimba `atualizado_em` e a TV
+recarrega sozinha em até 1 minuto.
+
+| Modo | `opcoes` | Tela |
+|---|---|---|
+| Desenho + lista | `{componentes:true}` | completa: coluna de componentes, camadas, cronômetro |
+| Desenho sem a lista | `{componentes:false}` | sai a coluna; o desenho ocupa a largura toda |
+| Só o desenho | `{soDesenho:true}` | a folha ocupa a tela: sem cabeçalho, coluna, cronômetro nem rodapé |
+
+**Só o desenho** existe para a folha TV 16:9 do desenhista, que já traz camada e peças
+escritas nela — repetir isso na tela só rouba área do desenho. Continuam visíveis duas
+coisas que a folha não garante: a **OBS** digitada no gerador, em faixa no alto, e um fio
+de progresso no rodapé, que mostra o ritmo da troca de camada.
+
+No computador, o botão **Só o desenho** (aparece ao mexer o mouse) e a tecla `D` alternam
+o modo **só naquela tela e só naquela sessão**: quem manda no que a TV exibe continua
+sendo a biblioteca, senão um clique de conferência prenderia um modo na TV sem ninguém
+saber onde desfazer.
+
+### Pausar a TV de longe
+
+A TV não tem controle nem teclado, e até então pausar exigia ir até a embalagem. A
+biblioteca grava o pedido em `embalagem_config.tv_pausa` (`null` = rodando; carimbo =
+pausada desde) e o player consulta esse campo **de 5 em 5 segundos** — é comando, tem que
+chegar rápido, por isso não espera o ciclo de 1 minuto da troca de produto.
+
+- o comando só age **na virada** do valor, então a pausa feita no toque da tela não é
+  desfeita pelo polling;
+- **trocar ou tirar o produto da TV limpa a pausa** — senão o produto novo entraria
+  congelado na primeira camada, com a pausa esquecida do anterior;
+- a biblioteca mostra desde quando a TV está parada: TV pausada e esquecida é o risco
+  real desta função;
+- se o banco não tiver a coluna, o player desliga a checagem sozinho e continua tocando.
+
+A coluna:
+
+```sql
+alter table public.embalagem_config add column if not exists tv_pausa timestamptz;
+```
+
+As policies de `embalagem_config` são por tabela — leitura anônima e escrita autenticada
+já valem para ela, sem policy nova.
+
+### Tempo por camada na biblioteca
+
+O ritmo certo só aparece com a linha rodando. O campo **Tempo** de cada produto, na
+biblioteca, grava `embalagem_paineis.tempo` direto: mudar de 5 para 8 segundos não exige
+mais gerar o PDF de novo. A TV recarrega em até 1 minuto (o `atualizado_em` muda) e
+recomeça pela camada 01.
+
+### Nem toda página do PDF é camada
+
+A capa e as folhas de conjunto entram na leitura do PDF e não devem ir para a TV. No
+gerador, **× remover camada** tira a página do painel e **Restaurar** devolve: nada é
+apagado, o desenho continua à vista e a numeração das camadas se refaz sozinha (removida
+a 01, a antiga 02 vira 01). Publicar com todas removidas é barrado — painel sem camada
+vira tela de erro no player.
+
+A ordem das descrições dentro da camada se acerta pelas setas `▲ ▼` de cada linha: a
+ordem na tela é a ordem publicada, lida de cima para baixo.
+
 ### Onde a versão do painel aparece
 
 O painel não tem número de versão: quem identifica a versão publicada é a data em
@@ -118,9 +182,12 @@ E, pelo uso real na fábrica:
 
 - `?p=slug` — força um produto, ignorando o `ativo.json` (útil para conferir)
 - `?t=8` — força o tempo por camada em segundos
+- `?comp=0` / `?comp=1` — força esconder ou mostrar a coluna de componentes
+- `?so=1` / `?so=0` — força o modo só o desenho, ignorando o que o produto tem publicado
 
 ## Atalhos (quando aberto no computador)
 
 - `Espaço` — pausa / retoma
 - `→` ou `Enter` — próxima camada
 - `←` — camada anterior
+- `D` — alterna o modo só o desenho (só nesta tela, só nesta sessão)
