@@ -148,6 +148,32 @@
   .selo{font-size:10.5px;font-weight:800;letter-spacing:0.06em;text-transform:uppercase;
         padding:3px 7px;border-radius:4px;border:1px solid var(--border);color:var(--gray);}
   .selo.ok{color:var(--success);border-color:rgba(22,163,74,0.5);}
+  /* O código é o que a pessoa vai ler em voz alta ou digitar olhando de longe:
+     grande, monoespaçado e com bastante respiro entre os caracteres. */
+  .codigo-grande{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:38px;
+                 font-weight:700;letter-spacing:0.12em;color:var(--accent);
+                 text-align:center;padding:14px 0 6px;user-select:all;}
+  .codigo-prazo{text-align:center;font-size:12.5px;color:var(--gray);margin-bottom:12px;}
+  .codigo-passos{font-size:13px;color:var(--text-muted);line-height:1.7;margin-bottom:10px;}
+  .codigo-passos b{color:var(--text);}
+  /* Caixa para digitar o código no tablet. */
+  .caixa-codigo{background:var(--panel);border:1px solid var(--border);border-radius:10px;
+                padding:16px 18px;margin-bottom:12px;}
+  .caixa-codigo h2{font-size:13px;font-weight:800;letter-spacing:0.06em;text-transform:uppercase;
+                   color:var(--text-muted);margin-bottom:8px;}
+  .caixa-codigo p{font-size:13px;color:var(--gray);line-height:1.55;margin-bottom:12px;}
+  .linha-codigo{display:flex;gap:8px;flex-wrap:wrap;}
+  .linha-codigo input{flex:1 1 190px;min-width:0;padding:13px 14px;border-radius:7px;
+                      border:1px solid var(--border);background:var(--bg);color:var(--text);
+                      font-family:ui-monospace,Menlo,Consolas,monospace;font-size:19px;
+                      font-weight:700;letter-spacing:0.14em;text-transform:uppercase;
+                      text-align:center;min-height:48px;}
+  .linha-codigo input:focus{outline:none;border-color:var(--accent);}
+  .linha-codigo button{flex:0 0 auto;min-height:48px;padding:0 22px;border-radius:7px;
+                       border:none;background:var(--accent);color:#fff;font-weight:700;
+                       font-size:15px;cursor:pointer;font-family:inherit;}
+  .linha-codigo button:disabled{opacity:.5;cursor:default;}
+
   /* Credencial do aparelho: aparece uma vez, some quando a pessoa fecha. */
   #caixaLink{display:none;margin-top:12px;border-left:3px solid var(--warn);
              background:rgba(234,179,8,0.07);padding:12px 14px;border-radius:0 6px 6px 0;}
@@ -290,14 +316,30 @@
       <button class="btn" onclick="autorizarAparelho()" id="btnAutorizar">Autorizar um tablet</button>
     </div>
     <div id="caixaLink">
-      <p><b>Abra este link no tablet</b>, uma vez só. Ele já contém a credencial do
-         aparelho — trate como senha: não mande por grupo nem deixe impresso.</p>
+      <div class="codigo-passos">
+        No tablet, abra a biblioteca e digite este código em
+        <b>Autorizar este aparelho</b>:
+      </div>
+      <div class="codigo-grande" id="codigoAparelho">—</div>
+      <div class="codigo-prazo" id="codigoPrazo"></div>
       <div id="qrAparelho"></div>
-      <input id="linkAparelho" readonly onclick="this.select()">
       <div class="linha" style="display:flex;gap:8px;margin-top:10px">
-        <button class="btn" onclick="copiarLink()" id="btnCopiar">Copiar o link</button>
+        <button class="btn" onclick="copiarLink()" id="btnCopiar">Copiar o código</button>
         <button class="btn" onclick="fecharLink()">Já usei, fechar</button>
       </div>
+      <input id="linkAparelho" type="hidden">
+    </div>
+  </div>
+
+  <div class="caixa-codigo" id="caixaDigitarCodigo" style="display:none">
+    <h2>Autorizar este aparelho</h2>
+    <p>Tem um código gerado no computador? Digite aqui e este tablet passa a abrir a
+       biblioteca sem senha.</p>
+    <div class="linha-codigo">
+      <input id="campoCodigo" placeholder="ABCD-EFGH" maxlength="9" autocomplete="off"
+             autocapitalize="characters" spellcheck="false" aria-label="Código de autorização"
+             oninput="formatarCampoCodigo(this)" onkeydown="if(event.key==='Enter')usarCodigo()">
+      <button onclick="usarCodigo()" id="btnCodigo">Autorizar</button>
     </div>
   </div>
 
@@ -700,6 +742,11 @@ function recado(html, tipo, segundos){
 var aparelhos = [];
 
 function pintarAparelhos(){
+  /* Quem já é aparelho autorizado não precisa ver como se autoriza; quem é
+     admin autoriza pelo computador, não digitando código nele mesmo. */
+  var digitar = $('caixaDigitarCodigo');
+  if (digitar) digitar.style.display = (eu && (podeOperar(eu) || podePublicar(eu))) ? 'none' : 'block';
+
   var caixa = $('caixaAparelhos');
   if (!caixa) return;
   if (!eu || eu.papel !== 'admin'){ caixa.style.display = 'none'; return; }
@@ -760,10 +807,12 @@ function autorizarAparelho(){
     var bt = $('btnAutorizar');
     bt.disabled = true; bt.textContent = 'Criando...';
     supaCriarDispositivo(nome).then(function(cred){
-      var link = montarLinkDispositivo(cred);
-      $('linkAparelho').value = link;
+      $('codigoAparelho').textContent = formatarCodigo(cred.codigo);
+      $('linkAparelho').value = formatarCodigo(cred.codigo);
+      $('codigoPrazo').textContent = 'Vale por 15 minutos e serve uma vez só.';
       $('caixaLink').style.display = 'block';
-      desenharQR(link);
+      desenharQR(montarLinkCodigo(cred.codigo));
+      contarPrazo(cred.expiraEm);
       pintarAparelhos();
     })['catch'](function(e){
       $('estado').style.display='block';
@@ -790,18 +839,80 @@ function desenharQR(texto){
   catch (e) { alvo.innerHTML = ''; }
 }
 
+/* Mostra o tempo que resta: código vencido sem aviso vira "não funciona" sem
+   explicação, e a pessoa culpa o sistema. */
+var prazoTimer = null;
+function contarPrazo(fim){
+  clearInterval(prazoTimer);
+  function pintar(){
+    var resta = Math.round((fim - Date.now()) / 1000);
+    if (resta <= 0){
+      clearInterval(prazoTimer);
+      $('codigoPrazo').textContent = 'Código vencido — gere outro.';
+      $('codigoAparelho').style.opacity = '.35';
+      return;
+    }
+    var min = Math.floor(resta / 60), seg = resta % 60;
+    $('codigoAparelho').style.opacity = '1';
+    $('codigoPrazo').textContent = 'Vale por mais ' + min + ':' +
+      (seg < 10 ? '0' : '') + seg + ' e serve uma vez só.';
+  }
+  pintar();
+  prazoTimer = setInterval(pintar, 1000);
+}
+
+/* ── Digitar o código no tablet ───────────────────────────────────────────── */
+function formatarCampoCodigo(campo){
+  var pos = campo.value.length;
+  campo.value = formatarCodigo(campo.value);
+  if (pos >= campo.value.length) campo.setSelectionRange(campo.value.length, campo.value.length);
+}
+function usarCodigo(){
+  var campo = $('campoCodigo'), bt = $('btnCodigo');
+  var codigo = (campo.value || '').replace(/[^A-Za-z0-9]/g, '');
+  if (codigo.length !== 8){
+    recado('<b>Código incompleto.</b> São 8 caracteres, como ABCD-EFGH.', 'erro');
+    campo.focus();
+    return;
+  }
+  bt.disabled = true; bt.textContent = 'Autorizando...';
+  recado('Conferindo o código...');
+  supaEntrarComCodigo(codigo).then(function(){
+    limparUsuarioCache();
+    return conferirPapel();
+  }).then(function(){
+    campo.value = '';
+    recado('<b>Tablet autorizado.</b> Daqui em diante é só abrir o atalho — ' +
+           'não pede senha nem código de novo.', 'ok', 12);
+    carregar();
+  })['catch'](function(e){
+    recado('<b>Não consegui autorizar:</b> ' + (e.message || e), 'erro');
+  }).then(function(){
+    bt.disabled = false; bt.textContent = 'Autorizar';
+  });
+}
+
 function copiarLink(){
-  var campo = $('linkAparelho');
-  campo.select();
+  var texto = $('linkAparelho').value;
   var ok = false;
-  try { ok = document.execCommand('copy'); } catch (e) {}
-  if (!ok && navigator.clipboard) navigator.clipboard.writeText(campo.value);
+  try {
+    var tmp = document.createElement('textarea');
+    tmp.value = texto;
+    tmp.style.cssText = 'position:fixed;top:-100px';
+    document.body.appendChild(tmp);
+    tmp.select();
+    ok = document.execCommand('copy');
+    document.body.removeChild(tmp);
+  } catch (e) {}
+  if (!ok && navigator.clipboard) navigator.clipboard.writeText(texto);
   $('btnCopiar').textContent = 'Copiado';
-  setTimeout(function(){ $('btnCopiar').textContent = 'Copiar o link'; }, 2000);
+  setTimeout(function(){ $('btnCopiar').textContent = 'Copiar o código'; }, 2000);
 }
 function fecharLink(){
+  clearInterval(prazoTimer);
   $('caixaLink').style.display = 'none';
   $('linkAparelho').value = '';
+  $('codigoAparelho').textContent = '—';
   $('qrAparelho').innerHTML = '';
 }
 
@@ -829,27 +940,24 @@ function dialogoTexto(op){
 /* ── Chegada pelo link de autorização ──────────────────────────────────────
    O tablet abre biblioteca.html#aparelho=…, entra com a credencial do
    aparelho e limpa a URL. Daí em diante é só abrir o atalho. */
+/* O QR abre a biblioteca com o código pronto — quem preferir digitar chega no
+   mesmo lugar. O que viaja na URL é o código, que vence em 15 minutos. */
 function autorizarPelaURL(){
-  var m = (location.hash || '').match(/[#&]aparelho=([^&]+)/);
+  var m = (location.hash || '').match(/[#&]codigo=([^&]+)/);
   if (!m) return Promise.resolve(false);
-  var cred = lerLinkDispositivo(m[1]);
+  var codigo = decodeURIComponent(m[1]);
   try { history.replaceState(null, '', location.pathname); } catch (e) {}
-  if (!cred){
-    recado('<b>Link de autorização inválido.</b> Gere outro no computador.', 'erro');
-    return Promise.resolve(false);
-  }
   recado('Autorizando este aparelho...');
-  return supaLogin(cred.email, cred.senha).then(function(){
+  return supaEntrarComCodigo(codigo).then(function(){
     limparUsuarioCache();
     return supaUsuarioAtual(true);
   }).then(function(u){
     eu = u;
     recado('<b>Tablet autorizado.</b> Daqui em diante é só abrir o atalho — ' +
-           'não pede senha de novo.', 'ok', 12);
+           'não pede senha nem código de novo.', 'ok', 12);
     return true;
   })['catch'](function(e){
-    recado('<b>Não consegui autorizar:</b> ' + (e.message || e) +
-           ' — o link pode ter sido revogado. Gere outro no computador.', 'erro');
+    recado('<b>Não consegui autorizar:</b> ' + (e.message || e), 'erro');
     return false;
   });
 }

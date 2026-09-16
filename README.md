@@ -138,15 +138,20 @@ por falha de rede confundiria mais do que ajuda.
 
 ### Tablet autorizado, sem senha no chão de fábrica
 
-Um aparelho por conta, registrado em `embalagem_dispositivos`. O administrador
-clica em **Autorizar um tablet** na biblioteca, dá um nome, e a tela mostra um link (com
-QR quando a biblioteca de QR carrega). O tablet abre esse link **uma vez**: entra com a
-credencial do aparelho, limpa a URL e não pede senha nunca mais — a sessão se renova
-sozinha.
+Um aparelho por conta, registrado em `embalagem_dispositivos`. O administrador clica em
+**Autorizar um tablet** na biblioteca, dá um nome, e a tela mostra um **código de oito
+caracteres** (`ABCD-EFGH`) com o tempo que resta. No tablet, a biblioteca mostra
+**Autorizar este aparelho**: digita o código e pronto — dali em diante entra sozinho, sem
+senha e sem código, porque a sessão se renova.
 
-- a senha é sorteada com 32 caracteres e **ninguém precisa decorá-la**;
-- o link carrega essa credencial no fragmento da URL, então vale como senha até ser
-  usado — a tela avisa;
+- a senha do aparelho é sorteada com 32 caracteres e **ninguém precisa decorá-la** nem vê-la;
+- o código **vale 15 minutos e serve uma vez só**; a linha some do banco assim que é usado;
+- o QR leva o mesmo código, não a senha: se a imagem for parar noutro lugar, o que vaza é
+  um código que já venceu. A versão anterior punha a credencial dentro do link, que ficava
+  no histórico do navegador e em qualquer conversa por onde o link passasse;
+- o e-mail do aparelho sai do **domínio de quem autoriza**. O Supabase recusa e-mail cujo
+  domínio não existe em DNS, e `dispositivo.ritmopatrimar.app` não resolve — toda criação
+  falhava com *"Email address is invalid"*;
 - **revogar é desligar o aparelho na lista**: nenhuma senha de pessoa muda, e os outros
   aparelhos seguem funcionando. A conta continua entrando, mas toda ação é recusada, e a
   biblioteca avisa isso na tela do próprio tablet;

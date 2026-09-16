@@ -158,22 +158,48 @@ function senhaSorteada(tamanho) {
   return saida;
 }
 
-function apelidoDispositivo() {
-  return 'tablet-' + senhaSorteada(8).toLowerCase() + '@dispositivo.ritmopatrimar.app';
+/* O Supabase recusa e-mail cujo domínio não existe — "dispositivo.ritmopatrimar.app"
+ * não resolve em DNS, e toda criação de aparelho falhava com "Email address is
+ * invalid". O endereço do aparelho passa a sair do domínio de quem autoriza, que
+ * é um domínio real. Ninguém escreve para essa caixa: é só um par de acesso. */
+function apelidoDispositivo(emailDeQuemAutoriza) {
+  var dominio = String(emailDeQuemAutoriza || '').split('@')[1] || 'patrimarmoveis.com.br';
+  return 'tablet-' + senhaSorteada(8).toLowerCase() + '@' + dominio;
+}
+
+/* Código de autorização: oito caracteres, em dois blocos, sem os que se
+ * confundem à mão (I, O, 0, 1). Digitar isto num tablet é mais rápido e mais
+ * seguro que abrir um link que carrega a senha dentro dele. */
+function codigoSorteado() {
+  var letras = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789', saida = '', i;
+  try {
+    var buf = new Uint32Array(8);
+    (window.crypto || window.msCrypto).getRandomValues(buf);
+    for (i = 0; i < 8; i++) saida += letras[buf[i] % letras.length];
+  } catch (e) {
+    for (i = 0; i < 8; i++) saida += letras[Math.floor(Math.random() * letras.length)];
+  }
+  return saida;
+}
+function formatarCodigo(c) {
+  c = String(c || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+  return c.length > 4 ? c.slice(0, 4) + '-' + c.slice(4, 8) : c;
 }
 
 /* Cria a conta do aparelho e devolve as credenciais para o link de autorização.
  * Não mexe na sessão de quem está criando: o signup devolve uma sessão nova,
  * que é descartada aqui de propósito. */
 function supaCriarDispositivo(nome) {
-  var email = apelidoDispositivo();
   var senha = senhaSorteada(32);
+  var codigo = codigoSorteado();
   var guardada = sessaoSalva();
+  var email;
 
   return supaUsuarioAtual().then(function (eu) {
     if (!eu || eu.papel !== 'admin') {
       throw new Error('só o administrador autoriza um aparelho novo.');
     }
+    email = apelidoDispositivo(eu.email || emailLogado());
     return fetch(window.SUPA.url + '/auth/v1/signup', {
       method: 'POST',
       headers: { 'apikey': window.SUPA.key, 'Content-Type': 'application/json' },
@@ -211,7 +237,26 @@ function supaCriarDispositivo(nome) {
                               r.status + ' ' + t);
             });
           }
-          return { id: idNovo, email: email, senha: senha, nome: nome };
+          /* O código guarda a credencial por 15 minutos. Quem digita no tablet
+             a recebe uma vez só, e a linha some do banco na mesma hora. */
+          return fetch(window.SUPA.url + '/rest/v1/embalagem_pareamentos', {
+            method: 'POST',
+            headers: cabecalhos(token, { 'Content-Type': 'application/json' }),
+            body: JSON.stringify({
+              codigo: codigo, usuario_id: idNovo, email: email, senha: senha,
+              criado_por: eu.id,
+              expira_em: new Date(Date.now() + 15 * 60000).toISOString()
+            })
+          }).then(function (r2) {
+            if (!r2.ok) {
+              return r2.text().then(function (t) {
+                throw new Error('aparelho criado, mas não consegui gerar o código: ' +
+                                r2.status + ' ' + t);
+              });
+            }
+            return { id: idNovo, email: email, senha: senha, nome: nome,
+                     codigo: codigo, expiraEm: Date.now() + 15 * 60000 };
+          });
         });
       });
     });
@@ -254,18 +299,32 @@ function supaSituacaoDispositivo(id, ativo) {
   });
 }
 
-/* O link de autorização leva as credenciais no fragmento da URL, que não é
- * enviado ao servidor. Vale como senha enquanto não for usado — por isso a
- * tela avisa, e o aparelho pode ser revogado a qualquer momento. */
-function montarLinkDispositivo(cred) {
-  var pacote = btoa(unescape(encodeURIComponent(JSON.stringify({ e: cred.email, s: cred.senha }))));
-  return window.location.origin + '/biblioteca.html#aparelho=' + encodeURIComponent(pacote);
+/* Troca o código pela credencial do aparelho e já entra com ela. É a única
+ * chamada do sistema aberta a visitante: o tablet ainda não tem conta quando
+ * digita o código. O código serve uma vez e vence em 15 minutos. */
+function supaEntrarComCodigo(codigo) {
+  var limpo = String(codigo || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+  if (limpo.length !== 8) {
+    return Promise.reject(new Error('o código tem 8 caracteres, como ABCD-EFGH.'));
+  }
+  return fetch(window.SUPA.url + '/rest/v1/rpc/embalagem_parear', {
+    method: 'POST',
+    headers: { 'apikey': window.SUPA.key, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ p_codigo: limpo })
+  }).then(function (r) {
+    return r.json()['catch'](function () { return null; }).then(function (d) {
+      if (!r.ok || !d || !d.length) {
+        throw new Error('código inválido ou vencido. Gere outro no computador.');
+      }
+      return supaLogin(d[0].email, d[0].senha);
+    });
+  });
 }
-function lerLinkDispositivo(fragmento) {
-  try {
-    var d = JSON.parse(decodeURIComponent(escape(atob(decodeURIComponent(fragmento)))));
-    return (d && d.e && d.s) ? { email: d.e, senha: d.s } : null;
-  } catch (e) { return null; }
+
+/* O QR leva o mesmo código, não a senha: se a imagem for parar noutro lugar,
+ * o que vaza é um código que vence em 15 minutos e serve uma vez. */
+function montarLinkCodigo(codigo) {
+  return window.location.origin + '/biblioteca.html#codigo=' + encodeURIComponent(codigo);
 }
 
 /* ── Esqueci minha senha ───────────────────────────────────────────────────
