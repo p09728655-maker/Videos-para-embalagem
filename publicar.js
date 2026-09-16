@@ -56,6 +56,191 @@ function supaLogin(email, senha) {
 
 function supaLogout() { limparSessao(); }
 
+/* ── Quem está usando ──────────────────────────────────────────────────────
+ * O papel vem da tabela usuarios, a mesma do RitmoProd: admin e analista
+ * publicam e excluem painel; coletor (o tablet do chão de fábrica) só opera a
+ * TV. A tela esconde o que a pessoa não pode fazer — o banco recusa de
+ * qualquer jeito, mas botão que não funciona é armadilha.
+ */
+function idDoToken(token) {
+  try {
+    var corpo = token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
+    while (corpo.length % 4) corpo += '=';
+    return JSON.parse(decodeURIComponent(escape(atob(corpo)))).sub || null;
+  } catch (e) { return null; }
+}
+
+var usuarioCache = null;
+function supaUsuarioAtual(forcar) {
+  if (usuarioCache && !forcar) return Promise.resolve(usuarioCache);
+  return tokenValido().then(function (token) {
+    var id = idDoToken(token);
+    if (!id) throw new Error('sessão sem identificação');
+    return fetch(window.SUPA.url + '/rest/v1/usuarios?id=eq.' + id +
+                 '&select=id,nome,email,papel,ativo,empresa_id', {
+      headers: cabecalhos(token, {})
+    }).then(function (r) {
+      if (!r.ok) throw new Error('não consegui ler o perfil: ' + r.status);
+      return r.json();
+    }).then(function (rows) {
+      var u = rows && rows[0];
+      /* Conta sem linha em usuarios não tem papel nenhum: entra, mas não faz
+         nada. É o caso de quem foi criado direto no painel do Supabase. */
+      usuarioCache = u || { id: id, papel: null, nome: null, email: null,
+                            ativo: false, empresa_id: null };
+      return usuarioCache;
+    });
+  });
+}
+function limparUsuarioCache() { usuarioCache = null; }
+
+/* Carimba o acesso. Sem isto a lista de aparelhos não sabe dizer se um tablet
+ * ainda está em uso ou foi esquecido numa gaveta. Uma vez por abertura da
+ * página, e falha em silêncio: é informação de apoio, não pode travar a tela. */
+function supaMarcarAcesso() {
+  return tokenValido().then(function (token) {
+    var id = idDoToken(token);
+    if (!id) return false;
+    return fetch(window.SUPA.url + '/rest/v1/usuarios?id=eq.' + id, {
+      method: 'PATCH',
+      headers: cabecalhos(token, { 'Content-Type': 'application/json' }),
+      body: JSON.stringify({ ultimo_acesso_em: new Date().toISOString() })
+    }).then(function () { return true; });
+  })['catch'](function () { return false; });
+}
+
+function podeOperar(u) { return !!u && u.ativo && ['admin','analista','coletor'].indexOf(u.papel) >= 0; }
+function podePublicar(u) { return !!u && u.ativo && ['admin','analista'].indexOf(u.papel) >= 0; }
+function ehDispositivo(u) { return !!u && u.papel === 'coletor'; }
+
+/* ── Tablet autorizado ─────────────────────────────────────────────────────
+ * Uma conta por aparelho, como o RitmoProd já faz com os coletores. A senha é
+ * sorteada, fica guardada só no tablet e ninguém precisa decorá-la: o aparelho
+ * é autorizado uma vez e não pede senha nunca mais.
+ *
+ * Revogar é desativar a conta na lista — sem trocar senha de ninguém e sem
+ * mexer nos outros aparelhos.
+ */
+function senhaSorteada(tamanho) {
+  var letras = 'abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  var saida = '', i;
+  try {
+    var buf = new Uint32Array(tamanho || 32);
+    (window.crypto || window.msCrypto).getRandomValues(buf);
+    for (i = 0; i < buf.length; i++) saida += letras[buf[i] % letras.length];
+  } catch (e) {
+    for (i = 0; i < (tamanho || 32); i++) {
+      saida += letras[Math.floor(Math.random() * letras.length)];
+    }
+  }
+  return saida;
+}
+
+function apelidoDispositivo() {
+  return 'tablet-' + senhaSorteada(8).toLowerCase() + '@dispositivo.ritmopatrimar.app';
+}
+
+/* Cria a conta do aparelho e devolve as credenciais para o link de autorização.
+ * Não mexe na sessão de quem está criando: o signup devolve uma sessão nova,
+ * que é descartada aqui de propósito. */
+function supaCriarDispositivo(nome) {
+  var email = apelidoDispositivo();
+  var senha = senhaSorteada(32);
+  var guardada = sessaoSalva();
+
+  return supaUsuarioAtual().then(function (eu) {
+    if (!eu || eu.papel !== 'admin') {
+      throw new Error('só o administrador autoriza um aparelho novo.');
+    }
+    return fetch(window.SUPA.url + '/auth/v1/signup', {
+      method: 'POST',
+      headers: { 'apikey': window.SUPA.key, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: email, password: senha })
+    }).then(function (r) {
+      return r.json()['catch'](function () { return {}; }).then(function (d) {
+        if (!r.ok) {
+          if (r.status === 422 || (d.msg || d.message || '').indexOf('disabled') >= 0) {
+            throw new Error('o cadastro de contas está desligado no Supabase. ' +
+                            'Ligue em Authentication → Providers → Email, ou crie a ' +
+                            'conta do aparelho pelo painel.');
+          }
+          throw new Error(d.msg || d.error_description || d.message ||
+                          ('não consegui criar a conta (HTTP ' + r.status + ')'));
+        }
+        return (d.user && d.user.id) || d.id;
+      });
+    }).then(function (idNovo) {
+      if (!idNovo) throw new Error('o Supabase não devolveu o id da conta nova');
+      /* O signup pode ter trocado a sessão do navegador; devolve a de quem criou. */
+      if (guardada) { try { localStorage.setItem(SESSAO_KEY, JSON.stringify(guardada)); } catch (e) {} }
+      return tokenValido().then(function (token) {
+        return fetch(window.SUPA.url + '/rest/v1/usuarios', {
+          method: 'POST',
+          headers: cabecalhos(token, {
+            'Content-Type': 'application/json',
+            'Prefer': 'return=representation'
+          }),
+          body: JSON.stringify({
+            id: idNovo, empresa_id: eu.empresa_id || null, nome: nome || 'Tablet',
+            email: email, papel: 'coletor', ativo: true
+          })
+        }).then(function (r) {
+          if (!r.ok) {
+            return r.text().then(function (t) {
+              throw new Error('conta criada, mas não consegui dar o papel: ' + r.status + ' ' + t);
+            });
+          }
+          return { id: idNovo, email: email, senha: senha, nome: nome };
+        });
+      });
+    });
+  });
+}
+
+/* A lista de aparelhos, para saber quem está autorizado e poder revogar. */
+function supaListarDispositivos() {
+  return tokenValido().then(function (token) {
+    return fetch(window.SUPA.url + '/rest/v1/usuarios?papel=eq.coletor' +
+                 '&select=id,nome,email,ativo,ultimo_acesso_em&order=nome.asc', {
+      headers: cabecalhos(token, {})
+    }).then(function (r) {
+      if (!r.ok) throw new Error('não consegui listar os aparelhos: ' + r.status);
+      return r.json();
+    });
+  });
+}
+
+function supaSituacaoDispositivo(id, ativo) {
+  return tokenValido().then(function (token) {
+    return fetch(window.SUPA.url + '/rest/v1/usuarios?id=eq.' + encodeURIComponent(id), {
+      method: 'PATCH',
+      headers: cabecalhos(token, { 'Content-Type': 'application/json' }),
+      body: JSON.stringify({ ativo: !!ativo })
+    }).then(function (r) {
+      if (!r.ok) {
+        return r.text().then(function (t) {
+          throw new Error('não consegui mudar o aparelho: ' + r.status + ' ' + t);
+        });
+      }
+      return true;
+    });
+  });
+}
+
+/* O link de autorização leva as credenciais no fragmento da URL, que não é
+ * enviado ao servidor. Vale como senha enquanto não for usado — por isso a
+ * tela avisa, e o aparelho pode ser revogado a qualquer momento. */
+function montarLinkDispositivo(cred) {
+  var pacote = btoa(unescape(encodeURIComponent(JSON.stringify({ e: cred.email, s: cred.senha }))));
+  return window.location.origin + '/biblioteca.html#aparelho=' + encodeURIComponent(pacote);
+}
+function lerLinkDispositivo(fragmento) {
+  try {
+    var d = JSON.parse(decodeURIComponent(escape(atob(decodeURIComponent(fragmento)))));
+    return (d && d.e && d.s) ? { email: d.e, senha: d.s } : null;
+  } catch (e) { return null; }
+}
+
 /* ── Esqueci minha senha ───────────────────────────────────────────────────
  * Pede ao Supabase o e-mail de redefinição. A resposta é 200 mesmo para
  * e-mail que não existe — de propósito: senão a tela viraria um jeito de
@@ -244,45 +429,42 @@ function supaRecarregarTV() {
   });
 }
 
-/* Troca o tempo por camada de um painel ja publicado. O trigger de UPDATE
- * carimba atualizado_em, e e esse carimbo que faz a TV recarregar sozinha. */
-function supaDefinirTempo(slug, segundos) {
-  var n = parseInt(segundos, 10);
-  if (!(n > 0 && n <= 9999)) return Promise.reject(new Error('tempo inválido'));
+/* Chamada de funcao no banco (RPC). */
+function supaRpc(funcao, args, oQue) {
   return tokenValido().then(function (token) {
-    return fetch(window.SUPA.url + '/rest/v1/embalagem_paineis?slug=eq.' +
-                 encodeURIComponent(slug), {
-      method: 'PATCH',
+    return fetch(window.SUPA.url + '/rest/v1/rpc/' + funcao, {
+      method: 'POST',
       headers: cabecalhos(token, { 'Content-Type': 'application/json' }),
-      body: JSON.stringify({ tempo: n })
+      body: JSON.stringify(args)
     }).then(function (r) {
-      if (!r.ok) {
-        return r.text().then(function (t) {
-          throw new Error('não consegui salvar o tempo: ' + r.status + ' ' + t);
-        });
-      }
-      return n;
+      if (r.ok) return true;
+      return r.text().then(function (t) {
+        if (r.status === 403 || t.indexOf('sem permissao') >= 0) {
+          throw new Error('este aparelho não tem permissão para ' + oQue + '.');
+        }
+        throw new Error('não consegui ' + oQue + ': ' + r.status + ' ' + t);
+      });
     });
   });
 }
 
-/* Alterna a exibicao da coluna de componentes sem regerar o painel. */
+/* Tempo e exibicao passam por funcao no banco, nao por UPDATE na tabela: assim
+ * o tablet do chao de fabrica ajusta o ritmo sem ganhar permissao de alterar o
+ * painel inteiro nem de excluir nada. */
+function supaDefinirTempo(slug, segundos) {
+  var n = parseInt(segundos, 10);
+  if (!(n > 0 && n <= 9999)) return Promise.reject(new Error('tempo inválido'));
+  return supaRpc('embalagem_definir_tempo', { p_slug: slug, p_segundos: n },
+                 'salvar o tempo').then(function () { return n; });
+}
+
 function supaDefinirOpcoes(slug, opcoes) {
-  return tokenValido().then(function (token) {
-    return fetch(window.SUPA.url + '/rest/v1/embalagem_paineis?slug=eq.' +
-                 encodeURIComponent(slug), {
-      method: 'PATCH',
-      headers: cabecalhos(token, { 'Content-Type': 'application/json' }),
-      body: JSON.stringify({ opcoes: opcoes })
-    }).then(function (r) {
-      if (!r.ok) {
-        return r.text().then(function (t) {
-          throw new Error('não consegui salvar a opção: ' + r.status + ' ' + t);
-        });
-      }
-      return true;
-    });
-  });
+  var o = opcoes || {};
+  return supaRpc('embalagem_definir_exibicao',
+                 { p_slug: slug,
+                   p_componentes: o.componentes !== false,
+                   p_so_desenho: o.soDesenho === true },
+                 'salvar a exibição');
 }
 
 function supaExcluirPainel(slug) {

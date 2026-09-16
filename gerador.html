@@ -1297,6 +1297,21 @@ function fazerLogin() {
 async function publicarPainel() {
   if (!estaLogado()) { abrirLogin(); return; }
 
+  /* O banco recusa quem não pode publicar, mas a recusa chega no meio do
+     upload das imagens — melhor barrar antes de subir 8 MB à toa. */
+  try {
+    var quem = await supaUsuarioAtual();
+    if (!podePublicar(quem)) {
+      mostrarResultado(
+        '<b style="color:var(--error)">Esta conta não publica painel.</b> ' +
+        (quem && quem.papel === 'coletor'
+          ? 'Este é um aparelho autorizado só para operar a TV. Publique pelo computador, ' +
+            'com a conta do PPCP.'
+          : 'Peça ao administrador do RitmoProd o papel de analista ou admin.'));
+      return;
+    }
+  } catch (e) { /* sem rede para conferir: segue e deixa o banco decidir */ }
+
   var btn = document.getElementById('btnPublicar');
   var { produto, ops, tempo, opcoes } = coletarDados();
   if (!ops.length) { avisarSemCamada(); return; }

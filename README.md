@@ -106,6 +106,53 @@ Pausa e recarga viajam na **mesma consulta de 5 em 5 segundos** (`checarComandos
 de schema — coluna que ainda não existe — suspende a checagem por 10 minutos em vez de
 desligá-la de vez: um deploy fora de ordem não deixa a TV surda até o próximo reload.
 
+### Quem pode o quê
+
+A permissão vem do **papel na tabela `usuarios`**, a mesma do RitmoProd — não do domínio
+do e-mail. A regra antiga (`e-mail terminando em @patrimarmoveis.com.br`) dava poder de
+publicar e excluir painel a qualquer conta criada com um e-mail daquele domínio, sem que
+ninguém provasse ter acesso a ele.
+
+| Papel | Opera a TV | Publica e exclui painel |
+|---|---|---|
+| `admin`, `analista` | sim | sim |
+| `coletor` (tablet de chão de fábrica) | sim | **não** |
+| sem linha em `usuarios`, ou `ativo = false` | não | não |
+
+*Operar a TV* é trocar o produto no ar, pausar, mandar recarregar e ajustar tempo e modo
+de exibição. Essas duas últimas passam por função no banco
+(`embalagem_definir_tempo`, `embalagem_definir_exibicao`) em vez de `UPDATE` na tabela:
+assim o tablet ajusta o ritmo sem ganhar permissão de alterar o painel inteiro. As
+imagens no bucket seguem a mesma regra de publicar.
+
+A tela esconde o que a conta não pode fazer, mas quem recusa é o banco. Sem conseguir ler
+o papel (rede fora), a tela não esconde nada — a recusa vem do servidor, e botão sumido
+por falha de rede confundiria mais do que ajuda.
+
+### Tablet autorizado, sem senha no chão de fábrica
+
+Um aparelho por conta, do mesmo tipo que o RitmoProd usa nos coletores. O administrador
+clica em **Autorizar um tablet** na biblioteca, dá um nome, e a tela mostra um link (com
+QR quando a biblioteca de QR carrega). O tablet abre esse link **uma vez**: entra com a
+credencial do aparelho, limpa a URL e não pede senha nunca mais — a sessão se renova
+sozinha.
+
+- a senha é sorteada com 32 caracteres e **ninguém precisa decorá-la**;
+- o link carrega essa credencial no fragmento da URL, então vale como senha até ser
+  usado — a tela avisa;
+- **revogar é desligar o aparelho na lista**: nenhuma senha de pessoa muda, e os outros
+  aparelhos seguem funcionando. A conta continua entrando, mas toda ação é recusada, e a
+  biblioteca avisa isso na tela do próprio tablet;
+- a lista mostra o último acesso de cada aparelho, para saber o que está em uso e o que
+  ficou na gaveta.
+
+No tablet, a biblioteca esconde o caminho para publicar e o botão de excluir: o banco
+recusaria de qualquer forma, e link que leva a uma recusa é armadilha.
+
+> Os quatro coletores que já existem no RitmoProd também passam a operar a TV da
+> embalagem, porque o papel é o mesmo. São aparelhos da empresa no chão de fábrica; se um
+> dia isso precisar ser separado, é uma linha em `embalagem_pode_operar()`.
+
 ### Esqueci minha senha
 
 O login é o do Supabase Auth, o mesmo usuário do RitmoProd. A tela de login tem
