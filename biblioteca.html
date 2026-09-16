@@ -134,28 +134,8 @@
   .vazio a{color:var(--accent);text-decoration:none;font-weight:700;}
   #estado{font-size:14px;color:var(--text-muted);padding:14px 0;}
 
-  /* Aparelhos autorizados. Só o administrador vê esta parte. */
-  .aparelhos{background:var(--panel);border:1px solid var(--border);border-radius:10px;
-             padding:16px 18px;margin-bottom:12px;}
-  .aparelhos h2{font-size:13px;font-weight:800;letter-spacing:0.06em;text-transform:uppercase;
-                color:var(--text-muted);margin-bottom:4px;}
-  .aparelhos .exp{font-size:12.5px;color:var(--gray);line-height:1.55;margin-bottom:12px;}
-  .apar-item{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:10px 0;
-             border-top:1px solid rgba(63,63,70,0.55);font-size:13.5px;}
-  .apar-item .nome-ap{flex:1 1 160px;min-width:0;font-weight:700;}
-  .apar-item .quando{font-size:12px;color:var(--gray);font-family:ui-monospace,Menlo,Consolas,monospace;}
-  .apar-item.inativo{opacity:.55;}
-  .selo{font-size:10.5px;font-weight:800;letter-spacing:0.06em;text-transform:uppercase;
-        padding:3px 7px;border-radius:4px;border:1px solid var(--border);color:var(--gray);}
-  .selo.ok{color:var(--success);border-color:rgba(22,163,74,0.5);}
   /* O código é o que a pessoa vai ler em voz alta ou digitar olhando de longe:
      grande, monoespaçado e com bastante respiro entre os caracteres. */
-  .codigo-grande{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:38px;
-                 font-weight:700;letter-spacing:0.12em;color:var(--accent);
-                 text-align:center;padding:14px 0 6px;user-select:all;}
-  .codigo-prazo{text-align:center;font-size:12.5px;color:var(--gray);margin-bottom:12px;}
-  .codigo-passos{font-size:13px;color:var(--text-muted);line-height:1.7;margin-bottom:10px;}
-  .codigo-passos b{color:var(--text);}
   /* Caixa para digitar o código no tablet. */
   .caixa-codigo{background:var(--panel);border:1px solid var(--border);border-radius:10px;
                 padding:16px 18px;margin-bottom:12px;}
@@ -173,18 +153,6 @@
                        border:none;background:var(--accent);color:#fff;font-weight:700;
                        font-size:15px;cursor:pointer;font-family:inherit;}
   .linha-codigo button:disabled{opacity:.5;cursor:default;}
-
-  /* Credencial do aparelho: aparece uma vez, some quando a pessoa fecha. */
-  #caixaLink{display:none;margin-top:12px;border-left:3px solid var(--warn);
-             background:rgba(234,179,8,0.07);padding:12px 14px;border-radius:0 6px 6px 0;}
-  #caixaLink p{font-size:12.5px;color:var(--text-muted);line-height:1.55;margin-bottom:10px;}
-  #caixaLink b{color:var(--warn);}
-  #linkAparelho{width:100%;padding:10px;border-radius:6px;border:1px solid var(--border);
-                background:var(--bg);color:var(--text-muted);font-size:11.5px;
-                font-family:ui-monospace,Menlo,Consolas,monospace;word-break:break-all;}
-  #qrAparelho{display:flex;justify-content:center;background:#fff;padding:12px;
-              border-radius:8px;margin:12px 0;}
-  #qrAparelho:empty{display:none;}
 
   /* Busca: com a biblioteca crescendo, achar o produto na rolagem vira o
      trabalho. No celular ela gruda no topo — quem procura está com a lista
@@ -304,33 +272,6 @@
     </div>
   </div>
 
-  <div class="aparelhos" id="caixaAparelhos" style="display:none">
-    <h2>Aparelhos autorizados</h2>
-    <div class="exp">Tablets da embalagem. Abrem a biblioteca já conectados, sem senha, e
-      fazem tudo o que a linha precisa: colocar na TV, pausar, retomar, tempo e modo.
-      <b>Gerar vídeo novo é só no computador.</b> Revogar é desligar aqui — nenhuma senha
-      de pessoa muda. Esta lista é da embalagem: os coletores do RitmoProd não entram nela
-      nem operam a TV.</div>
-    <div id="listaAparelhos"></div>
-    <div style="margin-top:12px">
-      <button class="btn" onclick="autorizarAparelho()" id="btnAutorizar">Autorizar um tablet</button>
-    </div>
-    <div id="caixaLink">
-      <div class="codigo-passos">
-        No tablet, abra a biblioteca e digite este código em
-        <b>Autorizar este aparelho</b>:
-      </div>
-      <div class="codigo-grande" id="codigoAparelho">—</div>
-      <div class="codigo-prazo" id="codigoPrazo"></div>
-      <div id="qrAparelho"></div>
-      <div class="linha" style="display:flex;gap:8px;margin-top:10px">
-        <button class="btn" onclick="copiarLink()" id="btnCopiar">Copiar o código</button>
-        <button class="btn" onclick="fecharLink()">Já usei, fechar</button>
-      </div>
-      <input id="linkAparelho" type="hidden">
-    </div>
-  </div>
-
   <div class="caixa-codigo" id="caixaDigitarCodigo" style="display:none">
     <h2>Autorizar este aparelho</h2>
     <p>Tem um código gerado no computador? Digite aqui e este tablet passa a abrir a
@@ -427,17 +368,18 @@ function pintarSessao(){
   }
   el.innerHTML = 'Conectado como <b>' + (emailLogado() || '—') + '</b> · ' +
                  '<a onclick="sairDaConta()">sair</a> · ' +
-                 '<a href="gerador.html">publicar um vídeo novo</a>';
+                 '<a href="gerador.html">publicar um vídeo novo</a>' +
+                 (podePublicar(eu) ? ' · <a href="configuracoes.html">configurações</a>' : '');
 }
 
 /* Lê o papel de quem entrou e repinta a tela com o que essa pessoa pode fazer. */
 function conferirPapel(){
-  if (!temAcesso()){ eu = null; papelLido = false; pintarSessao(); pintarAparelhos();
+  if (!temAcesso()){ eu = null; papelLido = false; pintarSessao(); pintarCaixaCodigo();
                      return Promise.resolve(); }
   return supaUsuarioAtual(true).then(function(u){
     eu = u; papelLido = true;
     pintarSessao();
-    pintarAparelhos();
+    pintarCaixaCodigo();
     render(todosPaineis);
     if (podeOperar(u)) supaMarcarAcesso();
     if (u && u.papel === 'aparelho' && !u.ativo){
@@ -458,7 +400,7 @@ function abrirLogin(){
 }
 function fecharLogin(){ $('modalLogin').className=''; acaoPendente=null; }
 function sairDaConta(){ supaLogout(); limparUsuarioCache(); eu = null; papelLido = false;
-                        pintarSessao(); pintarAparelhos(); render(todosPaineis); }
+                        pintarSessao(); pintarCaixaCodigo(); render(todosPaineis); }
 
 
 /* ── Esqueci minha senha ──────────────────────────────────────────────────
@@ -740,133 +682,6 @@ function recado(html, tipo, segundos){
   }, segundos * 1000);
 }
 
-/* ── Aparelhos autorizados ────────────────────────────────────────────────
-   Uma conta por tablet, do mesmo tipo que o RitmoProd usa nos coletores. O
-   aparelho entra uma vez pelo link e não pede senha nunca mais; revogar é
-   desligar na lista, sem trocar a senha de ninguém. */
-var aparelhos = [];
-
-function pintarAparelhos(){
-  /* Quem já é aparelho autorizado não precisa ver como se autoriza; quem é
-     admin autoriza pelo computador, não digitando código nele mesmo. */
-  var digitar = $('caixaDigitarCodigo');
-  if (digitar) digitar.style.display = temAcesso() ? 'none' : 'block';
-
-  var caixa = $('caixaAparelhos');
-  if (!caixa) return;
-  if (!podePublicar(eu)){ caixa.style.display = 'none'; return; }
-  caixa.style.display = 'block';
-  supaListarDispositivos().then(function(lista){
-    aparelhos = lista || [];
-    var el = $('listaAparelhos');
-    if (!aparelhos.length){
-      el.innerHTML = '<div class="apar-item" style="color:var(--gray)">' +
-                     'Nenhum aparelho autorizado ainda.</div>';
-      return;
-    }
-    el.innerHTML = aparelhos.map(function(a){
-      var visto = a.ultimo_acesso_em ? dataBR(a.ultimo_acesso_em)
-                : (a.pareado_em ? 'pareado, sem uso' : 'aguardando o código');
-      return '<div class="apar-item' + (a.ativo ? '' : ' inativo') + '">' +
-               '<span class="nome-ap">' + esc(a.nome || 'Aparelho') + '</span>' +
-               '<span class="selo' + (a.ativo && a.pareado_em ? ' ok' : '') + '">' +
-                 (!a.ativo ? 'revogado' : (a.pareado_em ? 'ativo' : 'pendente')) + '</span>' +
-               '<span class="quando">' + visto + '</span>' +
-               '<span class="espaco" style="flex:1"></span>' +
-               '<button class="btn apoio-btn" onclick="trocarAparelho(\'' + a.id + '\',' +
-                 (a.ativo ? 'false' : 'true') + ')">' +
-                 (a.ativo ? 'Revogar' : 'Reativar') + '</button>' +
-             '</div>';
-    }).join('');
-  })['catch'](function(e){
-    $('listaAparelhos').innerHTML = '<div class="apar-item" style="color:var(--error)">' +
-      'Não consegui listar: ' + esc(e.message || e) + '</div>';
-  });
-}
-
-function trocarAparelho(id, ativar){
-  var a = aparelhos.filter(function(x){ return x.id === id; })[0];
-  dialogo({ titulo: ativar ? 'Reativar o aparelho?' : 'Revogar o aparelho?',
-            texto: ativar
-              ? '<b>' + esc(a ? a.nome : 'O aparelho') + '</b> volta a operar a TV ' +
-                'sem precisar de link novo.'
-              : '<b>' + esc(a ? a.nome : 'O aparelho') + '</b> para de operar a TV na hora. ' +
-                'A sessão dele continua aberta, mas toda ação passa a ser recusada.<br><br>' +
-                'Use isto se o tablet sumiu ou saiu do setor.',
-            ok: ativar ? 'Reativar' : 'Revogar', cancelar:'Cancelar', perigo: !ativar })
-  .then(function(sim){
-    if (!sim) return;
-    supaSituacaoDispositivo(id, ativar).then(pintarAparelhos)
-      ['catch'](function(e){
-        $('estado').style.display='block';
-        $('estado').innerHTML='<b style="color:var(--error)">Não consegui:</b> '+(e.message||e);
-      });
-  });
-}
-
-function autorizarAparelho(){
-  dialogoTexto({ titulo:'Autorizar um tablet',
-                 texto:'Dê um nome para reconhecer o aparelho depois, na lista.',
-                 valor:'Tablet da embalagem', ok:'Criar o link', cancelar:'Cancelar' })
-  .then(function(nome){
-    if (!nome) return;
-    var bt = $('btnAutorizar');
-    bt.disabled = true; bt.textContent = 'Criando...';
-    supaCriarDispositivo(nome).then(function(cred){
-      $('codigoAparelho').textContent = formatarCodigo(cred.codigo);
-      $('linkAparelho').value = formatarCodigo(cred.codigo);
-      $('codigoPrazo').textContent = 'Vale por 15 minutos e serve uma vez só.';
-      $('caixaLink').style.display = 'block';
-      desenharQR(montarLinkCodigo(cred.codigo));
-      contarPrazo(cred.expiraEm);
-      pintarAparelhos();
-    })['catch'](function(e){
-      $('estado').style.display='block';
-      $('estado').innerHTML='<b style="color:var(--error)">Não consegui autorizar:</b> '+(e.message||e);
-    }).then(function(){ bt.disabled = false; bt.textContent = 'Autorizar um tablet'; });
-  });
-}
-
-/* O QR é conforto: com o PC e o tablet na mesma sala, ninguém quer digitar uma
-   URL enorme. Se a biblioteca do QR não carregar, o link continua ali. */
-function desenharQR(texto){
-  var alvo = $('qrAparelho');
-  alvo.innerHTML = '';
-  if (!window.QRCode){
-    var sc = document.createElement('script');
-    sc.src = 'https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js';
-    sc.onload = function(){ desenharQR(texto); };
-    sc.onerror = function(){ alvo.innerHTML = ''; };   /* fica só o link */
-    document.head.appendChild(sc);
-    return;
-  }
-  try { new window.QRCode(alvo, { text: texto, width: 190, height: 190,
-                                  correctLevel: window.QRCode.CorrectLevel.L }); }
-  catch (e) { alvo.innerHTML = ''; }
-}
-
-/* Mostra o tempo que resta: código vencido sem aviso vira "não funciona" sem
-   explicação, e a pessoa culpa o sistema. */
-var prazoTimer = null;
-function contarPrazo(fim){
-  clearInterval(prazoTimer);
-  function pintar(){
-    var resta = Math.round((fim - Date.now()) / 1000);
-    if (resta <= 0){
-      clearInterval(prazoTimer);
-      $('codigoPrazo').textContent = 'Código vencido — gere outro.';
-      $('codigoAparelho').style.opacity = '.35';
-      return;
-    }
-    var min = Math.floor(resta / 60), seg = resta % 60;
-    $('codigoAparelho').style.opacity = '1';
-    $('codigoPrazo').textContent = 'Vale por mais ' + min + ':' +
-      (seg < 10 ? '0' : '') + seg + ' e serve uma vez só.';
-  }
-  pintar();
-  prazoTimer = setInterval(pintar, 1000);
-}
-
 /* ── Digitar o código no tablet ───────────────────────────────────────────── */
 function formatarCampoCodigo(campo){
   var pos = campo.value.length;
@@ -898,49 +713,11 @@ function usarCodigo(){
   });
 }
 
-function copiarLink(){
-  var texto = $('linkAparelho').value;
-  var ok = false;
-  try {
-    var tmp = document.createElement('textarea');
-    tmp.value = texto;
-    tmp.style.cssText = 'position:fixed;top:-100px';
-    document.body.appendChild(tmp);
-    tmp.select();
-    ok = document.execCommand('copy');
-    document.body.removeChild(tmp);
-  } catch (e) {}
-  if (!ok && navigator.clipboard) navigator.clipboard.writeText(texto);
-  $('btnCopiar').textContent = 'Copiado';
-  setTimeout(function(){ $('btnCopiar').textContent = 'Copiar o código'; }, 2000);
-}
-function fecharLink(){
-  clearInterval(prazoTimer);
-  $('caixaLink').style.display = 'none';
-  $('linkAparelho').value = '';
-  $('codigoAparelho').textContent = '—';
-  $('qrAparelho').innerHTML = '';
-}
-
-/* Caixa de texto do próprio app, no lugar do prompt() do navegador. */
-function dialogoTexto(op){
-  return new Promise(function(res){
-    var m=$('modalDialogo'), ok=$('dlgOk'), ca=$('dlgCancelar'), txt=$('dlgTexto');
-    $('dlgTitulo').textContent = op.titulo;
-    txt.innerHTML = op.texto +
-      '<br><br><input id="dlgCampo" style="width:100%;padding:11px 14px;border-radius:7px;' +
-      'border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:15px;' +
-      'font-family:inherit" maxlength="60">';
-    var campo = $('dlgCampo'); campo.value = op.valor || '';
-    ok.textContent = op.ok || 'OK'; ok.className = 'btn-entrar';
-    ca.style.display = ''; ca.textContent = op.cancelar || 'Cancelar';
-    m.className = 'aberto';
-    campo.focus(); campo.select();
-    function fecha(v){ m.className=''; ok.onclick=ca.onclick=campo.onkeydown=null; res(v); }
-    ok.onclick = function(){ fecha((campo.value || '').trim()); };
-    ca.onclick = function(){ fecha(null); };
-    campo.onkeydown = function(e){ if (e.key === 'Enter'){ e.preventDefault(); ok.onclick(); } };
-  });
+/* Quem já tem acesso não precisa ver como se autoriza. Autorizar um tablet é
+   em Configurações, no computador. */
+function pintarCaixaCodigo(){
+  var el = $('caixaDigitarCodigo');
+  if (el) el.style.display = temAcesso() ? 'none' : 'block';
 }
 
 /* ── Chegada pelo link de autorização ──────────────────────────────────────

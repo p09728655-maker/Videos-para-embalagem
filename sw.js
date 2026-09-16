@@ -5,7 +5,7 @@
  * a TV ficaria presa num produto antigo sem ninguém perceber. O guard em fetch()
  * abaixo é o que garante isso — não remova.
  */
-var CACHE = 'ritmopatrimar-embalagem-v14';
+var CACHE = 'ritmopatrimar-embalagem-v15';
 
 /* Só o que o gerador precisa para abrir sem internet. */
 var ESSENCIAL = [
@@ -19,6 +19,7 @@ var ESSENCIAL = [
   './icones/apple-touch-icon.png',
   './logo/patrimar.png',
   './biblioteca.html',
+  './configuracoes.html',
   './supabase-config.js',
   './publicar.js',
   'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js',

@@ -20,6 +20,7 @@ as observações críticas (furação, pintura) e o desenho técnico da camada.
 | `paineis/<slug>/` | Biblioteca: um produto por pasta, publicado uma vez só |
 | `docs/padrao-desenho-tv.html` | **Padrão de folha para o desenhista** (publicado em `/padrao`) |
 | `docs/modelo-folha-tv.dxf` | Modelo da folha TV 16:9 para abrir no CAD |
+| `configuracoes.html` | Aparelhos autorizados — o que se ajusta de vez em quando |
 | `nova-senha.html` | Redefinição de senha, aberta pelo link do e-mail |
 | `manifest.webmanifest`, `sw.js` | App instalável (PWA) do gerador |
 | `logo/`, `icones/` | Marca Patrimar preparada para fundo escuro |
@@ -150,7 +151,7 @@ tablet guarda um **token**, e ninguém precisa de caixa de e-mail nenhuma.
 
 Como funciona:
 
-1. no computador, **Autorizar um tablet** cria a linha em `embalagem_dispositivos`
+1. no computador, em **Configurações**, **Autorizar um tablet** cria a linha em `embalagem_dispositivos`
    (ainda **sem token**) e um código de oito caracteres válido por 15 minutos;
 2. no tablet, a biblioteca mostra **Autorizar este aparelho**: digita o código;
 3. a função `embalagem_parear` gera o token no banco, guarda só o `sha256` dele e devolve

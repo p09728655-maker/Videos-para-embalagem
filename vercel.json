@@ -24,6 +24,10 @@
     {
       "source": "/nova-senha",
       "destination": "/nova-senha.html"
+    },
+    {
+      "source": "/configuracoes",
+      "destination": "/configuracoes.html"
     }
   ],
   "headers": [
