@@ -207,13 +207,24 @@ function supaCriarDispositivo(nome) {
     }).then(function (r) {
       return r.json()['catch'](function () { return {}; }).then(function (d) {
         if (!r.ok) {
-          if (r.status === 422 || (d.msg || d.message || '').indexOf('disabled') >= 0) {
+          var texto = String(d.msg || d.error_description || d.message || '');
+          /* Os dois tropeços de configuração que param aqui, com o que fazer em
+             cada um — a mensagem crua do Supabase vem em inglês e não diz onde
+             mexer. */
+          if (texto.indexOf('rate limit') >= 0 || r.status === 429) {
+            throw new Error('o Supabase tentou mandar e-mail de confirmação para a conta ' +
+                            'do aparelho e bateu no limite de envios. Desligue a confirmação ' +
+                            'de e-mail em Authentication → Sign In / Providers → Email → ' +
+                            '"Confirm email": a conta do aparelho não tem caixa de e-mail ' +
+                            'de verdade, e não há para onde confirmar.');
+          }
+          if (r.status === 422 || texto.indexOf('disabled') >= 0 ||
+              texto.indexOf('not enabled') >= 0) {
             throw new Error('o cadastro de contas está desligado no Supabase. ' +
-                            'Ligue em Authentication → Providers → Email, ou crie a ' +
+                            'Ligue em Authentication → Sign In / Providers → Email, ou crie a ' +
                             'conta do aparelho pelo painel.');
           }
-          throw new Error(d.msg || d.error_description || d.message ||
-                          ('não consegui criar a conta (HTTP ' + r.status + ')'));
+          throw new Error(texto || ('não consegui criar a conta (HTTP ' + r.status + ')'));
         }
         return (d.user && d.user.id) || d.id;
       });

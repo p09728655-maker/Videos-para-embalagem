@@ -180,6 +180,7 @@ silêncio:
 |---|---|---|
 | Authentication → URL Configuration → Redirect URLs | `https://<domínio>/**` | o link cai na Site URL e `nova-senha.html` abre sem token |
 | Authentication → Emails → SMTP | servidor de e-mail próprio | ~2 e-mails por hora e entrega ruim: o link não chega |
+| Authentication → Sign In / Providers → Email → **Confirm email** | **desligado** | autorizar tablet falha com *email rate limit exceeded*: o Supabase tenta confirmar por e-mail uma conta de aparelho, que não tem caixa nenhuma |
 
 Sem SMTP próprio o botão existe mas não é confiável no dia a dia. **Com poucas pessoas
 usando, redefinir a senha pelo painel do Supabase continua sendo o caminho mais rápido** —
