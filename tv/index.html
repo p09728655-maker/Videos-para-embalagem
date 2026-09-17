@@ -97,11 +97,23 @@
 
   /* SO O DESENHO
      A folha do desenhista ja e 16:9 e ja traz camada e componentes escritos
-     nela. Neste modo a tela nao repete nada disso: sai cabecalho, coluna,
+     nela. Neste modo a tela nao repete nada disso: saem logo, coluna,
      faixa da camada, cronometro e rodape, e a folha ocupa a tela toda.
      Ficam de pe so duas coisas que a folha nao garante: a OBS, digitada pelo
      PPCP, e um fio de progresso que mostra o ritmo da troca de camada. */
-  body.so-desenho .header{display:none;}
+  body.so-desenho .rp-logo{display:none;}
+  /* Os botoes ficam. Antes este modo ocultava o cabecalho inteiro e levava
+     embora o unico jeito de sair pela tela: quem entrasse aqui sem saber da
+     tecla D ficava preso no desenho, e na TV da fabrica nem ha teclado. Eles
+     saem do fluxo para nao roubar altura da folha e continuam invisiveis ate
+     alguem mover o mouse — a TV parada segue mostrando so o desenho. */
+  body.so-desenho .header{position:fixed;right:0;bottom:0.7vh;z-index:8;padding:0;
+       border-bottom:none;background:transparent;pointer-events:none;}
+  /* Embaixo, e nao no alto: no alto eles cobririam a faixa da OBS, e aviso de
+     furacao encoberto — ainda que por cinco segundos — e erro de embalagem.
+     Aqui encostam so num canto do desenho, com alguem de mouse na mao. */
+  body.so-desenho .controls{padding:1vh 1.4vw;background:rgba(10,10,11,0.72);
+       border-radius:10px 0 0 0;}
   body.so-desenho .right{display:none;}
   body.so-desenho .footer{display:none;}
   body.so-desenho .left{width:100%;padding:0;position:relative;}
@@ -867,6 +879,12 @@ document.addEventListener('keydown', function(e){
     e.preventDefault(); irCamada(-1);
   } else if (e.code === 'KeyD' || e.keyCode === 68){
     e.preventDefault(); alternarSoDesenho();
+  } else if (e.code === 'Escape' || e.keyCode === 27){
+    /* Saida de emergencia: Esc so age para VOLTAR, nunca para entrar no modo.
+       Em tela cheia o navegador consome a primeira tecla para sair do
+       fullscreen e nem entrega o evento aqui — a segunda devolve a tela
+       completa. */
+    if (modoSoDesenho()){ e.preventDefault(); alternarSoDesenho(); }
   }
 });
 
